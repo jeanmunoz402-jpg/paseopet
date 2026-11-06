@@ -870,6 +870,12 @@ body{background:var(--bg)}
 .dogslot.add{box-shadow:inset 0 0 0 2px #6A5FC8;background:repeating-linear-gradient(45deg,#1E1854 0 8px,#221B5E 8px 16px);justify-content:center;min-height:104px}
 .dogslot .plus{font-family:var(--pix);font-size:22px;color:var(--gold)}
 .brsearch{margin-bottom:8px}
+/* misiones por etapas */
+.chainrow{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px 0;box-shadow:0 2px 0 rgba(246,234,200,.08)}
+.chainrow .mic img{width:28px;height:28px}
+.chainrow.ready{background:linear-gradient(90deg,rgba(79,209,139,.14),transparent);border-radius:12px;padding:8px 6px}
+.chainrow.done{opacity:.6}
+.itcard.miss img{filter:brightness(0) opacity(.5)}
 </style>
 
 <div class="app" id="app">
@@ -1931,9 +1937,10 @@ const sprC=new Map(),urlC=new Map();
 function paint(rows,pal,w,h){const c=document.createElement('canvas');w=w||Math.max(...rows.map(r=>r.length));h=h||rows.length;c.width=w;c.height=h;const x=c.getContext('2d');rows.forEach((r,j)=>{for(let i=0;i<Math.min(r.length,w);i++){const ch=r[i];if(ch==='.'||ch===' ')continue;const col=(pal&&pal[ch])||PAL[ch];if(!col)continue;x.fillStyle=col;x.fillRect(i,j,1,1)}});return c}
 function iconC(name,x){
   const baseName=String(name||'star').split(':')[0];
+  let icn=baseName;if(!ICONS[baseName]){try{const it=ITEMS.find(i=>i.id===baseName);if(it&&it.ic){icn=it.ic;if(!x&&it.tint)x=it.tint}}catch(e){}}
   const k=baseName+'|'+(x||'');
   if(!sprC.has(k)){
-    const rows=ICONS[baseName]||ICONS.star;
+    const rows=ICONS[icn]||ICONS.star;
     let pal=null;
     if(x==='#1A0A02'||x==='#2A0E04'){
       pal={o:'#2A0E04',w:'#FFF4D6',y:'#5A240E',Y:'#3D1608',r:'#5A240E',R:'#5A240E',p:'#5A240E',b:'#5A240E',g:'#5A240E',G:'#3D1608',B:'#5A240E',D:'#3D1608',s:'#5A240E',S:'#3D1608',c:'#FFF4D6',l:'#5A240E',x};
@@ -2273,7 +2280,7 @@ function rollRarity(extraLuck=0){
 }
 function rollItem(extraLuck=0){
   const r=rollRarity(extraLuck);
-  const base=ITEMS[Math.floor(Math.random()*ITEMS.length)];
+  const base=pickNormal();
   return `${base.id}:${r}`;
 }
 function pickupRadius(){
@@ -2512,7 +2519,7 @@ function rollDay(){const t=dkey();if(S.today.d!==t)S.today={d:t,min:0,km:0};if(S
   S.talents=Object.assign({olfato:0,paso:0,suerte:0,corazon:0},S.talents||{});
   S.boosts=Object.assign({radar:0,xp2:0,luck:0,lure:0},S.boosts||{});
   if(S.pet.last&&S.pet.last!==t&&S.pet.last!==dkey(daysAgo(1))&&S.pet.streak){S.pet.streak=0}
-  const idle=S.pet.last?Math.floor((new Date(t)-new Date(S.pet.last))/86400000):0;if(idle>1)S.pet.happy=Math.max(30,S.pet.happy-idle*4)}
+  const idle=S.pet.last?Math.floor((new Date(t)-new Date(S.pet.last))/86400000):0;if(idle>1)S.pet.happy=Math.max(30,S.pet.happy-idle*4);refreshMis()}
 let saveT=0;
 function save(now){clearTimeout(saveT);const go=()=>W8(mainPath(),()=>DB.doc(mainPath()).set(clone(S))).catch(()=>{});if(now)return go();saveT=setTimeout(go,1200)}
 let profT=0;
@@ -2662,8 +2669,9 @@ function renderHome(){
   </div>
   <button class="box row" id="homeStoreBan" style="text-align:left;background:linear-gradient(90deg,#2D1E66,#3B1C5E);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)">${ico16('mChest')}<div class="grow col" style="gap:2px"><div class="t2" style="color:var(--gold)">TIENDA DE PASEO · ${S.coins||0} MONEDAS</div><div class="mute small">Canjea tus paseos por Skins para perros y Auras hasta Arcoíris RGB.</div></div><span class="rtag rgb">VER ►</span></button>
   <div class="box"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div></div>
-  <div class="box"><div class="row between"><span class="t2">Misiones</span><span class="lbl">Hoy</span></div>
-   ${MIS.map(m=>{const v=Math.min(m.goal,Math.floor(S.mis.p[m.id]||0)),d=S.mis.done[m.id];return `<div class="mission">${`<span class="mic">${ico16(d?'mStar':{min:'mBoot',hex:'mFlag',item:'mChest'}[m.id]||'mStar')}</span>`}<div class="col" style="gap:5px"><div>${m.t}</div>${segBar(v/m.goal,d?'g sm':'o sm')}</div><span class="lbl" style="color:${d?'var(--mint)':'#C9BDFF'};text-align:right">${d?'OK':v+'/'+m.goal}<br>+${m.xp} XP · <b style="color:var(--gold)">+${m.coins||15}🪙</b></span></div>`}).join('')}</div>
+  <div class="box"><div class="row between"><span class="t2">Misiones de hoy</span><span class="lbl">Nivel ${(S.mis.t||0)+1}</span></div>
+   ${MIS.map(m=>{const v=Math.min(m.goal,m.id==='km'?+(+S.mis.p[m.id]||0).toFixed(1):Math.floor(S.mis.p[m.id]||0)),d=S.mis.done[m.id];return `<div class="mission">${`<span class="mic">${ico16(d?'mStar':{min:'mBoot',hex:'mFlag',item:'mChest'}[m.id]||'mStar')}</span>`}<div class="col" style="gap:5px"><div>${m.t}</div>${segBar(v/m.goal,d?'g sm':'o sm')}</div><span class="lbl" style="color:${d?'var(--mint)':'#C9BDFF'};text-align:right">${d?'OK':v+'/'+m.goal}<br>+${m.xp} XP · <b style="color:var(--gold)">+${m.coins||15}🪙</b></span></div>`}).join('')}</div>
+  ${chainsBoxHTML()}
   ${(()=>{
     const wc=S.wkCon||{km:0,hex:0,items:0,claimed:false};
     const kDone=wc.km>=10,hDone=wc.hex>=8,iDone=wc.items>=5,allDone=kDone&&hDone&&iDone;
@@ -2695,7 +2703,7 @@ function renderHome(){
     S.coins=(S.coins||0)+35;
     addXp(250);
     const r=Math.random()<0.25?'legendaria':'epica';
-    const base=ITEMS[Math.floor(Math.random()*ITEMS.length)];
+    const base=pickNormal();
     const k=`${base.id}:${r}`;
     S.inv[base.id]=(S.inv[base.id]||0)+1;
     S.inv[k]=(S.inv[k]||0)+1;
@@ -2929,15 +2937,16 @@ async function finalize(w){
   const wb=w.well||null;const hm=wb?happyMult(wb.happy):1;
   let gained=Math.round(base*mult*hm*tPaso*bXp);const mins=w.moving/60;
   if(!w.manual&&S.boosts){for(const bk of ['radar','xp2','luck','lure'])if(S.boosts[bk]>0)S.boosts[bk]--}
-  if(today){S.today.min+=mins;S.today.km+=w.dist/1000;S.mis.p.min+=mins;S.mis.p.hex+=terr.taken;S.mis.p.item+=(w.got||[]).length}
+  if(today){S.today.min+=mins;S.today.km+=w.dist/1000;S.mis.p.min+=mins;S.mis.p.hex+=terr.taken;S.mis.p.item+=(w.got||[]).length;S.mis.p.km=(S.mis.p.km||0)+w.dist/1000;S.mis.p.sniff=(S.mis.p.sniff||0)+(wb?wb.sniffN:0);S.mis.p.walks=(S.mis.p.walks||0)+1;if(wb&&wb.happy>=85&&w.moving>=300)S.mis.p.happy=(S.mis.p.happy||0)+1}
   S.wkCon=S.wkCon||{wk:weekKey(),km:0,hex:0,items:0,claimed:false};
   S.wkCon.km=(S.wkCon.km||0)+w.dist/1000;S.wkCon.hex=(S.wkCon.hex||0)+terr.taken;S.wkCon.items=(S.wkCon.items||0)+(w.got||[]).length;
   const misDone=[];for(const m of MIS)if(!S.mis.done[m.id]&&S.mis.p[m.id]>=m.goal){S.mis.done[m.id]=1;gained+=m.xp;misDone.push(m)}
+  {const sctx=secretCtx(w,terr,wb,p);const sf=findSecrets(w,sctx);if(sf.length){w.got=(w.got||[]).concat(sf);gained+=sf.reduce((a,g)=>a+itemById(g).xp,0)}statUpdate(w,wb,sctx,w.got)}
   for(const g of w.got||[]){const d=itemById(g);S.inv[d.baseId]=(S.inv[d.baseId]||0)+1;S.inv[`${d.baseId}:${d.r}`]=(S.inv[`${d.baseId}:${d.r}`]||0)+1}
   S.friends=(S.friends||0)+(w.events||[]).filter(e=>e.t==='amigo').length;
-  S.totals.km+=w.dist/1000;S.totals.min+=mins;S.totals.walks++;S.days[w.date]=Math.min(3,(S.days[w.date]||0)+1);
+  S.totals.km+=w.dist/1000;S.totals.min+=mins;S.totals.walks++;hatchEggs();S.days[w.date]=Math.min(3,(S.days[w.date]||0)+1);
   p.happy=Math.min(100,p.happy+Math.round((6+mins/2)*(wb?wb.happy/85:1)));
-  S.parks=S.parks||{};const parkRes=wb&&wb.parks.length?await commitParks(wb.parks):[];
+  S.parks=S.parks||{};const parkRes=wb&&wb.parks.length?await commitParks(wb.parks):[];S.stat=S.stat||{};S.stat.leads=(S.stat.leads||0)+parkRes.filter(x=>x.newLead).length;
   const cw=calcWalkCoins(w,terr,wb,parkRes,firstToday,misDone,p.streak);
   const coins=cw.total;S.coins=(S.coins||0)+coins;
   const lv=addXp(gained);const crewRes=giveCrewXp(w.crew,gained,today);
@@ -4014,12 +4023,12 @@ function medalC(b){const k='med|'+b.id;if(sprC.has(k))return sprC.get(k);const c
   const ic=iconC(b.i);x.imageSmoothingEnabled=false;x.drawImage(ic,0,0,ic.width,ic.height,6,9,12,12);sprC.set(k,c);return c}
 function medalU(b){const k='umed|'+b.id;if(!urlC.has(k))urlC.set(k,medalC(b).toDataURL());return urlC.get(k)}
 const HOWB={first:'Termina tu primer paseo con GPS o registra uno manual.',km5:'Suma 5 km entre todos tus paseos.',km50:'Suma 50 km en total. ¡Constancia!',km250:'Suma 250 km en total. Solo para leyendas.',long:'Camina 3 km o más en un solo paseo.',streak7:'Pasea 7 días seguidos sin cortar la racha.',streak30:'Pasea 30 días seguidos.',hex10:'Conquista 10 territorios en el mapa.',hex50:'Conquista 50 territorios en el mapa.',col10:'Junta 10 objetos de la colección en tus paseos.',legend:'Encuentra un objeto en Nivel 5 Legendario (1% de aparición) o el Trofeo / Corona.',social:'Publica un paseo o una foto en Social.',early:'Empieza un paseo antes de las 7:00.',night:'Empieza un paseo después de las 21:00.',friend:'Registra 5 amigos perrunos (botón Amigo) durante tus paseos.'};
-function medalTile(b){const h=S.badges.includes(b.id),c=RAR[b.r].c;return `<button class="mdl ${h?'got':'lock'}" style="--ec:${c}" data-badge="${b.id}" aria-label="${esc(b.n)}${h?'':' (bloqueada)'}">${h?`<canvas class="pfx" data-spark="${SPARK_R[b.r]}" aria-hidden="true"></canvas>`:''}<img class="spr mi" src="${medalU(b)}" alt=""><span class="mn">${esc(b.n)}</span><span class="mr">${RAR[b.r].n.toUpperCase()}</span>${h?'':`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}
+function medalTile(b){const h=S.badges.includes(b.id),c=RAR[b.r].c;return `<button class="mdl ${h?'got':'lock'}" style="--ec:${c}" data-badge="${b.id}" aria-label="${esc(b.secret&&!h?'Medalla secreta':b.n)}${h?'':' (bloqueada)'}">${h?`<canvas class="pfx" data-spark="${SPARK_R[b.r]}" aria-hidden="true"></canvas>`:''}<img class="spr mi" src="${medalU(b)}" alt=""><span class="mn">${esc(b.secret&&!h?'???':b.n)}</span><span class="mr">${RAR[b.r].n.toUpperCase()}</span>${h?'':`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}
 function medalsGridHTML(){return `<div class="mgrid">${BADGES.slice().sort((a,b)=>(S.badges.includes(b.id)-S.badges.includes(a.id))||rarOrder(b.r)-rarOrder(a.r)).map(medalTile).join('')}</div>`}
 function bindMedals(root){root.querySelectorAll('[data-badge]').forEach(el=>el.onclick=()=>openBadge(el.dataset.badge))}
 function openBadge(id){const b=BADGES.find(x=>x.id===id),h=S.badges.includes(id),c=RAR[b.r].c;
-  sheet(`<div class="mdl got" style="--ec:${c};min-height:0;padding:18px 10px;gap:10px;${h?'':'filter:grayscale(1);opacity:.7'}">${h?`<canvas class="pfx" data-spark="${SPARK_R[b.r]+1}" aria-hidden="true"></canvas>`:''}<img class="spr medbig" src="${medalU(b)}" alt="" style="--ec:${c}"><div class="t1" style="z-index:1">${esc(b.n.toUpperCase())}</div><span class="tag" style="background:${c};color:#0B0F1A;z-index:1">${RAR[b.r].n.toUpperCase()}</span></div>
-  <div class="box dark"><span class="lbl">${h?'Desbloqueada':'Cómo conseguirla'}</span><div>${esc(HOWB[b.id]||b.d)}</div></div>
+  sheet(`<div class="mdl got" style="--ec:${c};min-height:0;padding:18px 10px;gap:10px;${h?'':'filter:grayscale(1);opacity:.7'}">${h?`<canvas class="pfx" data-spark="${SPARK_R[b.r]+1}" aria-hidden="true"></canvas>`:''}<img class="spr medbig" src="${medalU(b)}" alt="" style="--ec:${c}"><div class="t1" style="z-index:1">${esc((b.secret&&!h?'???':b.n).toUpperCase())}</div><span class="tag" style="background:${c};color:#0B0F1A;z-index:1">${RAR[b.r].n.toUpperCase()}</span></div>
+  <div class="box dark"><span class="lbl">${h?'Desbloqueada':'Cómo conseguirla'}</span><div>${esc(b.secret&&!h?'Medalla secreta: sigue paseando y explorando para descubrirla.':(HOWB[b.id]||b.d))}</div></div>
   <div class="mute small">${h?'¡Bien hecho! Aparece en la ficha de '+esc(S.pet.name)+' y en tu perfil.':'Las medallas raras dan más Carisma a la ficha de tu perro.'}</div><button class="btn" id="bdx">Cerrar</button>`,sh=>{sh.querySelector('#bdx').onclick=closeSheet})}
 /* ================= COLECCIÓN POR CATEGORÍAS Y NIVELES (5 RAREZAS · 1% LEGENDARIO) ================= */
 const ITEM_INFO={hueso:'Un clásico. Los perros los esconden por todo el barrio.',juego:'Una pelota de parque. Puede aparecer desde Nivel 1 Común (55%) hasta Nivel 5 Legendaria (1%).',galleta:'Galleta crujiente. Huele a premio por buen comportamiento.',frisbee:'Vuela lejos. Ideal para perros veloces.',peluche:'Un peluche suave que alguien dejó olvidado en el césped.',gema:'Un collar con gemas que brilla bajo el sol.',trofeo:'El trofeo de los campeones del parque. Desbloquea la medalla Tesoro mítico.',corona:'La corona real del barrio. Desbloquea el accesorio Corona para tu perro.'};
@@ -4044,6 +4053,7 @@ function albumHTML(){
   const pr=pickupRadius();
   return `<div class="box dark" style="padding:10px 12px;gap:6px">
     <div class="row between"><span class="lbl" style="color:var(--mint)">📡 ANILLO DE ALCANCE GPS: ${pr} METROS</span><span class="tag y">LEGENDARIO 1%</span></div>
+    <div class="row between small" style="gap:6px;flex-wrap:wrap"><b>${ITEMS.filter(i=>(S.inv[i.id]||0)>0).length}/${ITEMS.length} objetos descubiertos</b><span style="color:var(--gold)">Secretos ${Object.keys(S.found||{}).length}/${ITEMS.filter(i=>i.secret).length} · ✨ ${Object.values(S.shiny||{}).reduce((a,b)=>a+b,0)} brillantes</span></div>
     <div class="mute small">Cada objeto (ej. <b>Pelota</b>, <b>Hueso</b>, <b>Corona</b>) existe en <b>5 Niveles de Rareza</b>:</div>
     <div class="row" style="gap:4px;flex-wrap:wrap">
       ${RAR_KEYS.map(rk=>{const r=RAR[rk];return `<span class="tag" style="background:${r.c}22;color:${r.c};box-shadow:inset 0 0 0 1.5px ${r.c};font-size:7px;padding:3px 6px">Nv.${r.lv} ${r.n} · ${r.pct}%</span>`}).join('')}
@@ -4068,11 +4078,11 @@ function albumHTML(){
           return `<button class="itcard ${n?'':'miss'}" style="--c:${bc}" data-item="${i.id}" aria-label="${esc(i.n)}">
             ${n?`<span class="lbl" style="color:${bc};font-size:7px">NV.${RAR[bestR].lv} ${RAR[bestR].n.toUpperCase()}</span>`:'<span class="q">?</span>'}
             ${ico(i.id)}
-            <b style="font-size:11px;color:var(--fg);line-height:1.15">${esc(i.n)}</b>
+            <b style="font-size:11px;color:var(--fg);line-height:1.15">${esc(i.secret&&!n?'???':i.n)}${S.shiny&&S.shiny[i.id]?' ✨':''}</b>
             <div class="it-lvs" title="Niveles desbloqueados (${gotLvs}/5)">
               ${RAR_KEYS.map(rk=>`<i class="${cnt[rk]>0?'on':''}" style="--rc:${RAR[rk].c}"></i>`).join('')}
             </div>
-            <span class="mute" style="font-size:10px">${n?`Total x${n} · ${gotLvs}/5 nv.`:'Sin descubrir'}</span>
+            <span class="mute" style="font-size:10px">${n?`Total x${n} · ${gotLvs}/5 nv.`:(i.secret?esc(i.hint):'Sin descubrir')}</span>
           </button>`;
         }).join('')}
       </div>
@@ -4091,8 +4101,8 @@ function openItem(id){
   const pr=pickupRadius();
   sheet(`<div class="itembig" style="--c:${c};${total?'':'filter:brightness(0) opacity(.6)'}">${ico(baseId)}</div>
   <div class="row" style="justify-content:center;gap:6px"><span class="tag" style="background:${cat.c};color:#0B0F1A">${esc(cat.n.toUpperCase())}</span><span class="tag ${total?'g':'d'}">${total?'TOTAL RECOGIDOS: x'+total:'AÚN NO DESCUBIERTO'}</span></div>
-  <div class="t1" style="text-align:center">${esc(base.n.toUpperCase())}</div>
-  <div class="box dark">${esc(ITEM_INFO[baseId]||'Objeto coleccionable de paseo.')}</div>
+  <div class="t1" style="text-align:center">${esc((base.secret&&!total?'???':base.n).toUpperCase())}</div>
+  <div class="box dark">${esc(base.secret&&!total?'Objeto secreto. Pista: '+base.hint:(ITEM_INFO[baseId]||base.d||'Objeto coleccionable de paseo.'))}${S.shiny&&S.shiny[baseId]?` · ✨ Tienes ${S.shiny[baseId]} brillante${S.shiny[baseId]>1?'s':''}`:''}</div>
   <div class="box" style="gap:7px">
     <div class="row between"><span class="t2">5 Niveles del mismo objeto</span><span class="lbl" style="color:var(--gold)">1% Legendario</span></div>
     <div class="mute small">Cada vez que aparece <b>${esc(base.n)}</b> en el mapa, su nivel se sortea con estos porcentajes:</div>
@@ -4871,11 +4881,16 @@ function chimeSfx(){if(S&&S.sound===false)return;const ac=audioCtx();if(!ac)retu
 function grabSfx(lv){if(S&&S.sound===false)return;const ac=audioCtx();if(!ac)return;const t0=ac.currentTime+.02,notes=[659,784,988,1318,1568].slice(0,2+Math.min(3,lv||1));notes.forEach((f,i)=>{const t=t0+i*.06,o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.18)})}
 /* recolección: tocar dentro del anillo, o automática al pasar encima */
 const AUTO_R=22;
-function collectItem(it,tapped){if(!WK||it.got)return;it.got=true;WK.got.push(it.id);const d=itemById(it.id),rr=RAR[d.r];
+function collectItem(it,tapped){if(!WK||it.got)return;it.got=true;let d=itemById(it.id);
+  if(d.baseId==='caja'){S.stat=S.stat||{};S.stat.boxes=(S.stat.boxes||0)+1;const n=Math.random()<.15?2:1,inner=[];for(let i=0;i<n;i++){const b=pickNormal();if(b.id==='caja'||b.id==='huevo')continue;const k=`${b.id}:${rollRarity(.05)}`;inner.push(k);WK.got.push(k)}
+    setTimeout(()=>toast(inner.length?`🎁 ¡Caja sorpresa! Adentro había: ${inner.map(k=>esc(itemById(k).fullName)).join(' y ')}`:'🎁 La caja estaba vacía... ¡qué broma!','regalo','#FF5CC8'),900);if(inner.length)d=itemById(inner[0])}
+  else{WK.got.push(it.id);if(d.baseId==='huevo'){S.eggs=(S.eggs||[]).concat([{at:+(S.totals.km+WK.dist/1000+3).toFixed(2)}]);setTimeout(()=>toast('🥚 Huevo misterioso: eclosiona cuando camines 3 km más','huevo','#FF5CC8'),900)}}
+  if(Math.random()<1/75){S.shiny=S.shiny||{};S.shiny[d.baseId]=(S.shiny[d.baseId]||0)+1;setTimeout(()=>{toast(`✨ ¡${esc(d.n.toUpperCase())} BRILLANTE! (1 en 75)`,d.baseId,'#FFFFFF');boom(90)},1500)}
+  const rr=RAR[d.r];
   toast(`${tapped?'¡Atrapado! ':''}${d.n} · <span style="color:${rr.c}">Nv.${d.lv} ${rr.n} (${d.pct}%)</span> +${d.xp} XP`,d.baseId,rr.c);
   vib('item');grabSfx(d.lv);if(d.r==='legendaria'||d.r==='epica'){boom(75);bark(d.r==='legendaria'?3:2,.95)}else bark(1,.35);
   flyLoot(it);markDirty()}
-function collectBoss(){const b=WK.boss;if(!b||b.done)return;b.done=true;const br=Math.random()<0.3?'legendaria':'epica';const bItem=`${ITEMS[Math.floor(Math.random()*ITEMS.length)].id}:${br}`;
+function collectBoss(){const b=WK.boss;if(!b||b.done)return;b.done=true;const br=Math.random()<0.3?'legendaria':'epica';const bItem=`${pickNormal().id}:${br}`;
   WK.got.push(bItem);WK.bossBonus=120;const bd=itemById(bItem);toast(`¡HITO DORADO DEL BARRIO RECLAMADO! +120 XP y ${bd.fullName}`,'trofeo','#FFC93C');boom(120);bark(3,1);grabSfx(5);flyLoot(b,'trofeo');markDirty()}
 function flyLoot(it,icon){try{const cv=$('#liveCv');if(!cv||!cv._hits)return;const h=cv._hits.find(x=>x.it===it);const me=cv._me;if(!h||!me)return;const r=cv.getBoundingClientRect(),sx=r.width/cv.width,sy=r.height/cv.height;
   const el=document.createElement('img');el.className='spr loot-fly';el.src=iconU(icon||itemById(it.id).baseId);el.style.left=(h.x*sx)+'px';el.style.top=(h.y*sy)+'px';cv.parentElement.appendChild(el);
@@ -4947,6 +4962,197 @@ function giveCrewXp(crew,n,today){ensureDogs();const out=[];for(const pid of cre
   if(out.length)setTimeout(()=>toast(`${out.map(o=>esc(o.n)).join(' y ')} también ${out.length>1?'ganaron':'ganó'} +${n} XP${out.some(o=>o.up)?' · ¡subió de nivel!':''}`,'paw','#2CE6A6'),3200);return out}
 /* buscador de razas */
 window.brFilter=function(el){const nm=t=>(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');const q=nm(el.value.trim());const g=el.nextElementSibling;if(!g)return;g.querySelectorAll('.brk').forEach(b=>{b.hidden=!!q&&!nm(b.textContent+' '+(b.dataset.k||'')).includes(q)})};
+
+/* ================= COLECCIÓN AMPLIADA · SECRETOS · SORPRESAS · MISIONES PROGRESIVAS · MEDALLAS ================= */
+Object.assign(ICONS,{"hoja":["................","................","..........ooo...","........oorrro..",".......orrrrYro.","......orrrrYrro.",".....orrrrYrrro.","....orrrrYrrro..","....orrrYrrrro..","...orrrYrrrro...","...orrYrrrro....","...orDrrrro.....","...oDrrroo......","..oDoooo........","...o............","................"],"flor":["................",".......ooo......","......ottto.....",".....ottttto....","...ootttttttoo..","..otttttyttttto.","..ottttwyytttto.","..ottttyyytttto.","..otttttyttttto.","...ootttttttoo..",".....ottttto....","......otttgo....",".......oggo.....",".......ogo......",".......ogo......",".......ogo......"],"pluma":["................","................","............o...","..........oobo..","........oobbwbo.",".......obbbwbo..","......obbbwbbo..",".....obbbwbbo...","....obbbwbbbo...","....obbwbbbo....","...obbwbbbo.....","...oppbbbo......","..opSpboo.......","..oSpoo.........",".oSoo...........","..o............."],"calcetin":["......ooooo.....",".....oRRRRRo....",".....owwwwwo....",".....oRRRRRo....",".....owwwwwo....",".....owwwwwo....",".....oRRRRRo....",".....owwwwwo....","...ooowwwwwo....","..owwwwwwwwo....","..owwwwwRRRo....",".owwwwwwRRRo....","..oRRwwwRRRo....","...oooooooo.....","................","................"],"llave":["................","................","...oooo.........","..oyyyyo........",".oywyyyyooooooo.",".oyyooyyyyyyyyyo",".oyyooyyyyyyyyyo",".oyyyyyyoooyyyyo","..oyyyyo..oyyyyo","...oooo....ooyyo",".............oo.","................","................","................","................","................"],"carta":["................","................","................",".oooooooooooooo.","osccccccccccccso","ocsscccccccccsco","occcsccccccsscco","occccsccccscccco","occcccssRsccccco","occccccRRRccccco","occcccccRcccccco","occcccccccccccco","occcccccccccccco",".oooooooooooooo.","................","................"],"empanada":["................","................","................","................","................","................","..ooooooooooooo.",".oYyycycycycyyYo",".oYyyyyyyyyyyyYo",".oYcyyyyyyyyycYo",".oYyyyyyyyyyyyYo",".oYyyyyYyyyyyyYo","..oYyyyyyyYyyYo.","..oYYyYyyyyyYYo.","...oYYyyyyyYYo..","....ooYYYYYoo..."],"calabaza":["................",".......ooo......","......ogggo.....","......oggo......","......oggoo.....","....oorrrrroo...","...orYrrYrrYro..","..orrYrrYrrYrro.",".orrrkkrYrkkrrro",".orrrkkrYrkkrrro",".orrrYrrYrrYrrro",".orrrkkkkkkkrrro","..orrYkrYrkYrro.","...orYrrYrrYro..","....oYrrYrrYo...",".....ooooooo...."],"regalo":["................",".....oo...oo....","....oyyoooyyo...","...oyyyYYyyyyo..",".ooooyyYYoyyooo.","oppppppyyppppppo","oyyyyyyyyyyyyyyo","oppppppyyppppppo",".opppppyypppppo.",".opwwppyypppppo.",".opwwppyypppppo.",".opppppyypppppo.",".opppppyypppppo.",".opppppyypppppo.",".opppppyypppppo.","..oooooooooooo.."],"trebol":["................","................","....ooo...ooo...","...ogggo.ogggo..","..ogwgggogwgggo.","..ogggggogggggo.","..ogggggogggggo.","...ogggggggggo..","...ogggggggggo..","..ogggggggggggo.","..ogggggoDggggo.","..ogggggogDgggo.","...oggggogDggo..","....oooo.ooDo...","...........oDo..","...........oDo.."],"reloj":["......oyyo......","......oyyo......",".....ooyyyoo....","....oyyyyyyyo...","...oyywwswwyyo..","..oyywswkwswyyo.",".oyyswwwkwwwsyyo",".oyywwwwkwwwwyyo",".oywswwwRkkkswyo",".oywwwwwwwwwwwyo",".oyywwwwwwwwwyyo",".oyyswwwwwwwsyyo","..oyywswwwswyyo.","...oyywwswwyyo..","....oyyyyyyyo...",".....ooyyyoo...."],"huevo":["................","................","......ooooo.....",".....occccco....","....ocwccccco...","....occcccbco...","...occtcccccco..","...occccccccco..","...occccccccco..","..ocpcpcpcpcpco.","..opcpcpcpcpcpo.","...occccccccco..","...occccccccco..","....occccgcco...","....occccccco...",".....occccco...."],"boleto":["................","................","................","................",".oooooooooooooo.","oyyyyYyyyyyyyyyo","oywwyYyyyyyyyyyo","oyyyyYyDDDDDDyyo","oyyyyYyyyyyyyyyo","oyyyyYyDDDDDyyyo","oyyyyYyyyyyyyyyo","oyyyyYyyyyyyyyyo",".oooooooooooooo.","................","................","................"],"piedra":["................","................","................","................","......ooo.......","....oosssooo....","...ossssssssoo..","..osswwssssssso.",".osswwwwwssssso.",".osssswwssssssso",".ossssssssssSsso","..ossssssssSssso","..osssssssSssso.","...oosssssssso..",".....ooosssoo...","........ooo....."],"pina":[".......oo.......","......oggo......","......oggo......","......oggBo.....",".....oBBDBBo....","....oBBDBBDBo...","...oBBDBBDBBDo..","...oBDBBDBBDBo..","...oDBBDBBDBBo..","...oBBDBBDBBDo..","...oBDBBDBBDBo..","...oDBBDBBDBBo..","...oBBDBBDBBDo..","....oDBBDBBDo...",".....oBDBBDo....","......oBBBo....."]});
+ITEM_CATS.push(
+ {id:'naturaleza',n:'Naturaleza del Barrio',i:'hoja',c:'#4FD18B',d:'Hojas, flores y tesoros que el viento deja en las veredas.'},
+ {id:'barrio',n:'Cosas del Barrio',i:'llave',c:'#7EA6FF',d:'Lo que la gente pierde camino al trabajo.'},
+ {id:'misterio',n:'Misterios',i:'regalo',c:'#FF5CC8',d:'Cajas sorpresa y huevos que nadie sabe de dónde salen.'},
+ {id:'secretos',n:'Secretos',i:'lock',c:'#FFC93C',d:'Objetos ocultos que solo aparecen si se cumplen condiciones especiales. ¿Los descubrirás todos?'});
+ITEMS.push(
+ {id:'cuerda',n:'Cuerda de nudos',cat:'juguetes',r:'comun',baseXp:10,ic:'juego',tint:'#C98A4B',d:'Para jugar al tira y afloja con cualquier perro del barrio.'},
+ {id:'pato',n:'Pato chirriador',cat:'juguetes',r:'comun',baseXp:11,ic:'peluche',tint:'#FFE066',d:'Hace ¡cuic! cada vez que lo muerdes. Irresistible.'},
+ {id:'kong',n:'Kong relleno',cat:'juguetes',r:'rara',baseXp:13,ic:'juego',tint:'#FF3B5C',d:'Un juguete con premio adentro. Paciencia de campeón.'},
+ {id:'disco_neon',n:'Frisbee neón',cat:'juguetes',r:'rara',baseXp:14,ic:'frisbee',tint:'#00F5D4',d:'Brilla en la oscuridad. Ideal para paseos nocturnos.'},
+ {id:'vienesa',n:'Vienesa perdida',cat:'snacks',r:'comun',baseXp:10,ic:'hueso',tint:'#E07A5F',d:'Alguien no terminó su completo. Su pérdida, tu ganancia.'},
+ {id:'queso',n:'Cubito de queso',cat:'snacks',r:'comun',baseXp:10,ic:'galleta',tint:'#FFD166',d:'El premio favorito de 9 de cada 10 perros.'},
+ {id:'pollo',n:'Trocito de pollo',cat:'snacks',r:'comun',baseXp:11,ic:'hueso',tint:'#F4A261',d:'Huele a domingo en familia.'},
+ {id:'helado',n:'Helado perruno',cat:'snacks',r:'rara',baseXp:13,ic:'galleta',tint:'#9EE7FF',d:'Sin azúcar, con mucho amor. Perfecto para el verano.'},
+ {id:'placa',n:'Placa con nombre',cat:'joyas',r:'comun',baseXp:12,ic:'moneda',tint:'#C9D1E0',d:'Una placa grabada. ¿De quién será?'},
+ {id:'cascabel',n:'Cascabel',cat:'joyas',r:'comun',baseXp:12,ic:'bell',tint:'#FFC93C',d:'Tilín, tilín. Se escucha desde la otra cuadra.'},
+ {id:'collar_cuero',n:'Collar de cuero',cat:'joyas',r:'rara',baseXp:14,ic:'gema',tint:'#8A5A2B',d:'Clásico, resistente y con estilo.'},
+ {id:'rubi',n:'Rubí',cat:'joyas',r:'epica',baseXp:18,ic:'gema',tint:'#FF3B5C',d:'Rojo como el atardecer sobre la cordillera.'},
+ {id:'zafiro',n:'Zafiro',cat:'joyas',r:'epica',baseXp:18,ic:'gema',tint:'#3C9DFF',d:'Azul profundo. Dicen que trae buenos paseos.'},
+ {id:'cetro',n:'Cetro canino',cat:'reliquias',r:'epica',baseXp:22,ic:'star',tint:'#FFC93C',d:'El símbolo de los antiguos líderes de manada.'},
+ {id:'medalla_antigua',n:'Medalla antigua',cat:'reliquias',r:'rara',baseXp:18,ic:'moneda',tint:'#C88A14',d:'Una medalla de una exposición canina de hace 50 años.'},
+ {id:'reloj_bolsillo',n:'Reloj de bolsillo',cat:'reliquias',r:'epica',baseXp:20,ic:'reloj',d:'Marca la hora exacta del paseo perfecto.'},
+ {id:'hoja',n:'Hoja de otoño',cat:'naturaleza',r:'comun',baseXp:9,ic:'hoja',d:'Crujiente. Saltar sobre ellas es obligatorio.'},
+ {id:'flor',n:'Flor silvestre',cat:'naturaleza',r:'comun',baseXp:9,ic:'flor',d:'Creció entre dos baldosas. Valiente.'},
+ {id:'pluma',n:'Pluma de paloma',cat:'naturaleza',r:'comun',baseXp:10,ic:'pluma',d:'La paloma se fue volando. La pluma se quedó.'},
+ {id:'pina',n:'Piña de pino',cat:'naturaleza',r:'comun',baseXp:10,ic:'pina',d:'Perfecta para llevar en el hocico todo el camino.'},
+ {id:'piedra',n:'Piedra de río',cat:'naturaleza',r:'rara',baseXp:12,ic:'piedra',d:'Lisita y fría. Viajó desde la cordillera.'},
+ {id:'llave',n:'Llave perdida',cat:'barrio',r:'comun',baseXp:11,ic:'llave',d:'Alguien no va a poder entrar a su casa.'},
+ {id:'carta',n:'Carta sin abrir',cat:'barrio',r:'comun',baseXp:11,ic:'carta',d:'Dice "para el mejor perro del barrio". ¿Será para ti?'},
+ {id:'boleto',n:'Boleto de micro',cat:'barrio',r:'comun',baseXp:10,ic:'boleto',d:'Un clásico de colección. Ya no se usan.'},
+ {id:'tapita',n:'Tapita de bebida',cat:'barrio',r:'comun',baseXp:9,ic:'moneda',tint:'#FF3B5C',d:'Brillante y ruidosa al patearla.'},
+ {id:'caja',n:'Caja sorpresa',cat:'misterio',r:'rara',baseXp:10,ic:'regalo',d:'¡Ábrela al atraparla! Puede traer uno o dos objetos al azar.'},
+ {id:'huevo',n:'Huevo misterioso',cat:'misterio',r:'rara',baseXp:12,ic:'huevo',d:'Eclosiona después de caminar 3 km. Adentro hay un objeto épico o legendario.'},
+ {id:'luna_llena',n:'Hueso lunar',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:30,ic:'moon',tint:'#E8E8FF',hint:'Pasea de noche cuando la luna esté llena.',d:'Brilla con la luz de la luna llena.'},
+ {id:'gota_arcoiris',n:'Gota arcoíris',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:22,ic:'agua',tint:'#FF5CC8',hint:'Sal a pasear aunque esté lloviendo.',d:'Solo cae cuando llueve y alguien igual sale a pasear.'},
+ {id:'pluma_fenix',n:'Pluma de fénix',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:30,ic:'pluma',tint:'#FF6B2C',hint:'Camina muy, muy lejos en un solo paseo.',d:'Arde sin quemar. Premio a los paseos de 5 km o más.'},
+ {id:'llave_antigua',n:'Llave del olfato',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:22,ic:'llave',tint:'#C9D1E0',hint:'Detente a olfatear varias veces en un mismo paseo.',d:'Abre la puerta de los mejores olores del barrio.'},
+ {id:'reloj_alba',n:'Reloj del alba',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:22,ic:'reloj',tint:'#FFB38A',hint:'Sal antes de que salga el sol.',d:'Para quienes pasean cuando el barrio aún duerme.'},
+ {id:'fosil',n:'Hueso fósil',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:22,ic:'hueso',tint:'#B8A27A',hint:'Recorre un buen tramo dentro de un parque.',d:'Enterrado en el parque hace millones de años (o eso dicen).'},
+ {id:'estrella_fugaz',n:'Estrella fugaz',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:30,ic:'star',tint:'#7EE7FF',hint:'Pasea cerca de la medianoche.',d:'Pide un deseo: más paseos.'},
+ {id:'calcetin',n:'Calcetín perdido',cat:'secretos',secret:1,r:'rara',award:'rara',baseXp:15,ic:'calcetin',hint:'Simplemente aparece... muy de vez en cuando.',d:'¿Dónde estará el otro?'},
+ {id:'carta_vecino',n:'Carta de la manada',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:22,ic:'carta',tint:'#FF8FA3',hint:'Sal a pasear con más de un perro.',d:'Firmada con huellitas por toda tu manada.'},
+ {id:'brujula',n:'Brújula del conquistador',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:30,ic:'gps',tint:'#FFC93C',hint:'Conquista muchos territorios en un solo paseo.',d:'Siempre apunta al próximo territorio sin dueño.'},
+ {id:'huella_dorada',n:'Huella dorada',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:30,ic:'paw',tint:'#FFC93C',hint:'Pasea todos los días, sin fallar, durante una semana.',d:'La marca de los perros constantes.'},
+ {id:'torta',n:'Torta de cumpleaños',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:25,ic:'regalo',tint:'#FF8FA3',hint:'Pasea el día del cumpleaños de tu perro.',d:'¡Feliz cumpleaños! Con velita de hueso.'},
+ {id:'empanada',n:'Empanada de pino',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:25,ic:'empanada',hint:'Solo aparece en Fiestas Patrias.',d:'¡Viva Chile! Solo del 17 al 20 de septiembre.'},
+ {id:'calabaza',n:'Calabaza traviesa',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:25,ic:'calabaza',hint:'Busca en la temporada de disfraces.',d:'Dulce o truco. Solo en Halloween.'},
+ {id:'regalo_navidad',n:'Regalo navideño',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:25,ic:'regalo',tint:'#FF3B5C',hint:'Pasea en la semana de Navidad.',d:'Dejado por un perro con gorro rojo.'},
+ {id:'fuegos',n:'Fuego artificial',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:30,ic:'star',tint:'#FF5CC8',hint:'Sal a pasear al cambiar el año.',d:'Tranquilo: este no hace ruido.'},
+ {id:'trebol',n:'Trébol de 4 hojas',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:35,ic:'trebol',hint:'Pura suerte: 1 en 100 paseos.',d:'La suerte existe y tiene cuatro hojas.'},
+ {id:'diamante_negro',n:'Diamante negro',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:40,ic:'gema',tint:'#2A2630',hint:'Encuentra un objeto legendario... y quizá algo más.',d:'Solo aparece junto a otro tesoro legendario.'},
+ {id:'huevo_dorado',n:'Huevo de oro',cat:'secretos',secret:1,r:'legendaria',award:'legendaria',baseXp:35,ic:'huevo',tint:'#FFC93C',hint:'Abre muchas cajas sorpresa.',d:'Premio por abrir 10 cajas sorpresa.'},
+ {id:'polvo_estrella',n:'Polvo de estrella',cat:'secretos',secret:1,r:'epica',award:'epica',baseXp:25,ic:'star',tint:'#FFFFFF',hint:'Encuentra un objeto brillante.',d:'Queda en tus patas cuando atrapas un objeto brillante.'}
+);
+function pickNormal(){const p=ITEMS.filter(i=>!i.secret);return p[Math.floor(Math.random()*p.length)]}
+function moonPhase(d=new Date()){const syn=29.530588853,ref=Date.UTC(2000,0,6,18,14);return((((d-ref)/86400000)%syn)+syn)%syn/syn}
+function isRaining(){try{const c=WX&&WX.d&&WX.d.current;if(!c)return false;const wc=c.weather_code!=null?c.weather_code:c.weathercode;return(c.precipitation||c.rain||0)>0.1||[51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99].includes(wc)}catch(e){return false}}
+const SECRET_RULES={
+ luna_llena:(w,c)=>(w.hour>=20||w.hour<5)&&Math.abs(moonPhase()-.5)<.07,
+ gota_arcoiris:(w,c)=>c.rain&&Math.random()<.5,
+ pluma_fenix:(w,c)=>w.dist>=5000&&Math.random()<.35,
+ llave_antigua:(w,c)=>c.sniffN>=3,
+ reloj_alba:(w,c)=>w.hour<7&&Math.random()<.6,
+ fosil:(w,c)=>c.parkM>=300&&Math.random()<.3,
+ estrella_fugaz:(w,c)=>(w.hour>=23||w.hour<1)&&Math.random()<.5,
+ calcetin:(w,c)=>Math.random()<.03,
+ carta_vecino:(w,c)=>c.crew>=2&&Math.random()<.6,
+ brujula:(w,c)=>c.terr>=10,
+ huella_dorada:(w,c)=>c.streak>=7&&!S.found.huella_dorada,
+ torta:(w,c)=>c.bday,
+ empanada:(w,c)=>c.md>='09-17'&&c.md<='09-20',
+ calabaza:(w,c)=>c.md>='10-25'&&c.md<='11-02',
+ regalo_navidad:(w,c)=>c.md>='12-20'&&c.md<='12-26',
+ fuegos:(w,c)=>c.md==='12-31'||c.md==='01-01',
+ trebol:(w,c)=>Math.random()<.01,
+ diamante_negro:(w,c)=>c.legend&&Math.random()<.25,
+ huevo_dorado:(w,c)=>((S.stat&&S.stat.boxes)||0)>=10&&!S.found.huevo_dorado,
+ polvo_estrella:(w,c)=>Object.values(S.shiny||{}).reduce((a,b)=>a+b,0)>0&&!S.found.polvo_estrella
+};
+function secretCtx(w,terr,wb,p){const md=dkey().slice(5);return{terr:terr.taken||0,sniffN:wb?wb.sniffN:0,parkM:wb&&wb.parks&&wb.parks.length?Math.max(...wb.parks.map(x=>x.m)):0,crew:(w.crew||[]).length,streak:p.streak||0,bday:!!(p.born&&p.born.slice(5)===md),md,rain:isRaining(),legend:(w.got||[]).some(g=>itemById(g).r==='legendaria')}}
+function findSecrets(w,c){S.found=S.found||{};if(w.manual||w.dist<200)return[];const out=[],fresh=[];
+  for(const id in SECRET_RULES){let ok=false;try{ok=SECRET_RULES[id](w,c)}catch(e){}if(!ok)continue;const it=ITEMS.find(i=>i.id===id);out.push(`${id}:${it.award||'epica'}`);if(!S.found[id]){S.found[id]=dkey();fresh.push(it)}}
+  fresh.forEach((it,i)=>setTimeout(()=>{toast(`🔓 ¡SECRETO DESCUBIERTO! ${esc(it.n)}`,it.id,'#FFC93C');boom(110);try{bark(2,.8);grabSfx(5)}catch(e){}},2400+i*1800));
+  if(out.length&&!fresh.length)setTimeout(()=>toast(`Encontraste otra vez: ${out.map(k=>itemById(k).n).join(', ')}`,out[0].split(':')[0],'#FFC93C'),2400);
+  return out}
+function statUpdate(w,wb,c,got){S.stat=Object.assign({sniffs:0,early:0,crewWalks:0,boxes:0,leads:0,night:0,rain:0,items:0},S.stat||{});if(w.manual)return;
+  S.stat.sniffs+=wb?wb.sniffN:0;if(w.hour<8)S.stat.early++;if(w.hour>=21)S.stat.night++;if(c.crew>=2)S.stat.crewWalks++;if(c.rain)S.stat.rain++;S.stat.items+=(got||[]).length}
+function hatchEggs(){S.eggs=S.eggs||[];const ready=S.eggs.filter(e=>S.totals.km>=e.at);if(!ready.length)return[];S.eggs=S.eggs.filter(e=>S.totals.km<e.at);const out=[];
+  for(const e of ready){const d=itemById(`${pickNormal().id}:${Math.random()<.3?'legendaria':'epica'}`);S.inv[d.baseId]=(S.inv[d.baseId]||0)+1;S.inv[d.id]=(S.inv[d.id]||0)+1;out.push(d)}
+  out.forEach((d,i)=>setTimeout(()=>{toast(`🐣 ¡Tu huevo eclosionó! Salió: ${esc(d.fullName)}`,d.baseId,RAR[d.r].c);boom(80)},4200+i*1600));return out}
+/* ---- misiones diarias progresivas ---- */
+const MIS_POOL=[
+ {id:'min',i:'boot',f:t=>({goal:15+5*t,t:`Pasea ${15+5*t} minutos`})},
+ {id:'km',i:'boot',f:t=>{const g=+(1+.5*t).toFixed(1);return{goal:g,t:`Camina ${String(g).replace('.',',')} km`}}},
+ {id:'hex',i:'flag',f:t=>({goal:2+t,t:`Conquista ${2+t} territorios`})},
+ {id:'item',i:'bag',f:t=>({goal:2+t,t:`Atrapa ${2+t} objetos`})},
+ {id:'sniff',i:'nariz',f:t=>{const g=1+Math.floor(t/2);return{goal:g,t:`Haz ${g} parada${g>1?'s':''} de olfateo`}}},
+ {id:'happy',i:'heart',f:t=>({goal:1,t:'Termina un paseo con 85% de felicidad o más'})},
+ {id:'walks',i:'paw',f:t=>({goal:2,t:'Sal a pasear 2 veces hoy'})}
+];
+function misTier(){const lv=Math.max(1,...(S.dogs||[S.pet]).map(d=>d.level||1));return Math.min(6,Math.floor(lv/4))}
+function refreshMis(){if(!S||!S.mis)return;if(S.mis.t==null)S.mis.t=misTier();const t=S.mis.t;let h=0;for(const ch of String(S.mis.d))h=(h*31+ch.charCodeAt(0))|0;
+  const pool=MIS_POOL.slice(1),pick=[MIS_POOL[0]];while(pick.length<3&&pool.length){h=(Math.imul(h,1103515245)+12345)|0;pick.push(pool.splice(Math.abs(h)%pool.length,1)[0])}
+  MIS.length=0;pick.forEach(m=>{const r=m.f(t);MIS.push({id:m.id,i:m.i,t:r.t,goal:r.goal,xp:40+15*t,coins:3+t})});S.mis.p=Object.assign({min:0,km:0,hex:0,item:0,sniff:0,happy:0,walks:0},S.mis.p||{})}
+/* ---- caminos de progreso (misiones por etapas) ---- */
+function invTotal(){return ITEMS.reduce((a,i)=>a+(S.inv[i.id]||0),0)}
+const CHAINS=[
+ {id:'km',n:'Caminante',i:'boot',u:'km',tiers:[2,10,25,50,100,250,500],v:()=>S.totals.km},
+ {id:'walks',n:'Paseador constante',i:'paw',u:'paseos',tiers:[1,10,30,75,150,365],v:()=>S.totals.walks},
+ {id:'terr',n:'Conquistador',i:'flag',u:'territorios',tiers:[5,20,50,120,300,600],v:()=>S.terrCount},
+ {id:'items',n:'Coleccionista',i:'bag',u:'objetos',tiers:[5,25,75,150,300,600],v:()=>Math.max((S.stat&&S.stat.items)||0,invTotal())},
+ {id:'sniff',n:'Gran olfato',i:'nariz',u:'paradas de olfateo',tiers:[3,10,30,75,150],v:()=>(S.stat&&S.stat.sniffs)||0},
+ {id:'streak',n:'Constancia',i:'fire',u:'días de racha',tiers:[3,7,14,30,60,100],v:()=>Math.max(0,...(S.dogs||[S.pet]).map(d=>d.best||0))},
+ {id:'parks',n:'Explorador de plazas',i:'pin',u:'parques',tiers:[1,3,7,15,30],v:()=>Object.keys(S.parks||{}).length},
+ {id:'secrets',n:'Cazasecretos',i:'lock',u:'secretos',tiers:[1,3,6,10,15,20],v:()=>Object.keys(S.found||{}).length},
+ {id:'early',n:'Madrugador',i:'sun',u:'paseos antes de las 8',tiers:[1,5,15,40],v:()=>(S.stat&&S.stat.early)||0},
+ {id:'crew',n:'Manada unida',i:'amigo',u:'paseos en grupo',tiers:[1,5,20,50],v:()=>(S.stat&&S.stat.crewWalks)||0}
+];
+const chainReward=k=>({coins:5+k*8,xp:60+k*70});
+function chainState(c){const k=((S.chains||{})[c.id])|0,goal=c.tiers[k],v=+c.v()||0;return{k,goal,v,done:k>=c.tiers.length,ready:goal!=null&&v>=goal}}
+function chainRowHTML(c){const s=chainState(c),r=chainReward(s.k),fmt=x=>c.id==='km'?(+x).toFixed(1).replace('.',','):Math.floor(x);
+  return `<div class="chainrow ${s.ready?'ready':''} ${s.done?'done':''}"><span class="mic">${ico(c.i)}</span><div class="col" style="gap:4px;min-width:0"><div class="row between"><b>${esc(c.n)}</b><span class="lbl">Etapa ${Math.min(s.k+1,c.tiers.length)}/${c.tiers.length}</span></div>
+   ${s.done?`<div class="mute small">¡Camino completado!</div>`:`${segBar(Math.min(1,s.v/s.goal),s.ready?'g sm':'o sm')}<div class="mute small">${fmt(Math.min(s.v,s.goal))}/${s.goal} ${esc(c.u)} · +${r.coins} monedas · +${r.xp} XP</div>`}</div>
+   ${s.ready?`<button class="btn sm g" data-chain="${c.id}">Reclamar</button>`:s.done?'<span class="tag g">✓</span>':''}</div>`}
+function chainsBoxHTML(){const list=CHAINS.slice().sort((a,b)=>{const A=chainState(a),B=chainState(b);return(B.ready-A.ready)||(A.done-B.done)||((B.v/(B.goal||1))-(A.v/(A.goal||1)))});
+  const ready=CHAINS.filter(c=>chainState(c).ready).length;
+  return `<div class="box"><div class="row between"><span class="t2">Misiones por etapas</span>${ready?`<span class="tag g">${ready} por reclamar</span>`:`<span class="lbl">${CHAINS.reduce((a,c)=>a+chainState(c).k,0)} etapas</span>`}</div>${list.slice(0,4).map(chainRowHTML).join('')}<button class="btn sm" id="chainAll">Ver las ${CHAINS.length} misiones</button></div>`}
+function openChains(){sheet(`<div class="t1">MISIONES POR ETAPAS</div><div class="mute small">Cada misión tiene varias etapas. Al completar una, reclama tu premio y se desbloquea la siguiente, más difícil y con mejor recompensa.</div>${CHAINS.map(chainRowHTML).join('')}<button class="btn" id="chX">Cerrar</button>`,sh=>{hydrateIcons(sh);sh.querySelector('#chX').onclick=closeSheet})}
+function claimChain(id){const c=CHAINS.find(x=>x.id===id);if(!c)return;const s=chainState(c);if(!s.ready)return;const r=chainReward(s.k);S.chains=S.chains||{};S.chains[id]=s.k+1;S.coins=(S.coins||0)+r.coins;addXp(r.xp);save();pushProfile();coinSfx();boom(70);
+  toast(`${esc(c.n)} · etapa ${s.k+1} completada: +${r.coins} monedas y +${r.xp} XP`,c.i,'#4FD18B');const shOpen=!$('#sheetWrap').hidden;if(shOpen)openChains();render()}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-chain],#chainAll');if(!t||!S)return;if(t.id==='chainAll')openChains();else claimChain(t.dataset.chain)});
+/* ---- medallas nuevas (incluye secretas) ---- */
+const totKm=s=>s.totals.km,maxLv=s=>Math.max(1,...(s.dogs||[s.pet]).map(d=>d.level||1));
+BADGES.push(
+ {id:'km1',n:'Primer kilómetro',i:'boot',r:'comun',d:'Suma 1 km',t:s=>totKm(s)>=1},
+ {id:'km10',n:'10 km',i:'boot',r:'comun',d:'Suma 10 km',t:s=>totKm(s)>=10},
+ {id:'km25',n:'25 km',i:'boot',r:'infrecuente',d:'Suma 25 km',t:s=>totKm(s)>=25},
+ {id:'km100',n:'100 km',i:'boot',r:'epica',d:'Suma 100 km',t:s=>totKm(s)>=100},
+ {id:'km500',n:'500 km',i:'trofeo',r:'legendaria',d:'Suma 500 km',t:s=>totKm(s)>=500},
+ {id:'km1000',n:'Mil kilómetros',i:'corona',r:'legendaria',d:'Suma 1.000 km',t:s=>totKm(s)>=1000},
+ {id:'w10',n:'10 paseos',i:'paw',r:'comun',d:'Completa 10 paseos',t:s=>s.totals.walks>=10},
+ {id:'w50',n:'50 paseos',i:'paw',r:'rara',d:'Completa 50 paseos',t:s=>s.totals.walks>=50},
+ {id:'w100',n:'Centenario',i:'paw',r:'epica',d:'Completa 100 paseos',t:s=>s.totals.walks>=100},
+ {id:'w365',n:'Un año paseando',i:'trofeo',r:'legendaria',d:'Completa 365 paseos',t:s=>s.totals.walks>=365},
+ {id:'streak3',n:'Buen comienzo',i:'fire',r:'comun',d:'Racha de 3 días',t:s=>s.pet.streak>=3},
+ {id:'streak14',n:'Dos semanas',i:'fire',r:'epica',d:'Racha de 14 días',t:s=>s.pet.streak>=14},
+ {id:'streak60',n:'Leyenda constante',i:'fire',r:'legendaria',d:'Racha de 60 días',t:s=>s.pet.streak>=60},
+ {id:'streak100',n:'Cien días',i:'corona',r:'legendaria',d:'Racha de 100 días',t:s=>s.pet.streak>=100},
+ {id:'hex100',n:'Señor del barrio',i:'flag',r:'epica',d:'100 territorios',t:s=>s.terrCount>=100},
+ {id:'hex250',n:'Emperador canino',i:'flag',r:'legendaria',d:'250 territorios',t:s=>s.terrCount>=250},
+ {id:'col50',n:'Cazatesoros',i:'bag',r:'infrecuente',d:'50 objetos',t:s=>invTotal()>=50},
+ {id:'col150',n:'Museo canino',i:'bag',r:'epica',d:'150 objetos',t:s=>invTotal()>=150},
+ {id:'col400',n:'Acumulador legendario',i:'bag',r:'legendaria',d:'400 objetos',t:s=>invTotal()>=400},
+ {id:'allcat',n:'Un poco de todo',i:'star',r:'rara',d:'Un objeto de cada categoría normal',t:s=>ITEM_CATS.filter(c=>c.id!=='secretos').every(c=>ITEMS.some(i=>i.cat===c.id&&(s.inv[i.id]||0)>0))},
+ {id:'sec1',n:'Detective',i:'lock',r:'rara',d:'Descubre tu primer secreto',t:s=>Object.keys(s.found||{}).length>=1},
+ {id:'sec5',n:'Cazasecretos',i:'lock',r:'epica',d:'Descubre 5 secretos',t:s=>Object.keys(s.found||{}).length>=5},
+ {id:'sec10',n:'Guardián de misterios',i:'lock',r:'legendaria',d:'Descubre 10 secretos',t:s=>Object.keys(s.found||{}).length>=10},
+ {id:'secAll',n:'Leyenda oculta',i:'corona',r:'legendaria',d:'Descubre todos los secretos',t:s=>Object.keys(s.found||{}).length>=ITEMS.filter(i=>i.secret).length},
+ {id:'shiny1',n:'¡Brilla!',i:'star',r:'epica',d:'Atrapa un objeto brillante',t:s=>Object.values(s.shiny||{}).reduce((a,b)=>a+b,0)>=1},
+ {id:'shiny5',n:'Coleccionista brillante',i:'star',r:'legendaria',d:'Atrapa 5 objetos brillantes',t:s=>Object.values(s.shiny||{}).reduce((a,b)=>a+b,0)>=5},
+ {id:'box10',n:'Abrecajas',i:'regalo',r:'rara',d:'Abre 10 cajas sorpresa',t:s=>((s.stat&&s.stat.boxes)||0)>=10},
+ {id:'park1',n:'Primera plaza',i:'pin',r:'comun',d:'Pasea por un parque',t:s=>Object.keys(s.parks||{}).length>=1},
+ {id:'park10',n:'Turista de plazas',i:'pin',r:'epica',d:'Pasea por 10 parques distintos',t:s=>Object.keys(s.parks||{}).length>=10},
+ {id:'leader',n:'Líder del parque',i:'corona',r:'epica',d:'Sé Líder de un parque',t:s=>((s.stat&&s.stat.leads)||0)>=1},
+ {id:'sniff1',n:'Nariz curiosa',i:'nariz',r:'comun',d:'Haz una parada de olfateo',t:s=>((s.stat&&s.stat.sniffs)||0)>=1},
+ {id:'sniff50',n:'Nariz de oro',i:'nariz',r:'epica',d:'50 paradas de olfateo',t:s=>((s.stat&&s.stat.sniffs)||0)>=50},
+ {id:'long5',n:'Gran caminata',i:'boot',r:'rara',d:'5 km en un paseo',t:(s,w)=>w&&w.dist>=5000},
+ {id:'long10',n:'Ultra paseo',i:'trofeo',r:'legendaria',d:'10 km en un paseo',t:(s,w)=>w&&w.dist>=10000},
+ {id:'hour',n:'Una hora juntos',i:'heart',r:'rara',d:'60 minutos en movimiento en un paseo',t:(s,w)=>w&&w.moving>=3600},
+ {id:'zen',n:'Ritmo perfecto',i:'heart',r:'epica',d:'Termina un paseo con 95% de felicidad',t:(s,w)=>w&&w.well&&w.well.happy>=95&&w.moving>=600},
+ {id:'crew2',n:'Paseo en manada',i:'amigo',r:'rara',d:'Pasea con 2 perros a la vez',t:(s,w)=>w&&(w.crew||[]).length>=2},
+ {id:'crew4',n:'Manada completa',i:'amigo',r:'legendaria',d:'Pasea con 4 perros a la vez',t:(s,w)=>w&&(w.crew||[]).length>=4},
+ {id:'dogs2',n:'Familia grande',i:'paw',r:'infrecuente',d:'Ten 2 perros en tu manada',t:s=>(s.dogs||[]).length>=2},
+ {id:'lv5',n:'Nivel 5',i:'star',r:'comun',d:'Un perro llega a nivel 5',t:s=>maxLv(s)>=5},
+ {id:'lv10',n:'Nivel 10',i:'star',r:'rara',d:'Un perro llega a nivel 10',t:s=>maxLv(s)>=10},
+ {id:'lv25',n:'Nivel 25',i:'star',r:'epica',d:'Un perro llega a nivel 25',t:s=>maxLv(s)>=25},
+ {id:'lv50',n:'Nivel 50',i:'corona',r:'legendaria',d:'Un perro llega a nivel 50',t:s=>maxLv(s)>=50},
+ {id:'rain',n:'Bajo la lluvia',i:'rain',r:'rara',d:'Pasea mientras llueve',t:s=>((s.stat&&s.stat.rain)||0)>=1},
+ {id:'sunday',n:'Paseo de domingo',i:'sun',r:'comun',d:'Pasea un domingo',t:(s,w)=>w&&new Date(w.date+'T12:00').getDay()===0},
+ {id:'triple',n:'Triple paseo',i:'paw',r:'rara',d:'3 paseos en un mismo día',t:(s,w)=>w&&(s.days[w.date]||0)>=3},
+ {id:'rich',n:'Ahorrador',i:'moneda',r:'epica',d:'Junta 1.000 monedas',t:s=>(s.coins||0)>=1000},
+ {id:'x_calcetin',n:'¿Y el otro?',i:'calcetin',r:'epica',secret:1,d:'Encontraste el calcetín perdido',t:s=>!!(s.found||{}).calcetin},
+ {id:'x_trebol',n:'Suertudo',i:'trebol',r:'legendaria',secret:1,d:'Encontraste el trébol de 4 hojas',t:s=>!!(s.found||{}).trebol},
+ {id:'x_medianoche',n:'Hora bruja',i:'moon',r:'epica',secret:1,d:'Pasea justo a medianoche',t:(s,w)=>w&&w.hour===0},
+ {id:'x_patrias',n:'¡Viva Chile!',i:'empanada',r:'epica',secret:1,d:'Pasea en Fiestas Patrias',t:s=>!!(s.found||{}).empanada},
+ {id:'x_cumple',n:'Cumpleañero',i:'regalo',r:'epica',secret:1,d:'Pasea el día del cumpleaños de tu perro',t:s=>!!(s.found||{}).torta},
+ {id:'x_luna',n:'Aullido lunar',i:'moon',r:'legendaria',secret:1,d:'Encontraste el hueso lunar',t:s=>!!(s.found||{}).luna_llena}
+);
 
 /* ================= LOOP ================= */
 let lastT=performance.now(),acc=0,uiAcc=0,cardAcc=0,trAcc=0;
