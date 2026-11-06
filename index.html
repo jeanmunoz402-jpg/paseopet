@@ -860,6 +860,16 @@ body{background:var(--bg)}
 .floatbar{bottom:calc(112px + env(safe-area-inset-bottom,0px))!important;border-radius:14px}
 @media (prefers-reduced-motion:reduce){.nav .go .nb,.btn.o.big,.btn.g.big,.ringhint,.toast,.screen:not([hidden]){animation:none!important}}
 
+/* manada: varios perros */
+.dogrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.dogslot{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:14px;background:#1E1854;box-shadow:inset 0 0 0 2px #3A3088;font-size:12.5px;min-width:0;color:var(--fg)}
+.dogslot b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dogslot span{color:var(--mute);font-size:11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dogslot em{font-style:normal;font-family:var(--pix);font-size:7px;padding:3px 6px;border-radius:6px;background:var(--mint);color:#04261A}
+.dogslot.on{background:linear-gradient(180deg,#3A2F8E,#2A2170);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--coral),0 0 14px var(--glow)}
+.dogslot.add{box-shadow:inset 0 0 0 2px #6A5FC8;background:repeating-linear-gradient(45deg,#1E1854 0 8px,#221B5E 8px 16px);justify-content:center;min-height:104px}
+.dogslot .plus{font-family:var(--pix);font-size:22px;color:var(--gold)}
+.brsearch{margin-bottom:8px}
 </style>
 
 <div class="app" id="app">
@@ -1942,7 +1952,7 @@ function ico(name,x,alt=''){return `<img class="spr" src="${iconU(name,x)}" alt=
 /* ================= DOG BREEDS (24x24 pixel art, procedural) ================= */
 // coat: [nombre, base, claro, oscuro, patrón opcional]
 const BREEDS=[
- {id:'quiltro',n:'Quiltro',ears:'fold',muz:'med',pat:'chest',tail:'up',size:'mediano',coats:[['Canela','#C98A4B','#F4E9D6','#8A5A2B'],['Negro','#2E2A33','#EFE6D6','#1B1820'],['Café','#7A4A2A','#E8D5B5','#4A2C18'],['Blanco','#EFE8DA','#FFFFFF','#C9B79A','solid'],['Gris','#8C8F9A','#ECECF2','#5A5D68'],['Atigrado','#6E4A2E','#E3C9A0','#3A2616']]},
+ {id:'quiltro',n:'Kiltro (sin raza)',k:'quiltro mestizo sin raza callejero',ears:'fold',muz:'med',pat:'chest',tail:'up',size:'mediano',coats:[['Canela','#C98A4B','#F4E9D6','#8A5A2B'],['Negro','#2E2A33','#EFE6D6','#1B1820'],['Café','#7A4A2A','#E8D5B5','#4A2C18'],['Blanco','#EFE8DA','#FFFFFF','#C9B79A','solid'],['Gris','#8C8F9A','#ECECF2','#5A5D68'],['Atigrado','#6E4A2E','#E3C9A0','#3A2616'],['Negro y fuego','#2A272F','#C2783A','#18161C','blacktan'],['Manchado','#F2EEE4','#FFFFFF','#7A4A2A','patch'],['Tricolor','#B8692E','#FFFFFF','#2A2630','tri'],['Overo','#F4F0E8','#FFFFFF','#2A2630','spots']]},
  {id:'labrador',n:'Labrador',ears:'floppy',muz:'med',pat:'solid',tail:'down',size:'grande',coats:[['Amarillo','#E2B66C','#F3DDB0','#B8894A'],['Chocolate','#6B4024','#9A6644','#45281A'],['Negro','#2A272F','#45414C','#18161C']]},
  {id:'golden',n:'Golden retriever',ears:'floppy',muz:'med',pat:'solid',tail:'down',fluffEar:1,size:'grande',coats:[['Dorado','#D99A45','#F0C27A','#A86E2A'],['Crema','#EBCB8B','#F7E3B8','#C9A260'],['Rojizo','#B8682A','#D98E4E','#8A4A1A']]},
  {id:'beagle',n:'Beagle',ears:'floppy',muz:'med',pat:'tri',tail:'up',size:'mediano',coats:[['Tricolor','#B8692E','#FFFFFF','#2A2630'],['Limón','#E0B062','#FFFFFF','#C08A3A']]},
@@ -1966,6 +1976,32 @@ const BREEDS=[
  {id:'shiba',n:'Shiba / Akita',ears:'pointy',muz:'med',pat:'urajiro',tail:'curl',size:'mediano',coats:[['Rojo','#D98A3A','#FFF4E2','#A85E22'],['Sésamo','#B07A4A','#FFF0DC','#4A3020'],['Negro y fuego','#2E2B33','#F3E3CC','#18161C']]},
  {id:'corgi',n:'Corgi',ears:'big',muz:'med',pat:'urajiro',blaze:1,tail:'none',size:'pequeño',coats:[['Rojo','#E58A3A','#FFFFFF','#B05E22'],['Tricolor','#2A272F','#FFFFFF','#C2783A']]},
  {id:'samoyedo',n:'Samoyedo',ears:'pointy',muz:'med',pat:'solid',fluff:2,tail:'curl',size:'grande',coats:[['Blanco','#F7F4EC','#FFFFFF','#D9D2C2']]},
+ {id:'kiltro2',k:'quiltro mestizo sin raza',n:'Kiltro orejón (sin raza)',ears:'pointy',muz:'long',pat:'chest',tail:'curl',size:'mediano',coats:[['Café','#8A5A34','#EAD7BA','#5A3820'],['Negro','#2E2A33','#EFE6D6','#1B1820'],['Amarillo','#D9AE6A','#F6E8CC','#A87E3E'],['Atigrado','#6E4A2E','#E3C9A0','#3A2616'],['Blanco y negro','#F2EEE4','#FFFFFF','#2A2630','patch']]},
+ {id:'bulldog',n:'Bulldog inglés',ears:'fold',muz:'short',pat:'mask',chestW:1,tail:'none',eyeBig:1,size:'mediano',coats:[['Leonado','#D9A066','#F6E6CC','#2A2630'],['Blanco y leonado','#F2EEE4','#FFFFFF','#C98A4B','patch'],['Atigrado','#6B4A30','#F2E6D0','#2A2026']]},
+ {id:'maltes',n:'Maltés',ears:'long',fluffEar:1,muz:'short',pat:'solid',fluff:2,top:'bow',tail:'curl',small:1,size:'pequeño',coats:[['Blanco','#F7F4EC','#FFFFFF','#DCD4C4']]},
+ {id:'bichon',n:'Bichón frisé',ears:'curly',muz:'short',pat:'solid',fluff:2,tail:'curl',size:'pequeño',coats:[['Blanco','#F8F5EE','#FFFFFF','#E0D8C8'],['Crema','#F2E2C2','#FFF6E2','#D2BC94']]},
+ {id:'doberman',n:'Dóberman',ears:'pointy',muz:'long',pat:'blacktan',tail:'none',size:'grande',coats:[['Negro y fuego','#2A272F','#B8692E','#18161C'],['Rojo y fuego','#6E3A22','#C2783A','#45221A']]},
+ {id:'grandanes',n:'Gran danés',ears:'floppy',muz:'long',pat:'mask',chestW:1,tail:'down',size:'grande',coats:[['Leonado','#D9A35E','#E9C38A','#2A2630'],['Arlequín','#F4F0E8','#FFFFFF','#2A2630','spots'],['Azul','#5E6678','#7A8294','#3A4050','solid'],['Negro','#2A272F','#45414C','#18161C','solid']]},
+ {id:'sanbernardo',n:'San Bernardo',ears:'floppy',muz:'med',pat:'blaze',fluff:1,chestW:1,tail:'down',size:'grande',coats:[['Rojo y blanco','#B8632E','#FFFFFF','#2A2026']]},
+ {id:'australiano',n:'Pastor australiano',ears:'fold',muz:'long',pat:'blaze',fluff:1,tail:'none',eye:'#5CC8FF',size:'mediano',coats:[['Merle azul','#7D8597','#FFFFFF','#2E3240'],['Merle rojo','#B0785A','#FFFFFF','#6E3E28'],['Negro tricolor','#2A272F','#FFFFFF','#18161C']]},
+ {id:'sharpei',n:'Shar pei',ears:'fold',small:1,muz:'short',pat:'solid',chestW:1,tail:'curl',size:'mediano',coats:[['Leonado','#D2A066','#E6BE88','#9A6A36'],['Crema','#EED6AE','#F8E8CC','#C2A272'],['Negro','#2A272F','#3E3A45','#18161C']]},
+ {id:'chowchow',n:'Chow chow',ears:'pointy',small:1,muz:'short',pat:'solid',fluff:2,tail:'curl',size:'mediano',coats:[['Rojo','#C8743A','#E09A5C','#8E4A1E'],['Crema','#EED8AE','#F8EBCF','#C6A877'],['Negro','#2A272F','#45414C','#18161C']]},
+ {id:'pitbull',n:'Pitbull',ears:'fold',muz:'med',pat:'chest',chestW:1,tail:'down',size:'grande',coats:[['Azul','#6A7284','#F2EEE8','#3E4454'],['Rojizo','#B8723E','#F4E6D2','#7A4420'],['Negro','#2A272F','#F2EEE8','#18161C'],['Atigrado','#5E4430','#F2E6D2','#2A1E16']]},
+ {id:'weimaraner',n:'Weimaraner',ears:'floppy',muz:'long',pat:'solid',tail:'down',eye:'#E6B85A',size:'grande',coats:[['Gris plata','#9EA0AA','#B8BAC4','#6E707C']]},
+ {id:'basset',n:'Basset hound',ears:'long',muz:'long',pat:'tri',tail:'up',size:'mediano',coats:[['Tricolor','#A8622E','#FFFFFF','#2A2630'],['Limón','#D9A85E','#FFFFFF','#B07E3A']]},
+ {id:'cavalier',n:'Cavalier King Charles',ears:'long',fluffEar:1,muz:'short',pat:'blaze',eyeBig:1,tail:'up',size:'pequeño',coats:[['Blenheim','#C2672E','#FFFFFF','#8A4418'],['Tricolor','#2A272F','#FFFFFF','#B8692E'],['Rubí','#A8482A','#C26A44','#6E2A16','solid']]},
+ {id:'pinscher',n:'Pinscher miniatura',ears:'pointy',small:1,muz:'med',pat:'blacktan',tail:'up',size:'pequeño',coats:[['Negro y fuego','#2A272F','#C2783A','#18161C'],['Rojo','#A8502A','#C2703E','#6E2E14','solid']]},
+ {id:'westie',n:'West highland terrier',ears:'pointy',small:1,muz:'short',pat:'solid',fluff:1,tail:'up',size:'pequeño',coats:[['Blanco','#F7F4EC','#FFFFFF','#D9D2C2']]},
+ {id:'bullterrier',n:'Bull terrier',ears:'pointy',muz:'long',pat:'patch',chestW:1,tail:'down',size:'mediano',coats:[['Blanco','#F4F0E8','#FFFFFF','#2A2630'],['Blanco y atigrado','#F4F0E8','#FFFFFF','#6B4A30']]},
+ {id:'galgo',n:'Galgo',ears:'fold',small:1,muz:'long',pat:'chest',tail:'down',size:'grande',coats:[['Atigrado','#8A6A4A','#E8D8C0','#4A3A2A'],['Negro','#2A272F','#E8E0D2','#18161C'],['Gris','#8C8F9A','#E8E8EE','#5A5D68'],['Leonado','#C9A06A','#F2E2C8','#9A7440']]},
+ {id:'foxterrier',n:'Fox terrier',ears:'fold',small:1,muz:'long',pat:'patch',tail:'up',size:'pequeño',coats:[['Blanco y fuego','#F4F0E8','#FFFFFF','#B8692E'],['Tricolor','#F4F0E8','#FFFFFF','#2A2630']]},
+ {id:'malinois',n:'Pastor belga malinois',ears:'pointy',muz:'long',pat:'mask',tail:'down',size:'grande',coats:[['Leonado','#C98A4B','#E2B074','#2A2630']]},
+ {id:'lhasa',n:'Lhasa apso',ears:'long',fluffEar:1,muz:'short',pat:'beard',fluff:2,top:'bow',tail:'curl',size:'pequeño',coats:[['Dorado','#D9A65E','#F2D29C','#A8762E'],['Gris','#9A9AA6','#D2D2DC','#6A6A76']]},
+ {id:'pequines',n:'Pequinés',ears:'long',fluffEar:1,muz:'short',pat:'mask',fluff:2,eyeBig:1,tail:'curl',size:'pequeño',coats:[['Leonado','#D9A06A','#F2D2A6','#2A2630'],['Negro','#2A272F','#45414C','#18161C','solid']]},
+ {id:'bernes',n:'Boyero de Berna',ears:'floppy',muz:'med',pat:'blaze',fluff:1,tail:'down',size:'grande',coats:[['Tricolor','#2A272F','#FFFFFF','#B8692E']]},
+ {id:'terranova',n:'Terranova',ears:'floppy',muz:'med',pat:'solid',fluff:2,tail:'down',size:'grande',coats:[['Negro','#2A272F','#45414C','#18161C'],['Café','#5A3A28','#7A5440','#3A2418']]},
+ {id:'malamute',n:'Alaskan malamute',ears:'pointy',muz:'long',pat:'husky',fluff:1,tail:'curl',size:'grande',coats:[['Gris','#7A7E8C','#FFFFFF','#3A3D48'],['Negro','#2E2B33','#FFFFFF','#18161C'],['Rojo','#A8683E','#FFFFFF','#6E4020']]},
+ {id:'setter',n:'Setter irlandés',ears:'long',fluffEar:1,muz:'long',pat:'solid',tail:'down',size:'grande',coats:[['Rojo caoba','#9E3E1E','#C2603A','#6A240E']]},
 ];
 const breedById=id=>BREEDS.find(b=>b.id===id);
 function guessBreed(txt){const t=(txt||'').toLowerCase();const m=[['labrador','labrador'],['golden','golden'],['beagle','beagle'],['poodle','poodle'],['caniche','poodle'],['franc','frenchie'],['pug','pug'],['carlino','pug'],['pastor','gsd'],['collie','collie'],['husky','husky'],['chihuahua','chihuahua'],['schnauzer','schnauzer'],['salchicha','dachshund'],['dachshund','dachshund'],['shih','shihtzu'],['york','yorkie'],['pomer','pomerania'],['bóxer','boxer'],['boxer','boxer'],['cocker','cocker'],['jack','jack'],['dálmata','dalmata'],['dalmata','dalmata'],['rott','rottweiler'],['shiba','shiba'],['akita','shiba'],['corgi','corgi'],['samoy','samoyedo']];for(const [k,id] of m)if(t.includes(k))return id;return 'quiltro'}
@@ -2108,7 +2144,7 @@ function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return
   const g=dogGrid(L,(p&&p.acc)||'',ev,frame,sk),P=dogPalette(L,ev,sk,frame);const c=document.createElement('canvas');c.width=24;c.height=24;const x=c.getContext('2d');
   g.forEach((r,y)=>r.forEach((kk,i)=>{if(kk){x.fillStyle=P[kk]||'#FF00FF';x.fillRect(i,y,1,1)}}));sprC.set(k,c);return c}
 function petU(p,frame=0){const {k}=dogKey(p,frame);if(!urlC.has('u'+k))urlC.set('u'+k,petC(p,frame).toDataURL());return urlC.get('u'+k)}
-function breedGrid(sel,attr){return `<div class="breeds">${BREEDS.map(b=>`<button class="brk ${sel===b.id?'on':''}" data-${attr}="${b.id}"><img class="spr" src="${petU({bid:b.id,coat:0,level:1})}" alt=""><span>${b.n}</span></button>`).join('')}</div>`}
+function breedGrid(sel,attr){return `<input class="inp brsearch" type="search" placeholder="Buscar entre ${BREEDS.length} razas…" oninput="brFilter(this)" aria-label="Buscar raza"><div class="breeds">${BREEDS.map(b=>`<button class="brk ${sel===b.id?'on':''}" data-k="${b.id} ${b.k||''}" data-${attr}="${b.id}"><img class="spr" src="${petU({bid:b.id,coat:0,level:1})}" alt=""><span>${b.n}</span></button>`).join('')}</div>`}
 function coatRow(p,attr){const br=breedById(p.bid)||breedById(guessBreed(p.breed));return `<div class="cos">${br.coats.map((c,i)=>`<button data-${attr}="${i}" class="${!p.custom&&(p.coat|0)===i?'on':''}" aria-label="${esc(c[0])}" title="${esc(c[0])}"><img class="spr" src="${petU({...p,bid:br.id,coat:i,custom:false})}" alt=""></button>`).join('')}</div>`}
 function petHTML(p,size,o={}){return `<div class="petbox ${o.bob?'bob':''}" style="width:${size}px;height:${size}px;${o.style||''}"><img class="spr" src="${petU(p,0)}" alt="${esc(p&&p.name||'Mascota')}"><img class="spr f1" src="${petU(p,1)}" alt=""></div>`}
 function hydrateIcons(root){(root||document).querySelectorAll('img[data-ico]').forEach(im=>{const navBtn=im.closest('.nav button');const col=im.dataset.x||(navBtn&&!navBtn.classList.contains('go')&&!navBtn.classList.contains('on')?'#9AA4C4':null);im.src=iconU(im.dataset.ico,col)})}
@@ -2456,6 +2492,7 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
     const mp=L.mePet||S.pet,au=mp&&mp.aura||'default';
     if(au==='rgb'){const cols=['#FF0055','#FF9B1A','#FFE600','#2CE6A6','#3C9DFF','#9C84FF'];for(let i=0;i<6;i++){ctx.strokeStyle=cols[(i+ph)%6];ctx.lineWidth=lw(1.5);ctx.beginPath();ctx.arc(cx,cy-10*u,(10+i*2)*u,0,7);ctx.stroke()}}
     else{const ac=({esmeralda:'#2CE6A6',llamarada:'#FF6B2C',relampago:'#3C9DFF',vacio:'#9C84FF',divina:'#FFC93C'})[au]||'#FF6B2C';ctx.strokeStyle=ac;ctx.lineWidth=lw(1.5);ctx.strokeRect(cx-rr,cy-rr,rr*2,rr*2)}
+    if(L.crewPets)L.crewPets.forEach((cp,i)=>{const ox=(i%2?1:-1)*(15+Math.floor(i/2)*11)*u,bb=(Math.floor(now/400+i)%2)*u;spr(petC(cp,0),cx+ox,cy+5*u-bb)});
     spr(petC(mp,Math.floor(now/500)%6===0?1:0),cx,cy);cv._me={x:cx,y:cy-10*u}}
 }
 function fitCamLL(pts,w,h,pad){let a=1e18,b=-1e18,c=1e18,d=-1e18;for(const p of pts){const m=merc(p.lat,p.lng);a=Math.min(a,m.x);b=Math.max(b,m.x);c=Math.min(c,m.y);d=Math.max(d,m.y)}const mpp=Math.max((b-a)/Math.max(10,w-2*pad),(d-c)/Math.max(10,h-2*pad),.6);return{x:(a+b)/2,y:(c+d)/2,mpp}}
@@ -2731,6 +2768,7 @@ function renderPre(){
   $('#s-walk').innerHTML=`
   <div class="row between"><div class="t1">PREPARAR PASEO</div><span class="tag ${gpsReady?'g':'y'}">PROCESO EN 3 PASOS</span></div>
   <div class="box row" style="padding:10px 12px">${petHTML(p,48,{bob:true})}<div class="grow col" style="gap:3px"><div class="t2">${esc(p.name)} · Listo para salir</div><span class="lbl" style="color:#C9BDFF">NV ${p.level} · Racha ${p.streak} días · Meta hoy ${Math.round(S.today.min)}/${p.goal} min</span></div></div>
+  ${crewHTML()}
 
   <div class="step-box ${gpsReady?'ok':g&&g.err?'warn':''}">
     <div class="step-hdr"><span class="step-badge">PASO 1 · SEÑAL Y CLIMA</span><button class="chip" id="gpsChip">${gpsTxt}</button></div>
@@ -2786,7 +2824,7 @@ function startWalk(resume){
   const start=resume?null:PLAN.gps;
   WK=resume||{t0:Date.now(),pausedMs:0,pauseAt:0,paused:false,auto:false,moving:0,dist:0,trail:[],last:null,lastMoveTs:Date.now(),fastSince:0,vehicle:false,hexes:[],hexInfo:{},items:[],got:[],events:[],splits:[],lastSplitMoving:0,hour:new Date().getHours(),mode:PLAN.mode,goalKm:PLAN.km,goalHit:false,guide:PLAN.mode==='ruta'&&S.routes[PLAN.route]?S.routes[PLAN.route].pts:null,targets:PLAN.mode==='conquista'?pickTargets(start):null,acc:start?start.acc:null,pos:start?{lat:start.lat,lng:start.lng}:null,cam:{mpp:1.4}};
   if(WK.pos)watchChunks(WK.pos.lat,WK.pos.lng);
-  if(!resume&&start)spawnStreetItems(WK,start);if(S.bgMode!==false)bgKeepAlive(true);
+  if(!resume){ensureDogs();WK.crew=(PLAN.crew&&PLAN.crew.length?PLAN.crew:[S.pet.pid]).slice()}if(!resume&&start)spawnStreetItems(WK,start);if(S.bgMode!==false)bgKeepAlive(true);
   {const lc=$('#liveCv');if(lc&&!lc._tap){lc._tap=1;lc.addEventListener('click',liveTap)}}
   $('#o-live').hidden=false;$('#o-live').classList.toggle('eco',!!S.eco);$('#ecoBtn').textContent=S.eco?'VER MAPA':'AHORRO';renderEvBtns();updateLive();
   startWatch();requestWake();persistActive();
@@ -2843,7 +2881,7 @@ function updateLive(){if(!WK)return;const el=elapsed();$('#lTime').textContent=f
   }
 }
 function drawLive(){if(S.eco)return;if(!WK.pos){drawWorld($('#liveCv'),{...(()=>{const c=S.home||DEF_CENTER;return merc(c.lat,c.lng)})(),mpp:WK.cam.mpp},{});return}const m=merc(WK.pos.lat,WK.pos.lng);const cells={...SH.cells};for(const k of WK.hexes){if(['new','steal'].includes(WK.hexInfo[k]))cells[k]={o:UID,s:1}}
-  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home})}
+  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home})}
 function renderEvBtns(){const cnt={};if(WK&&WK.events)for(const e of WK.events)cnt[e.t]=(cnt[e.t]||0)+1;$('#evBtns').innerHTML=EVS.map(([k,n])=>`<button data-ev="${k}" aria-label="${n}">${ico(k)}<span>${n}</span>${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`).join('');$$('#evBtns button').forEach(b=>b.onclick=()=>logEvent(b.dataset.ev))}
 async function logEvent(t){if(!WK)return;const pos=WK.pos||WK.last;if(!pos){toast('Esperando GPS para ubicar el evento','gps');return}
   const e={t,lat:+pos.lat.toFixed(6),lng:+pos.lng.toFixed(6),at:Math.round(elapsed())};
@@ -2874,7 +2912,7 @@ function endWalk(){if(!WK)return;const w=WK;
   if(w.dist<50){sheet(`<div class="t1">¿DESCARTAR?</div><div>El paseo fue muy corto (${fmtKm(w.dist)} km). Para guardarlo necesitas al menos 50 metros.</div><button class="btn r" id="dk">Descartar</button><button class="btn" id="dc">Seguir paseando</button>`,sh=>{sh.querySelector('#dk').onclick=()=>{stopWatch();bgKeepAlive(false);WK=null;clearActive();$('#o-live').hidden=true;closeSheet();updateFloat()};sh.querySelector('#dc').onclick=()=>{closeSheet();$('#o-live').hidden=false;if(watchId==null)startWatch()}});return}
   const time=Math.round(elapsed());
   stopWatch();bgKeepAlive(false);try{wakeLock&&wakeLock.release()}catch(e){}WK=null;clearActive();$('#o-live').hidden=true;updateFloat();
-  finalize({well:wellSnap(w),dist:w.dist,time,moving:w.moving,trail:w.trail,hexes:w.hexes,hexInfo:w.hexInfo,got:w.got,bossBonus:w.bossBonus||0,events:w.events,splits:w.splits,hour:w.hour,targets:w.targets,photos:w.photos||[],t0:w.t0,date:dkey(new Date(w.t0))})}
+  finalize({crew:w.crew,well:wellSnap(w),dist:w.dist,time,moving:w.moving,trail:w.trail,hexes:w.hexes,hexInfo:w.hexInfo,got:w.got,bossBonus:w.bossBonus||0,events:w.events,splits:w.splits,hour:w.hour,targets:w.targets,photos:w.photos||[],t0:w.t0,date:dkey(new Date(w.t0))})}
 
 /* ================= FINALIZE + SUMMARY ================= */
 async function finalize(w){
@@ -2902,7 +2940,7 @@ async function finalize(w){
   S.parks=S.parks||{};const parkRes=wb&&wb.parks.length?await commitParks(wb.parks):[];
   const cw=calcWalkCoins(w,terr,wb,parkRes,firstToday,misDone,p.streak);
   const coins=cw.total;S.coins=(S.coins||0)+coins;
-  const lv=addXp(gained);
+  const lv=addXp(gained);const crewRes=giveCrewXp(w.crew,gained,today);
   const sp=w.dist/Math.max(1,w.moving);p.cls=terr.taken>=6?'Explorador':sp>1.6?'Velocista':w.dist>4000?'Resistente':(w.events||[]).filter(e=>e.t==='amigo').length>=2?'Sociable':p.cls==='Novato'?'Paseador':p.cls;
   const newB=[];for(const b of BADGES)if(!S.badges.includes(b.id)&&b.t(S,w)){S.badges.push(b.id);newB.push(b)}
   const pts=slimLL(w.trail||[],7);
@@ -3153,6 +3191,7 @@ function renderPack(){rollDay();const p=S.pet;
   const inbox=SH.reqWalker.filter(r=>['pendiente','aceptada','en_camino','paseando'].includes(r.status));
   const wts=(S.weights||[]).slice(-12);
   $('#s-pack').innerHTML=`<div class="hdr"><div class="t1" style="flex:1">MI MANADA</div><span class="tag ${MODE==='local'?'d':'g'}">${MODE==='local'?'Sin cuenta':MODE==='firebase'?'Cuenta Google':'Compartido'}</span><button class="iconbtn" id="setBtn2" aria-label="Ajustes">${ico('gear')}</button></div>
+  ${dogsBoxHTML()}
   ${petCardHTML({edit:true})}
   <div class="box"><div class="row between"><span class="t2">Estilo</span><button class="coinbtn" id="pkStoreBtn" style="height:32px">${ico16('mCoin')}<span>${S.coins||0} · Ir a Tienda ►</span></button></div><div class="cos">${COS.map(c=>{const ok=c.price?owned(c.id):!c.ok||c.ok(S);return `<button data-acc="${c.id}" class="${p.acc===c.id?'on':''} ${ok?'':'lock'}" aria-label="${c.n}${ok?'':c.price?' cuesta '+c.price+' monedas':' bloqueado: '+c.req}"><img class="spr" src="${petU({...p,acc:c.id})}" alt="">${ok?'':c.price?`<span class="cprice">${c.price}</span>`:`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}).join('')}</div><div class="mute small">En la <b>Tienda</b> puedes canjear tus monedas de paseo por <b>Skins para tu perro</b> y <b>Auras hasta Arcoíris RGB</b>.</div>
    <div class="field"><label>Color</label>${coatRow(p,'pcoat')}</div>
@@ -3181,7 +3220,7 @@ function renderPack(){rollDay();const p=S.pet;
   $$('[data-acc]').forEach(b=>b.onclick=()=>{const c=COS.find(x=>x.id===b.dataset.acc);if(c.price&&!owned(c.id)){buyCos(c);return}if(c.ok&&!c.ok(S)){toast('Se desbloquea con: '+c.req,'lock');return}p.acc=c.id;save();pushProfile();renderPack()});
   $$('[data-pcoat]').forEach(b=>b.onclick=()=>{p.coat=+b.dataset.pcoat;p.custom=false;save();pushProfile();renderPack()});$('#pkCustom').onclick=()=>{p.custom=!p.custom;if(p.custom){const L=dogLook({...p,custom:false});p.fur=L.b;p.spot=L.d}save();pushProfile();renderPack()};
   $$('[data-fur]').forEach(b=>b.onclick=()=>{p.fur=b.dataset.fur;save();pushProfile();renderPack()});$$('[data-spot]').forEach(b=>b.onclick=()=>{p.spot=b.dataset.spot;save();pushProfile();renderPack()});
-  $('#editPet').onclick=editPet;bindPetCard();$('#addVac').onclick=addVac;$('#addKg').onclick=addKg;
+  $('#editPet').onclick=editPet;bindPetCard();bindDogsBox($('#s-pack'));$('#addVac').onclick=addVac;$('#addKg').onclick=addKg;
   $$('[data-dv]').forEach(b=>b.onclick=()=>{S.vacc.splice(+b.dataset.dv,1);save();renderPack()});
   $('#wkOn').onclick=()=>{S.walker.on=!S.walker.on;if(!S.walker.on)S.walker.avail=false;save();pushProfile();renderPack()};
   if($('#wkPrice')){const upd=()=>{S.walker.price=Math.max(1000,+$('#wkPrice').value||6000);S.walker.zone=$('#wkZone').value.trim();S.walker.bio=$('#wkBio').value.trim();save();pushProfile()};['#wkPrice','#wkZone','#wkBio'].forEach(s=>$(s).onchange=upd);
@@ -4858,6 +4897,57 @@ Object.assign(ICONS,{
  nPack:["................","..oo........oo..",".oBBo......oBBo.",".oBBooooooooBBo.",".oBorrrrrrrroBo.","..orrrrrrrrrro..","..orrorrrrorro..","..orrrrrrrrrro..","..orccccccccro..","..occccoocccco..","...occctcccco...","....occttcco....",".....oooooo.....","................","................","................"]
 });
 
+/* ================= MANADA: hasta 4 perros por usuario ================= */
+const MAX_DOGS=4;
+const newPid=()=>'d'+Math.random().toString(36).slice(2,8);
+function ensureDogs(){if(!S||!S.pet)return;if(!Array.isArray(S.dogs)||!S.dogs.length)S.dogs=[S.pet];
+  S.activeDog=Math.max(0,Math.min(S.activeDog|0,S.dogs.length-1));const old=S.dogs[S.activeDog];if(old&&old!==S.pet&&old.pid&&!S.pet.pid)S.pet.pid=old.pid;
+  S.dogs=S.dogs.map((d,i)=>i===S.activeDog?S.pet:(d&&d.level!=null&&d.pid?d:Object.assign(newState().pet,d)));S.dogs.forEach(d=>{if(!d.pid)d.pid=newPid()})}
+function setActiveDog(i){ensureDogs();if(!S.dogs[i])return;S.activeDog=i;S.pet=S.dogs[i];PLAN.crew=null;STORE_PREV=null;save();pushProfile();toast(`Ahora juegas con ${esc(S.pet.name)}`,'paw','#2CE6A6');render()}
+function dogsBoxHTML(){ensureDogs();const n=S.dogs.length;
+  return `<div class="box"><div class="row between"><span class="t2">Tus perros</span><span class="tag d">${n} de ${MAX_DOGS}</span></div>
+  <div class="dogrow">${S.dogs.map((d,i)=>`<button class="dogslot ${i===S.activeDog?'on':''}" data-dog="${i}" aria-label="${esc(d.name||'Perro')}">${petHTML(d,56,{bob:i===S.activeDog})}<b>${esc(d.name||'Sin nombre')}</b><span>Nv ${d.level} · ${esc((breedById(d.bid)||{n:d.breed||''}).n.split(' (')[0])}</span>${i===S.activeDog?'<em>Activo</em>':''}</button>`).join('')}${n<MAX_DOGS?`<button class="dogslot add" id="addDog"><span class="plus">+</span><b>Agregar</b><span>otro perro</span></button>`:''}</div>
+  <div class="mute small">${n>1?'Toca un perro para jugar con él. En cada paseo eliges quiénes salen y todos ganan XP.':'¿Tienes más de un perro? Agrega hasta 4 y paséalos juntos.'}</div></div>`}
+function bindDogsBox(root){(root||document).querySelectorAll('[data-dog]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dog;if(i===S.activeDog){toast(`${esc(S.pet.name)} es tu perro activo`,'paw','#2CE6A6');return}openDogMenu(i)});const a=(root||document).querySelector('#addDog');if(a)a.onclick=openAddDog}
+function openDogMenu(i){const d=S.dogs[i];let armed=false;
+  sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${petHTML(d,96,{bob:true})}<div class="t1">${esc((d.name||'').toUpperCase())}</div><div class="mute small">Nivel ${d.level} · Racha ${d.streak||0} días</div></div>
+  <button class="btn o big" id="dmUse">Jugar con ${esc(d.name)}</button><button class="btn r" id="dmDel">Quitar de mi manada</button><button class="btn" id="dmNo">Cancelar</button>`,sh=>{
+  sh.querySelector('#dmUse').onclick=()=>{closeSheet();setActiveDog(i)};sh.querySelector('#dmNo').onclick=closeSheet;
+  sh.querySelector('#dmDel').onclick=e=>{if(!armed){armed=true;e.currentTarget.textContent=`Toca otra vez: se borra ${d.name} y su progreso`;return}S.dogs.splice(i,1);if(S.activeDog>i)S.activeDog--;S.pet=S.dogs[S.activeDog];save();closeSheet();toast(`${esc(d.name)} salió de tu manada`,'paw','#FFC93C');render()}})}
+function openAddDog(){ensureDogs();if(S.dogs.length>=MAX_DOGS){toast(`Puedes tener hasta ${MAX_DOGS} perros`,'paw','#FFC93C');return}
+  const br0=breedById('quiltro');const p=Object.assign(newState().pet,{pid:newPid(),name:'',bid:br0.id,breed:br0.n,coat:0,custom:false,size:br0.size,acc:'bandana',level:1,xp:0,streak:0,best:0,last:'',happy:80});
+  sheet(`<div class="t1">NUEVO INTEGRANTE</div>
+  <div class="row" style="gap:12px;align-items:center"><div id="adPrev">${petHTML(p,84,{bob:true})}</div><div class="field grow"><label>Nombre</label><input class="inp" id="adName" maxlength="20" placeholder="Ej: Canela" autocomplete="off"></div></div>
+  <div class="field"><label>Raza</label>${breedGrid(p.bid,'adb')}</div>
+  <div class="field"><label>Color</label><div id="adCoat">${coatRow(p,'adc')}</div></div>
+  <div class="seg2"><button class="choice on" data-adsex="macho">Macho</button><button class="choice" data-adsex="hembra">Hembra</button></div>
+  <div class="g2"><div class="field"><label>Nacimiento</label><input class="inp" type="date" id="adBorn"></div><div class="field"><label>Peso (kg)</label><input class="inp" type="number" id="adKg" min="0" max="100" step="0.1" inputmode="decimal"></div></div>
+  <div id="adMsg"></div>
+  <button class="btn o big" id="adOk">Agregar a la manada</button><button class="btn" id="adNo">Cancelar</button>`,sh=>{
+    const prev=()=>{sh.querySelector('#adPrev').innerHTML=petHTML(p,84,{bob:true})};
+    const bindCoat=()=>sh.querySelectorAll('[data-adc]').forEach(b=>b.onclick=()=>{p.coat=+b.dataset.adc;p.custom=false;sh.querySelectorAll('[data-adc]').forEach(x=>x.classList.toggle('on',x===b));prev()});
+    sh.querySelectorAll('[data-adb]').forEach(b=>b.onclick=()=>{const br=breedById(b.dataset.adb);p.bid=br.id;p.breed=br.n;p.coat=0;p.size=br.size;sh.querySelectorAll('[data-adb]').forEach(x=>x.classList.toggle('on',x===b));sh.querySelector('#adCoat').innerHTML=coatRow(p,'adc');bindCoat();prev()});
+    bindCoat();
+    sh.querySelectorAll('[data-adsex]').forEach(b=>b.onclick=()=>{p.sex=b.dataset.adsex;sh.querySelectorAll('[data-adsex]').forEach(x=>x.classList.toggle('on',x===b))});
+    sh.querySelector('#adNo').onclick=closeSheet;
+    sh.querySelector('#adOk').onclick=()=>{const nm=sh.querySelector('#adName').value.trim();if(!nm){sh.querySelector('#adMsg').innerHTML='<div class="banner small">Escribe el nombre de tu perro.</div>';sh.querySelector('#adName').focus();return}
+      p.name=nm.slice(0,20);p.born=sh.querySelector('#adBorn').value||'';p.kg=sh.querySelector('#adKg').value||'';
+      S.dogs.push(p);save();const idx=S.dogs.length-1;coinSfx();boom(50);closeSheet();
+      sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${petHTML(p,96,{bob:true})}<div class="t1">¡BIENVENIDO, ${esc(p.name.toUpperCase())}!</div><div class="mute small">Ya es parte de tu manada. Puedes cambiar de perro cuando quieras desde Manada.</div></div><button class="btn o big" id="anUse">Jugar con ${esc(p.name)} ahora</button><button class="btn" id="anLater">Seguir con ${esc(S.pet.name)}</button>`,s2=>{
+        s2.querySelector('#anUse').onclick=()=>{closeSheet();setActiveDog(idx)};s2.querySelector('#anLater').onclick=()=>{closeSheet();render()}})}})}
+/* quiénes salen al paseo */
+function crewHTML(){ensureDogs();if(S.dogs.length<2)return '';PLAN.crew=(PLAN.crew||[S.pet.pid]).filter(pid=>S.dogs.some(d=>d.pid===pid));if(!PLAN.crew.includes(S.pet.pid))PLAN.crew.unshift(S.pet.pid);
+  return `<div class="box" style="padding:12px"><div class="row between"><span class="t2">¿Quiénes salen hoy?</span><span class="tag d">${PLAN.crew.length} de ${S.dogs.length}</span></div>
+  <div class="dogrow">${S.dogs.map(d=>{const on=PLAN.crew.includes(d.pid),main=d.pid===S.pet.pid;return `<button class="dogslot ${on?'on':''}" data-crew="${d.pid}" aria-pressed="${on}">${petHTML(d,44)}<b>${esc(d.name)}</b>${main?'<em>Guía</em>':on?'<em>Sale</em>':'<span>Se queda</span>'}</button>`}).join('')}</div>
+  <div class="mute small">Todos los que salen ganan la XP del paseo y suman racha.</div></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-crew]');if(!b||!S)return;const pid=b.dataset.crew;if(pid===S.pet.pid){toast(`${esc(S.pet.name)} guía el paseo`,'paw','#2CE6A6');return}PLAN.crew=PLAN.crew||[S.pet.pid];PLAN.crew=PLAN.crew.includes(pid)?PLAN.crew.filter(x=>x!==pid):PLAN.crew.concat([pid]);renderPre()});
+function giveCrewXp(crew,n,today){ensureDogs();const out=[];for(const pid of crew||[]){if(pid===S.pet.pid)continue;const d=S.dogs.find(x=>x.pid===pid);if(!d)continue;
+    d.xp=(d.xp||0)+n;let up=0;while(d.xp>=need(d.level)){d.xp-=need(d.level);d.level++;up++}d.happy=Math.min(100,(d.happy||70)+8);
+    if(today){const y=dkey(daysAgo(1));if(d.last===y)d.streak=(d.streak||0)+1;else if(d.last!==dkey())d.streak=1;d.last=dkey();d.best=Math.max(d.best||0,d.streak)}out.push({n:d.name,up})}
+  if(out.length)setTimeout(()=>toast(`${out.map(o=>esc(o.n)).join(' y ')} también ${out.length>1?'ganaron':'ganó'} +${n} XP${out.some(o=>o.up)?' · ¡subió de nivel!':''}`,'paw','#2CE6A6'),3200);return out}
+/* buscador de razas */
+window.brFilter=function(el){const nm=t=>(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');const q=nm(el.value.trim());const g=el.nextElementSibling;if(!g)return;g.querySelectorAll('.brk').forEach(b=>{b.hidden=!!q&&!nm(b.textContent+' '+(b.dataset.k||'')).includes(q)})};
+
 /* ================= LOOP ================= */
 let lastT=performance.now(),acc=0,uiAcc=0,cardAcc=0,trAcc=0;
 function loop(t){const dt=Math.min(.1,(t-lastT)/1000);lastT=t;acc+=dt;uiAcc+=dt;
@@ -4900,7 +4990,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
@@ -4915,7 +5005,7 @@ async function boot(){
   let snap=null;try{snap=await withTimeout(DB.doc(mainPath()).get(),10000)}catch(e){}
   if(!snap){$('#ob').innerHTML=`<div class="splash" style="padding-top:14vh"><img class="login-brand" src="${APP_LOGO}" alt="PaseoPet"><div class="t2">SIN CONEXIÓN</div><div class="mute small">No pudimos cargar tu manada desde la nube. Revisa tu internet.</div><button class="btn o" id="rl">Reintentar</button></div>`;$('#rl').onclick=()=>location.reload();return}
   if(!snap.exists&&await migrateLocalToCloud()){snap=await DB.doc(mainPath()).get();setTimeout(()=>toast('Trajimos tus datos de este teléfono a tu cuenta de Gmail','star','#2CE6A6'),1500)}
-  S=snap&&snap.exists?Object.assign(newState(),snap.data()):newState();S.pet=Object.assign(newState().pet,S.pet);S.walker=Object.assign(newState().walker,S.walker);S.pet.species='perro';S.pet.sex=S.pet.sex||'macho';S.pet.skin=S.pet.skin||'natural';S.pet.aura=S.pet.aura||'default';if(!S.storeGift){S.coins=(S.coins||0)+25;S.storeGift=1;S.econV2=1}if(!S.pet.bid){S.pet.bid=guessBreed(S.pet.breed);S.pet.coat=0;S.pet.custom=!!S.pet.fur&&S.pet.bid==='quiltro'&&S.pet.fur!=='#C98A4B'}if(!S.mapV2){S.mapStyle='nitido';S.mapV2=1}
+  S=snap&&snap.exists?Object.assign(newState(),snap.data()):newState();S.pet=Object.assign(newState().pet,S.pet);S.walker=Object.assign(newState().walker,S.walker);S.pet.species='perro';S.pet.sex=S.pet.sex||'macho';S.pet.skin=S.pet.skin||'natural';S.pet.aura=S.pet.aura||'default';if(!S.storeGift){S.coins=(S.coins||0)+25;S.storeGift=1;S.econV2=1}if(!S.pet.bid){S.pet.bid=guessBreed(S.pet.breed);S.pet.coat=0;S.pet.custom=!!S.pet.fur&&S.pet.bid==='quiltro'&&S.pet.fur!=='#C98A4B'}if(!S.mapV2){S.mapStyle='nitido';S.mapV2=1}ensureDogs();
   subscribeShared();
   if(S.home)watchChunks(S.home.lat,S.home.lng);
   if(!S.onboarded)startOnboarding();else{$('#ob').hidden=true;startApp()}
