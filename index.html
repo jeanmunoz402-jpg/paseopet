@@ -5171,7 +5171,9 @@ function loop(t){const dt=Math.min(.1,(t-lastT)/1000);lastT=t;acc+=dt;uiAcc+=dt;
   drawFx(dt);cardAcc+=dt;if(cardAcc>.05){animCards(cardAcc);cardAcc=0}requestAnimationFrame(loop)}
 
 /* ================= NAVEGADOR INTERNO (Instagram, TikTok, Facebook…) ================= */
-const PUBLIC_URL='https://jeanmunoz402-jpg.github.io/paseopet/';
+const PUBLIC_URL=(()=>{try{if(window.self===window.top&&/(^|\.)paseopet\.site$|github\.io$/.test(location.hostname))return location.origin+location.pathname}catch(e){}return 'https://paseopet.site/'})();
+/* si se abrió sin candado (http) y el certificado ya existe, pasa sola a https */
+(function(){try{if(location.protocol==='http:'&&/(^|\.)paseopet\.site$/.test(location.hostname)){fetch('https://'+location.host+location.pathname.replace(/[^/]*$/,'')+'manifest.webmanifest?ping='+Date.now(),{mode:'no-cors',cache:'no-store'}).then(()=>location.replace('https://'+location.host+location.pathname+location.search+location.hash)).catch(()=>{})}}catch(e){}})();
 function inAppName(){const u=navigator.userAgent;return /Instagram/i.test(u)?'Instagram':/FBAN|FBAV|FB_IAB|FBIOS|Messenger/i.test(u)?'Facebook':/TikTok|musical_ly|Bytedance/i.test(u)?'TikTok':/WhatsApp/i.test(u)?'WhatsApp':/Line\//i.test(u)?'LINE':/Snapchat/i.test(u)?'Snapchat':/Twitter/i.test(u)?'X':/LinkedInApp/i.test(u)?'LinkedIn':/; wv\)/i.test(u)?'otra app':''}
 const isIOS=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function openOut(url){let ok=false;try{const a=document.createElement('a');a.href=url;a.target='_top';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();ok=true}catch(e){}
