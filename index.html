@@ -2815,11 +2815,18 @@ function preCanStart(){const g=PLAN.gps;if(!g||g.err)return false;return g.acc<=
 function preStartTxt(){const g=PLAN.gps;if(PLAN.checking)return 'Buscando GPS…';if(!g||g.err)return 'Esperando GPS';if(g.acc<=50)return 'Empezar paseo';if(warmT0&&Date.now()-warmT0>20000)return `Empezar (señal débil ±${Math.round(g.acc)} m)`;return `Afinando GPS ±${Math.round(g.acc)} m…`}
 function updatePreGps(){if(tab!=='walk')return;const c=$('#gpsChip'),b=$('#startBtn');if(c)c.innerHTML=preGpsTxt();if(b){b.disabled=!preCanStart();const sp=b.querySelector('span');if(sp)sp.textContent=preStartTxt();else b.textContent=preStartTxt()}}
 function countdown(cb){const el=$('#countdown'),n=$('#countNum');el.hidden=false;let i=3;const step=()=>{if(i===0){n.textContent='GO!';n.style.animation='none';void n.offsetWidth;n.style.animation='';setTimeout(()=>{el.hidden=true;cb()},500);return}n.textContent=i;n.style.animation='none';void n.offsetWidth;n.style.animation='';try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}i--;setTimeout(step,650)};step()}
-function openManual(){sheet(`<div class="t1">PASEO MANUAL</div><div class="mute small">Para paseos sin GPS. Suma XP por tiempo y distancia, pero no conquista territorios ni encuentra objetos.</div>
-  <div class="g2"><div class="field"><label for="mMin">Minutos</label><input class="inp" id="mMin" type="number" min="1" max="300" inputmode="numeric" value="30"></div><div class="field"><label for="mKm">Kilómetros</label><input class="inp" id="mKm" type="number" min="0" max="40" step="0.1" inputmode="decimal" value="2"></div></div>
-  <div class="field"><label for="mDate">Fecha</label><input class="inp" id="mDate" type="date" value="${dkey()}" max="${dkey()}"></div>
-  <button class="btn o" id="mSave">Guardar paseo</button><button class="btn" id="mCancel">Cancelar</button>`,sh=>{sh.querySelector('#mCancel').onclick=closeSheet;sh.querySelector('#mSave').onclick=()=>{const min=+$('#mMin').value,km=+$('#mKm').value,date=$('#mDate').value||dkey();if(!(min>0)||km<0||km>40){toast('Revisa los minutos y kilómetros','sos');return}if(km/(min/60)>14){toast('Esa velocidad no parece un paseo (máx. 14 km/h)','sos');return}closeSheet();
-   finalize({dist:km*1000,time:min*60,moving:min*60,trail:[],hexes:[],got:[],events:[],splits:[],hour:new Date().getHours(),manual:true,date})}})}
+function openManual(){const today=dkey(),yest=dkey(daysAgo(1));S.manualLog=(S.manualLog||[]).filter(d=>d>=dkey(daysAgo(14)));const canSave=S.streakSaveWk!==weekKey();
+  sheet(`<div class="t1">PASEO MANUAL</div><div class="mute small">Para cuando saliste sin teléfono o falló el GPS. Es un salvavidas, no una forma de ganar:</div>
+  <div class="box dark small" style="gap:5px"><div>• 1 paseo manual por día, solo de hoy o de ayer</div><div>• Máximo 60 minutos y 4 km (ritmo de caminata)</div><div>• Da 25% de la XP y no da monedas</div><div>• No suma a la liga, las misiones ni las medallas</div><div style="color:${canSave?'var(--mint)':'var(--gold)'}">• ${canSave?'Si es de hoy, salva tu racha (1 vez por semana)':'Ya usaste el salvavidas de racha de esta semana'}</div></div>
+  <div class="g2"><div class="field"><label for="mMin">Minutos</label><input class="inp" id="mMin" type="number" min="1" max="60" inputmode="numeric" value="30"></div><div class="field"><label for="mKm">Kilómetros</label><input class="inp" id="mKm" type="number" min="0" max="4" step="0.1" inputmode="decimal" value="2"></div></div>
+  <div class="field"><label for="mDate">Fecha</label><input class="inp" id="mDate" type="date" value="${today}" min="${yest}" max="${today}"></div>
+  <button class="btn o" id="mSave">Guardar paseo manual</button><button class="btn" id="mCancel">Cancelar</button>`,sh=>{sh.querySelector('#mCancel').onclick=closeSheet;sh.querySelector('#mSave').onclick=()=>{const min=+$('#mMin').value,km=+$('#mKm').value,date=$('#mDate').value||today;
+    if(!(min>=1&&min<=60)){toast('Los minutos deben estar entre 1 y 60','sos');return}if(!(km>=0&&km<=4)){toast('Máximo 4 km en un paseo manual','sos');return}
+    if(date!==today&&date!==yest){toast('Solo puedes registrar paseos de hoy o de ayer','sos');return}
+    if(km/(min/60)>7){toast('Esa velocidad no es de caminata (máximo 7 km/h)','sos');return}
+    if(S.manualLog.includes(date)){toast('Ya registraste un paseo manual ese día','sos');return}
+    S.manualLog.push(date);closeSheet();
+    finalize({dist:km*1000,time:min*60,moving:min*60,trail:[],hexes:[],got:[],events:[],splits:[],hour:new Date().getHours(),manual:true,date})}})}
 
 /* ================= LIVE WALK (real GPS) ================= */
 let WK=null,watchId=null,wakeLock=null;
@@ -2847,7 +2854,7 @@ function onFix(pos){if(!WK)return;const c=pos.coords,p={lat:c.latitude,lng:c.lon
   if(c.accuracy<=25)sniffFix(p,c.accuracy);
   if(!WK.last){WK.last=p;WK.trail.push({lat:p.lat,lng:p.lng});onPoint(p);return}
   const d=hav(WK.last,p),dt=(p.ts-WK.last.ts)/1000;if(dt<=0)return;const v=d/dt;
-  if(v>12){return}
+  if(v>12){WK.jumps=(WK.jumps||0)+1;if(WK.jumps===5)toast('GPS inestable: los saltos de ubicación no cuentan para el paseo','gps','#FFC93C');return}
   if(d<3){if(p.ts-WK.lastMoveTs>180000&&!WK.auto){WK.auto=true;toast('Pausa automática: llevan 3 minutos detenidos','boot')}return}
   if(WK.auto){WK.auto=false;toast('¡Seguimos!','play')}
   if(v>4.5){WK.fastSince=WK.fastSince||p.ts;if(p.ts-WK.fastSince>20000&&!WK.vehicle){WK.vehicle=true;toast('¿Vas en vehículo? Este tramo no suma XP ni territorios','sos','#FFC93C')}}else{WK.fastSince=0;if(WK.vehicle){WK.vehicle=false}}
@@ -2928,29 +2935,30 @@ async function finalize(w){
   let terr={taken:0,stolen:[],weakened:[],reinforced:0};
   if(w.hexes&&w.hexes.length){terr=await commitTerritories(w.hexes);S.terrCount=Math.max(0,S.terrCount+terr.taken)}
   const firstToday=today&&S.today.min===0;
-  if(today){const y=dkey(daysAgo(1));if(p.last===y)p.streak++;else if(p.last!==dkey())p.streak=1;p.last=dkey();p.best=Math.max(p.best,p.streak)}
+  const mSave=!!(w.manual&&today&&p.last!==dkey()&&S.streakSaveWk!==weekKey());
+  if(today&&(!w.manual||mSave)){const y=dkey(daysAgo(1));if(p.last===y)p.streak++;else if(p.last!==dkey())p.streak=1;p.last=dkey();p.best=Math.max(p.best,p.streak)}if(mSave)S.streakSaveWk=weekKey();
   const mult=p.streak>=30?1.5:p.streak>=7?1.25:p.streak>=3?1.1:1;
   const tPaso=1+((S.talents&&S.talents.paso||0)*0.12)+((p.prestige||0)*0.15);
   const bXp=(!w.manual&&S.boosts&&S.boosts.xp2>0)?2:1;
   const base=Math.floor(w.moving/60)+Math.floor(w.dist/1000*20)+terr.taken*15+(w.got||[]).reduce((a,g)=>a+itemById(g).xp,0)+(w.bossBonus||0)+(w.targets&&w.targets.length&&w.targets.every(t=>t.done)?40:0)+(firstToday?25:0);
   const wb=w.well||null;const hm=wb?happyMult(wb.happy):1;
-  let gained=Math.round(base*mult*hm*tPaso*bXp);const mins=w.moving/60;
+  let gained=Math.round(base*mult*hm*tPaso*bXp);const mins=w.moving/60;if(w.manual)gained=Math.max(1,Math.round(gained*.25));
   if(!w.manual&&S.boosts){for(const bk of ['radar','xp2','luck','lure'])if(S.boosts[bk]>0)S.boosts[bk]--}
-  if(today){S.today.min+=mins;S.today.km+=w.dist/1000;S.mis.p.min+=mins;S.mis.p.hex+=terr.taken;S.mis.p.item+=(w.got||[]).length;S.mis.p.km=(S.mis.p.km||0)+w.dist/1000;S.mis.p.sniff=(S.mis.p.sniff||0)+(wb?wb.sniffN:0);S.mis.p.walks=(S.mis.p.walks||0)+1;if(wb&&wb.happy>=85&&w.moving>=300)S.mis.p.happy=(S.mis.p.happy||0)+1}
+  if(today&&!w.manual){S.today.min+=mins;S.today.km+=w.dist/1000;S.mis.p.min+=mins;S.mis.p.hex+=terr.taken;S.mis.p.item+=(w.got||[]).length;S.mis.p.km=(S.mis.p.km||0)+w.dist/1000;S.mis.p.sniff=(S.mis.p.sniff||0)+(wb?wb.sniffN:0);S.mis.p.walks=(S.mis.p.walks||0)+1;if(wb&&wb.happy>=85&&w.moving>=300)S.mis.p.happy=(S.mis.p.happy||0)+1}
   S.wkCon=S.wkCon||{wk:weekKey(),km:0,hex:0,items:0,claimed:false};
-  S.wkCon.km=(S.wkCon.km||0)+w.dist/1000;S.wkCon.hex=(S.wkCon.hex||0)+terr.taken;S.wkCon.items=(S.wkCon.items||0)+(w.got||[]).length;
-  const misDone=[];for(const m of MIS)if(!S.mis.done[m.id]&&S.mis.p[m.id]>=m.goal){S.mis.done[m.id]=1;gained+=m.xp;misDone.push(m)}
+  if(!w.manual)S.wkCon.km=(S.wkCon.km||0)+w.dist/1000;if(!w.manual){S.wkCon.hex=(S.wkCon.hex||0)+terr.taken;S.wkCon.items=(S.wkCon.items||0)+(w.got||[]).length}
+  const misDone=[];if(!w.manual)for(const m of MIS)if(!S.mis.done[m.id]&&S.mis.p[m.id]>=m.goal){S.mis.done[m.id]=1;gained+=m.xp;misDone.push(m)}
   {const sctx=secretCtx(w,terr,wb,p);const sf=findSecrets(w,sctx);if(sf.length){w.got=(w.got||[]).concat(sf);gained+=sf.reduce((a,g)=>a+itemById(g).xp,0)}statUpdate(w,wb,sctx,w.got)}
   for(const g of w.got||[]){const d=itemById(g);S.inv[d.baseId]=(S.inv[d.baseId]||0)+1;S.inv[`${d.baseId}:${d.r}`]=(S.inv[`${d.baseId}:${d.r}`]||0)+1}
   S.friends=(S.friends||0)+(w.events||[]).filter(e=>e.t==='amigo').length;
-  S.totals.km+=w.dist/1000;S.totals.min+=mins;S.totals.walks++;hatchEggs();S.days[w.date]=Math.min(3,(S.days[w.date]||0)+1);
+  if(!w.manual){S.totals.km+=w.dist/1000;S.totals.min+=mins;S.totals.walks++;hatchEggs();S.days[w.date]=Math.min(3,(S.days[w.date]||0)+1)}else{S.totals.mKm=(S.totals.mKm||0)+w.dist/1000;S.totals.mWalks=(S.totals.mWalks||0)+1}
   p.happy=Math.min(100,p.happy+Math.round((6+mins/2)*(wb?wb.happy/85:1)));
   S.parks=S.parks||{};const parkRes=wb&&wb.parks.length?await commitParks(wb.parks):[];S.stat=S.stat||{};S.stat.leads=(S.stat.leads||0)+parkRes.filter(x=>x.newLead).length;
   const cw=calcWalkCoins(w,terr,wb,parkRes,firstToday,misDone,p.streak);
-  const coins=cw.total;S.coins=(S.coins||0)+coins;
-  const lv=addXp(gained);const crewRes=giveCrewXp(w.crew,gained,today);
+  const coins=w.manual?0:cw.total;S.coins=(S.coins||0)+coins;
+  const lv=addXp(gained);if(w.manual)S.weekXp=Math.max(0,S.weekXp-gained);const crewRes=giveCrewXp(w.crew,gained,today);
   const sp=w.dist/Math.max(1,w.moving);p.cls=terr.taken>=6?'Explorador':sp>1.6?'Velocista':w.dist>4000?'Resistente':(w.events||[]).filter(e=>e.t==='amigo').length>=2?'Sociable':p.cls==='Novato'?'Paseador':p.cls;
-  const newB=[];for(const b of BADGES)if(!S.badges.includes(b.id)&&b.t(S,w)){S.badges.push(b.id);newB.push(b)}
+  const newB=[];if(!w.manual)for(const b of BADGES)if(!S.badges.includes(b.id)&&b.t(S,w)){S.badges.push(b.id);newB.push(b)}
   const pts=slimLL(w.trail||[],7);
   const id='w'+(w.t0||Date.now());
   const rec={id,date:w.date,ts:w.t0||Date.now(),dist:Math.round(w.dist),time:Math.round(w.time),moving:Math.round(w.moving),xp:gained,hexes:terr.taken,stolen:terr.stolen.length,items:w.got||[],events:(w.events||[]).map(e=>({t:e.t,lat:e.lat,lng:e.lng})),pts,splits:(w.splits||[]).map(Math.round),manual:!!w.manual,diary:'',coins,kcalH:kcalHuman(w.dist,w.moving),kcalD:kcalDog(w.dist),...(wb?{sniff:wb.sniff,sniffN:wb.sniffN,happy:wb.happy,parks:parkRes.map(x=>x.n)}:{})};
@@ -2958,7 +2966,8 @@ async function finalize(w){
   save(true);pushProfile();
   W8(walksCol().path+'/'+id,()=>walksCol().doc(id).set(rec)).catch(()=>{});
   const prevAvg=S.totals.walks>1?(S.totals.km*1000-w.dist)/(S.totals.walks-1):w.dist;
-  showSummary({rec,old,gained,lv,mult,hm,coins,coinBreak:cw.parts,parkRes,firstToday,misDone,newB,terr,photos:w.photos||[],pct:Math.round((w.dist/Math.max(1,prevAvg)-1)*100)});
+  showSummary({rec,old,gained,lv,mult,hm,coins,coinBreak:w.manual?[]:cw.parts,parkRes,firstToday,misDone,newB,terr,photos:w.photos||[],pct:Math.round((w.dist/Math.max(1,prevAvg)-1)*100)});
+  if(w.manual)setTimeout(()=>toast(`Paseo manual guardado: +${gained} XP${mSave?' · ¡racha salvada!':''}. No suma monedas, liga ni medallas`,'boot','#FFC93C'),1200);
   render();
 }
 function diaryFallback(sm){const r=sm.rec,km=fmtKm(r.dist),c=t=>r.events.filter(e=>e.t===t).length,o=[];const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -3082,7 +3091,7 @@ function petCardMini(){const e=evoOf(S.pet.level);return `<div class="pc-stage" 
 function closePost(t){$('#o-sum').hidden=true;if(POST&&POST.blobUrl)URL.revokeObjectURL(POST.blobUrl);POST=null;go(t||'home')}
 
 /* ================= PUBLISH / FEED ================= */
-async function openPublish(rec,photo){let img=photo||null;
+async function openPublish(rec,photo){if(rec&&rec.manual){toast('Los paseos manuales no se publican en la red social','sos','#FFC93C');return}let img=photo||null;
   sheet(`<div class="t1">PUBLICAR</div>${rec?`<div class="mute small">${rec.pts&&rec.pts.length>1?'Tu ruta se publica'+(S.priv?' sin el inicio ni el final (zona privada)':'')+'.':'Paseo manual, sin mapa.'}</div>`:''}
    <div class="field"><label for="pTxt">Texto</label><textarea class="inp" id="pTxt" maxlength="400" placeholder="¿Qué tal estuvo?">${esc(rec&&rec.diary||'')}</textarea></div>
    <div id="pImgBox">${img?`<img src="${img}" alt="Foto" style="width:100%;image-rendering:pixelated">`:''}</div>
