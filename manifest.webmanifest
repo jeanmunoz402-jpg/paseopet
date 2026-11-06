@@ -1,0 +1,16 @@
+{
+  "name": "PaseoPet",
+  "short_name": "PaseoPet",
+  "description": "Pasea a tu perro, gana XP y conquista tu barrio.",
+  "lang": "es-CL",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#17123A",
+  "theme_color": "#17123A",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
