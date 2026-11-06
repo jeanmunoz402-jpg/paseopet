@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0B0F1A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="PaseoPet">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -2277,8 +2277,9 @@ function pickPhoto(camera){return new Promise(res=>{const inp=camera?$('#fileCam
 
 /* ================= UI PRIMITIVES ================= */
 function toast(html,icon,color){const t=document.createElement('div');t.className='toast';if(color)t.style.boxShadow=`inset 0 0 0 3px ${color},4px 4px 0 rgba(0,0,0,.6)`;t.innerHTML=(icon?ico(icon):'')+`<span>${html}</span>`;$('#toasts').appendChild(t);while($('#toasts').children.length>3)$('#toasts').firstChild.remove();setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s steps(3)';setTimeout(()=>t.remove(),300)},2800);try{navigator.vibrate&&navigator.vibrate(25)}catch(e){}}
-function sheet(html,mount){$('#sheet').innerHTML=html;$('#sheetWrap').hidden=false;$('#sheet').scrollTop=0;hydrateIcons($('#sheet'));mount&&mount($('#sheet'))}
-function closeSheet(){$('#sheetWrap').hidden=true;gpsFixOpen=false}
+function sheet(html,mount){try{if(isApp()&&!(history.state&&history.state.pps))history.pushState({pps:1},'')}catch(e){}$('#sheet').innerHTML=html;$('#sheetWrap').hidden=false;$('#sheet').scrollTop=0;hydrateIcons($('#sheet'));mount&&mount($('#sheet'))}
+function closeSheet(fromBack){const was=!$('#sheetWrap').hidden;$('#sheetWrap').hidden=true;gpsFixOpen=false;try{if(fromBack!==true&&was&&history.state&&history.state.pps)history.back()}catch(e){}}
+window.addEventListener('popstate',()=>{if(!$('#sheetWrap').hidden)closeSheet(true)});
 $('#backdrop').onclick=closeSheet;
 let fx=[];
 function boom(n=90){const r=$('#fx').getBoundingClientRect();const cols=['#FF6B2C','#7C5CFF','#2CE6A6','#FFC93C','#3C9DFF','#FF3B5C'];for(let i=0;i<n;i++)fx.push({x:r.width/2/3,y:r.height*.3/3,vx:(Math.random()-.5)*4,vy:-Math.random()*4.5-1,c:cols[i%6],l:0});try{navigator.vibrate&&navigator.vibrate([40,30,80])}catch(e){}}
@@ -2693,7 +2694,7 @@ function startWalk(resume){
   const start=resume?null:PLAN.gps;
   WK=resume||{t0:Date.now(),pausedMs:0,pauseAt:0,paused:false,auto:false,moving:0,dist:0,trail:[],last:null,lastMoveTs:Date.now(),fastSince:0,vehicle:false,hexes:[],hexInfo:{},items:[],got:[],events:[],splits:[],lastSplitMoving:0,hour:new Date().getHours(),mode:PLAN.mode,goalKm:PLAN.km,goalHit:false,guide:PLAN.mode==='ruta'&&S.routes[PLAN.route]?S.routes[PLAN.route].pts:null,targets:PLAN.mode==='conquista'?pickTargets(start):null,acc:start?start.acc:null,pos:start?{lat:start.lat,lng:start.lng}:null,cam:{mpp:1.4}};
   if(WK.pos)watchChunks(WK.pos.lat,WK.pos.lng);
-  if(!resume&&start)spawnStreetItems(WK,start);else if(resume&&S.bgMode!==false)bgKeepAlive(true);
+  if(!resume&&start)spawnStreetItems(WK,start);if(S.bgMode!==false)bgKeepAlive(true);
   $('#o-live').hidden=false;$('#o-live').classList.toggle('eco',!!S.eco);$('#ecoBtn').textContent=S.eco?'VER MAPA':'AHORRO';renderEvBtns();updateLive();
   startWatch();requestWake();persistActive();
   if(!resume){toast('¡Paseo iniciado! Detente un minuto en las huellas verdes para olfatear y desenterrar botín','play');bark(2,.8)}
@@ -2701,7 +2702,7 @@ function startWalk(resume){
 function startWatch(){stopWatch();if(!navigator.geolocation)return;try{watchId=navigator.geolocation.watchPosition(onFix,e=>{$('#gpsPill').textContent=e.code===1?'SIN PERMISO':'SIN SEÑAL';if(e.code===1)gpsFail('denied',()=>startWatch());else if(e.code===2)setTimeout(()=>{if(WK)startWatch()},5000)},{enableHighAccuracy:true,maximumAge:0,timeout:30000})}catch(e){}}
 function stopWatch(){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId)}catch(e){}watchId=null}}
 async function requestWake(){try{if(navigator.wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener&&wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){wakeLock=null}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(WK&&!wakeLock)requestWake();if(WK&&watchId==null)startWatch();if(S&&S.onboarded)fetchWX()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'&&!WK){try{if(BGA&&!BGA.paused)BGA.pause();mediaSession(false)}catch(e){}}if(document.visibilityState==='visible'){if(WK&&!wakeLock)requestWake();if(WK&&watchId==null)startWatch();if(S&&S.onboarded)fetchWX()}});
 function onFix(pos){if(!WK)return;const c=pos.coords,p={lat:c.latitude,lng:c.longitude,ts:pos.timestamp||Date.now()};WK.acc=c.accuracy;WK.pos={lat:p.lat,lng:p.lng};WK.lastFixTs=Date.now();if(WK.lostWarned){WK.lostWarned=false;toast('GPS recuperado','gps','#4FD18B')}
   $('#gpsPill').textContent=c.accuracy>40?`GPS DÉBIL ±${Math.round(c.accuracy)}M`:`GPS ±${Math.round(c.accuracy)}M`;
   if(WK.paused)return;if(c.accuracy>50)return;
@@ -4031,7 +4032,7 @@ function renderSettings(){const p=S.pet;let acct='';
    <button class="setrow" id="stProf">${ico('paw')}<span><b>Mi perfil público</b><br><span class="mute small">Así te ven los demás</span></span><span class="chev">►</span></button>
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
    <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button></div>
-  ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
+  ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
   <div class="box"><span class="t2">Datos</span><div class="mute small">${MODE==='local'?'Tus datos se guardan solo en este navegador.':'Tu historial, salud y casa son privados. Tu perro, nivel, publicaciones y territorios los ve la comunidad.'}</div>
    <button class="btn r" id="stReset">${setResetArm?'Toca otra vez: se borra todo':'Borrar todos mis datos'}</button></div>
   <div class="box dark" style="align-items:center;text-align:center"><img src="${APP_LOGO}" alt="PaseoPet" style="width:92px;height:auto;filter:drop-shadow(0 4px 0 rgba(0,0,0,.45))"><div class="t2">PASEOPET v2.0</div><div class="mute small">Creado por <b style="color:var(--gold)">Jean &quot;morningstar&quot; Muñoz</b>, Chile.<br>Mapas © OpenStreetMap contributors · Clima: Open-Meteo.com</div></div>`;
@@ -4046,7 +4047,7 @@ function renderSettings(){const p=S.pet;let acct='';
   $('#stNot').onclick=async()=>{await askNotif();renderSettings()};
   $('#stSnd').onclick=()=>{S.sound=S.sound===false;save();renderSettings();if(S.sound)bark(2)};$('#stVoz').onclick=()=>{S.voice=S.voice===false;save();renderSettings();if(S.voice)say('Voz del entrenador activada')};
   $('#stBg').onclick=()=>{S.bgMode=S.bgMode===false;save();if(WK)bgKeepAlive(S.bgMode);renderSettings()};$('#stTest').onclick=()=>{audioCtx();bark(2);say(`Hola, soy ${S.pet.name}`)};
-  const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
+  const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isApp()){exitHint(true);return}if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
   $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;$('#stDon').onclick=openDonate;
   $('#stReset').onclick=async()=>{if(!setResetArm){setResetArm=true;renderSettings();setTimeout(()=>{setResetArm=false;if(tab==='settings')renderSettings()},3500);return}setResetArm=false;await wipeMine()}}
 let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:tab;go('settings')}
@@ -4165,6 +4166,8 @@ function openBadges(){sheet(`<div class="t1">MEDALLAS Y LOGROS</div><div class="
 /* ================= PORTADA ÉPICA + PANTALLA COMPLETA ================= */
 const fsEnabled=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+const isApp=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true||(matchMedia('(display-mode: fullscreen)').matches&&!document.fullscreenElement&&!document.webkitFullscreenElement)}catch(e){return false}};
+function exitHint(force){if(!isApp())return;if(!force&&S&&S.exitHint)return;if(S){S.exitHint=1;save()}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);sheet(`<div class="t1">CÓMO SALIR DE LA APP</div><div>${ios?'Desliza hacia arriba desde el borde inferior de la pantalla (o toca el botón de inicio).':'Usa el gesto o el botón de inicio de tu teléfono, o el botón Atrás.'}</div><div class="banner small">Tu sesión queda guardada: la próxima vez que abras PaseoPet entras directo, sin volver a iniciar sesión.</div><div class="mute small">Si estás paseando, el paseo sigue midiendo en segundo plano. Para soltarlo por completo, toca Terminar.</div><button class="btn o" id="exOk">Entendido</button>`,sh=>{sh.querySelector('#exOk').onclick=closeSheet})}
 function goFullscreen(){const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;
   if(rq&&fsEnabled()&&!isFull()){try{const r=rq.call(el,{navigationUI:'hide'});return Promise.resolve(r).then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{})}catch(e){}return 'fs'}).catch(()=>fsFallback())}catch(e){return Promise.resolve(fsFallback())}}
   if(isFull())return Promise.resolve('fs');return Promise.resolve(fsFallback())}
@@ -4217,7 +4220,8 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
     const root=$('#cvRoot');if(root)root.classList.add('cv-exit');
     playScreenWipe(()=>{cancelAnimationFrame(raf);ob.classList.remove('obc');resolve(v)});
   };
-  const fb=$('#cvFull');if(fb)fb.onclick=()=>{unlockAudio();coinSfx();goFullscreen().then(r=>{if(r==='tab'&&!inAppName()){$('#cvMsg').innerHTML='<div class="banner small">Abrimos PaseoPet en pantalla completa en una pestaña nueva. Continúa allí para iniciar sesión con Gmail. <button class="btn sm" id="cvHere" style="margin-top:8px;width:100%">Seguir aquí</button></div>';const h=$('#cvHere');if(h)h.onclick=()=>finish('here')}else finish('fs')})};
+  if(isApp()){const b=$('#cvFull');if(b)b.innerHTML='<span>▶ ENTRAR</span>';const rq=document.querySelector('.cv-req');if(rq)rq.textContent='★ APP INSTALADA ★';const st=document.querySelector('.cv-start');if(st)st.textContent='TOCA ENTRAR PARA COMENZAR'}
+  const fb=$('#cvFull');if(fb)fb.onclick=()=>{if(isApp()){unlockAudio();coinSfx();finish('app');return}unlockAudio();coinSfx();goFullscreen().then(r=>{if(r==='tab'&&!inAppName()){$('#cvMsg').innerHTML='<div class="banner small">Abrimos PaseoPet en pantalla completa en una pestaña nueva. Continúa allí para iniciar sesión con Gmail. <button class="btn sm" id="cvHere" style="margin-top:8px;width:100%">Seguir aquí</button></div>';const h=$('#cvHere');if(h)h.onclick=()=>finish('here')}else finish('fs')})};
 })}
 
 /* ================= OBJETOS SOLO EN LAS CALLES ================= */
@@ -4243,13 +4247,14 @@ function say(txt){if(!S||S.voice===false||!window.speechSynthesis)return;try{con
 function alertNotify(title,body,tag){try{if(window.Notification&&Notification.permission==='granted'&&document.visibilityState!=='visible')new Notification(title,{body,tag:tag||'paseopet',renotify:true})}catch(e){}}
 function bigAlert(title,body,icon,lvl){bark(lvl==='emergency'?3:2,1);try{navigator.vibrate&&navigator.vibrate(lvl==='emergency'?[300,120,300,120,500]:VIB[lvl]||[200,100,200])}catch(e){}toast(`<b>${esc(title)}</b> ${esc(body)}`,icon||'bell',lvl==='emergency'?'#FF3B5C':'#FFC93C');alertNotify('PaseoPet · '+title,body,'pp-'+(icon||'a'))}
 function kmAlert(km){const pace=fmtPace(WK.moving,WK.dist).replace("'"," min ").replace('"',' s');bigAlert(`¡${km} km!`,`${S.pet.name} lleva ${km} kilómetro${km>1?'s':''}. Ritmo ${fmtPace(WK.moving,WK.dist)}/km.`,'boot','km');say(`¡Guau! ${km} kilómetro${km>1?'s':''}. Ritmo de ${pace} por kilómetro. ¡Sigue así!`)}
-function unlockAudio(){audioCtx();if(S&&S.bgMode!==false)bgKeepAlive(true);try{if(window.speechSynthesis)speechSynthesis.getVoices()}catch(e){}if(window.Notification&&Notification.permission==='default')askNotif()}
+function unlockAudio(){audioCtx();if(S&&S.bgMode!==false){if(WK)bgKeepAlive(true);else bgPrime()}try{if(window.speechSynthesis)speechSynthesis.getVoices()}catch(e){}if(window.Notification&&Notification.permission==='default')askNotif()}
 /* ================= SEGUNDO PLANO ================= */
 let BGA=null,msT=0;
 function quietWav(){const sr=8000,n=sr*2,buf=new ArrayBuffer(44+n*2),v=new DataView(buf);const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
   w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
   for(let i=0;i<n;i++)v.setInt16(44+i*2,Math.round((Math.random()*2-1)*6),true);return URL.createObjectURL(new Blob([buf],{type:'audio/wav'}))}
-function bgKeepAlive(on){try{if(on){if(!BGA){BGA=new Audio(quietWav());BGA.loop=true;BGA.setAttribute('playsinline','');BGA.volume=.05}BGA.play().catch(()=>{});mediaSession(true)}else if(BGA){BGA.pause();mediaSession(false)}}catch(e){}}
+function bgPrime(){try{if(!BGA){BGA=new Audio(quietWav());BGA.loop=true;BGA.setAttribute('playsinline','');BGA.volume=.05}if(!WK){BGA.muted=true;BGA.play().then(()=>{if(!WK){BGA.pause();BGA.muted=false}}).catch(()=>{BGA.muted=false})}}catch(e){}}
+function bgKeepAlive(on){if(on&&!WK)return;try{if(on){if(!BGA){BGA=new Audio(quietWav());BGA.loop=true;BGA.setAttribute('playsinline','');BGA.volume=.05}BGA.play().catch(()=>{});mediaSession(true)}else if(BGA){BGA.pause();mediaSession(false)}}catch(e){}}
 function mediaSession(on){if(!('mediaSession' in navigator))return;try{if(!on){navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none';return}
   const art=[{src:petC(S.pet,0).toDataURL(),sizes:'96x96',type:'image/png'}];
   navigator.mediaSession.metadata=new MediaMetadata({title:`Paseando con ${S.pet.name}`,artist:WK?`${fmtKm(WK.dist)} km · ${fmtTime(elapsed())}`:'PaseoPet',album:'PaseoPet',artwork:art});
@@ -4710,7 +4715,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){setTimeout(handleFriendLink,600);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
