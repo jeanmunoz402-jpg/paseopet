@@ -294,8 +294,75 @@ button,.btn,.chip,.nav button{touch-action:manipulation}
 .pc-stage .petbox{position:relative;z-index:2}
 .aura{position:absolute;inset:6px;background:radial-gradient(circle,color-mix(in srgb,var(--ec) 70%,transparent) 0 22%,color-mix(in srgb,var(--ec) 28%,transparent) 42%,transparent 66%);animation:aurap 1.6s steps(3) infinite;z-index:1}
 .evo0 .aura{opacity:.25}.evo1 .aura{opacity:.5}.evo2 .aura{opacity:.7}
-.evo5 .aura{animation:aurap 1.2s steps(3) infinite,hue 4s linear infinite}
+.evo8 .aura,.evo10 .aura{animation:aurap 1.2s steps(3) infinite}.evo9 .aura,.evo11 .aura{animation:aurap 1.2s steps(3) infinite,hue 4s linear infinite}
 .evo5{animation:hueb 6s linear infinite}
+/* ===== Perros HD, auras épicas y tarjeta por etapa de evolución ===== */
+.evo5{animation:none}
+.pcard{--tc:var(--ec);--tc2:var(--ec2)}
+.pc-frame{position:absolute;inset:0;pointer-events:none;z-index:2}
+.pc-frame::before,.pc-frame::after{content:"";position:absolute;pointer-events:none}
+/* esquinas con gemas desde Guardián */
+.pc-frame.f5::before,.pc-frame.f6::before,.pc-frame.f7::before,.pc-frame.f8::before,.pc-frame.f9::before,.pc-frame.f10::before,.pc-frame.f11::before{inset:4px;background:
+  radial-gradient(circle at 10px 10px,#FFFFFF 0 2px,var(--tc) 3px 6px,#0E0A26 7px 8px,transparent 9px),
+  radial-gradient(circle at calc(100% - 10px) 10px,#FFFFFF 0 2px,var(--tc) 3px 6px,#0E0A26 7px 8px,transparent 9px),
+  radial-gradient(circle at 10px calc(100% - 10px),#FFFFFF 0 2px,var(--tc) 3px 6px,#0E0A26 7px 8px,transparent 9px),
+  radial-gradient(circle at calc(100% - 10px) calc(100% - 10px),#FFFFFF 0 2px,var(--tc) 3px 6px,#0E0A26 7px 8px,transparent 9px)}
+/* cresta superior desde Maestro */
+.pc-frame.f7::after,.pc-frame.f8::after,.pc-frame.f9::after,.pc-frame.f10::after,.pc-frame.f11::after{left:50%;top:-2px;width:64px;height:16px;transform:translateX(-50%);
+  background:linear-gradient(180deg,var(--tc),var(--tc2));clip-path:polygon(0 0,100% 0,82% 100%,62% 55%,50% 100%,38% 55%,18% 100%);filter:drop-shadow(0 0 6px var(--tc))}
+/* 0 Cachorro: cartón */
+.pcard.evo0:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(154,163,192,.18),transparent 62%),linear-gradient(180deg,#2A2448,#171236 80%);box-shadow:inset 0 0 0 3px #6B7392,inset 0 0 0 6px #0E0A26}
+/* 1 Explorador: cuero */
+.pcard.evo1:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(217,137,74,.25),transparent 62%),repeating-linear-gradient(135deg,rgba(0,0,0,.08) 0 3px,transparent 3px 7px),linear-gradient(180deg,#3A2418,#1B1230 80%);box-shadow:inset 0 0 0 3px #D9894A,inset 0 0 0 6px #0E0A26,inset 0 0 0 8px #7A4A1E}
+/* 2 Aventurero: plata */
+.pcard.evo2:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(201,211,232,.28),transparent 62%),linear-gradient(180deg,#2E3050,#151230 80%);box-shadow:inset 0 0 0 3px #E3E9F6,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #8C96B4,inset 0 0 0 11px #0E0A26}
+/* 3 Rastreador: bosque */
+.pcard.evo3:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(79,209,139,.28),transparent 62%),radial-gradient(circle at 85% 90%,rgba(44,230,166,.18),transparent 40%),linear-gradient(180deg,#183A36,#121230 80%);box-shadow:inset 0 0 0 3px #4FD18B,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #2A8F5C,inset 0 0 0 11px #0E0A26}
+/* 4 Héroe: oro */
+.pcard.evo4:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(255,201,60,.32),transparent 62%),linear-gradient(180deg,#3A2C14,#1A1236 80%);box-shadow:inset 0 0 0 3px #FFE29A,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #FFC93C,inset 0 0 0 11px #0E0A26,0 0 18px rgba(255,201,60,.25)}
+/* 5 Guardián: zafiro con runas */
+.pcard.evo5:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(60,157,255,.35),transparent 62%),repeating-conic-gradient(from 0deg at 80% 85%,rgba(126,166,255,.07) 0 10deg,transparent 10deg 20deg),linear-gradient(180deg,#132A5C,#121034 80%);box-shadow:inset 0 0 0 3px #7EA6FF,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #3C6FE0,inset 0 0 0 11px #0E0A26,0 0 20px rgba(60,157,255,.3)}
+/* 6 Campeón: amatista */
+.pcard.evo6:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(156,132,255,.4),transparent 62%),radial-gradient(circle at 90% 10%,rgba(255,143,212,.25),transparent 35%),linear-gradient(180deg,#2E1A5E,#140E36 80%);box-shadow:inset 0 0 0 3px #C2A6FF,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #9A6BFF,inset 0 0 0 11px #0E0A26,0 0 22px rgba(154,107,255,.35)}
+/* 7 Maestro: rubí ornamentado */
+.pcard.evo7:not(.aura-card-rgb){background:radial-gradient(110% 70% at 25% 18%,rgba(255,79,106,.38),transparent 62%),repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 2px,transparent 2px 8px),linear-gradient(180deg,#4A1430,#160E34 80%);box-shadow:inset 0 0 0 3px #FF8A9D,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #E0334F,inset 0 0 0 11px #0E0A26,inset 0 0 0 13px #FFC93C,0 0 24px rgba(255,79,106,.35)}
+/* 8 Leyenda: llamas */
+.pcard.evo8:not(.aura-card-rgb){background:radial-gradient(120% 60% at 50% 100%,rgba(255,107,44,.45),transparent 60%),radial-gradient(110% 70% at 25% 18%,rgba(255,201,60,.3),transparent 62%),linear-gradient(180deg,#3A1410,#160E30 75%);box-shadow:inset 0 0 0 3px #FFC93C,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #FF6B2C,inset 0 0 0 11px #0E0A26,inset 0 0 0 13px #C2185B,0 0 26px rgba(255,107,44,.45);animation:evoFlame 1.4s ease-in-out infinite}
+@keyframes evoFlame{50%{box-shadow:inset 0 0 0 3px #FFF176,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #FF9100,inset 0 0 0 11px #0E0A26,inset 0 0 0 13px #FF3B5C,0 0 34px rgba(255,145,0,.6)}}
+/* 9 Mítico: holográfico */
+.pcard.evo9:not(.aura-card-rgb){background:linear-gradient(115deg,rgba(0,245,212,.28),rgba(154,107,255,.3),rgba(255,92,200,.28),rgba(255,201,60,.24),rgba(0,245,212,.28),rgba(154,107,255,.3)),linear-gradient(180deg,#1A1650,#120E30 80%);background-size:300% 300%,auto;box-shadow:inset 0 0 0 3px #7EE7FF,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #FF5CC8,inset 0 0 0 11px #0E0A26,inset 0 0 0 13px #FFC93C,0 0 28px rgba(126,231,255,.4);animation:evoHolo 5s linear infinite}
+@keyframes evoHolo{0%{background-position:0% 50%,0 0}100%{background-position:300% 50%,0 0}}
+/* 10 Titán: obsidiana con lava */
+.pcard.evo10:not(.aura-card-rgb){background:repeating-linear-gradient(115deg,transparent 0 22px,rgba(255,107,44,.35) 22px 24px,transparent 24px 46px),radial-gradient(110% 70% at 25% 18%,rgba(255,107,44,.3),transparent 62%),linear-gradient(180deg,#1A1418,#0B0820 80%);background-size:200% 100%,auto,auto;box-shadow:inset 0 0 0 3px #FF6B2C,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #3A2A30,inset 0 0 0 11px #0E0A26,inset 0 0 0 13px #FF3B1A,0 0 30px rgba(255,59,26,.45);animation:evoLava 6s linear infinite}
+@keyframes evoLava{to{background-position:-200% 0,0 0,0 0}}
+/* 11 Inmortal: cósmico */
+.pcard.evo11:not(.aura-card-rgb){background:radial-gradient(1.5px 1.5px at 12% 20%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 12%,#FFC93C,transparent),radial-gradient(1px 1px at 40% 60%,#fff,transparent),radial-gradient(1.5px 1.5px at 88% 70%,#7EE7FF,transparent),radial-gradient(1px 1px at 22% 85%,#fff,transparent),radial-gradient(110% 70% at 50% 30%,rgba(255,255,255,.18),transparent 60%),conic-gradient(from 0deg at 50% 40%,#2A0E5A,#0E2A5A,#3A0E4A,#2A0E5A);box-shadow:inset 0 0 0 3px #FFFFFF,inset 0 0 0 6px #0E0A26,inset 0 0 0 9px #FFC93C,inset 0 0 0 11px #0E0A26,inset 0 0 0 13px #9A6BFF,0 0 36px rgba(255,255,255,.35);animation:evoCosmic 3s linear infinite}
+@keyframes evoCosmic{0%,100%{filter:none}50%{filter:brightness(1.12) saturate(1.2)}}
+.evob{background:var(--tc);color:#120C02}
+.pcard.evo9 .evob,.pcard.evo11 .evob{background:linear-gradient(90deg,#FF5CC8,#FFC93C,#7EE7FF)}
+.pcard.evo8 .pedestal,.pcard.evo10 .pedestal{box-shadow:inset 0 3px 0 #FFC93C,0 0 14px #FF6B2C}
+.pcard.evo11 .pedestal{background:linear-gradient(90deg,#FF5CC8,#FFC93C,#2CE6A6,#7EE7FF,#9A6BFF);box-shadow:0 0 16px #FFFFFF}
+/* auras nuevas */
+.aura.aura-hielo{opacity:1!important;inset:-2px;background:radial-gradient(circle,#FFFFFF 0 16%,#D6F6FF 30%,#7EE7FF 48%,rgba(60,120,200,.6) 66%,transparent 79%);filter:drop-shadow(0 0 16px #7EE7FF)}
+.aura.aura-hielo::before{inset:-6px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.9) 0 3deg,transparent 3deg 30deg);mask:radial-gradient(circle,transparent 40%,#000 44% 72%,transparent 76%);-webkit-mask:radial-gradient(circle,transparent 40%,#000 44% 72%,transparent 76%);animation:spin 9s linear infinite}
+.aura.aura-hielo::after{inset:6px;box-shadow:inset 0 0 0 2px #FFFFFF,0 0 14px #7EE7FF}
+.aura.aura-sakura{opacity:1!important;inset:-2px;background:radial-gradient(circle,#FFFFFF 0 14%,#FFE0EC 28%,#FF8FB8 46%,rgba(194,24,91,.55) 66%,transparent 79%);filter:drop-shadow(0 0 16px #FF8FB8)}
+.aura.aura-sakura::before{inset:-6px;background:repeating-conic-gradient(from 0deg,rgba(255,214,232,.85) 0 12deg,rgba(255,143,184,.5) 12deg 20deg,transparent 20deg 36deg);mask:radial-gradient(circle,transparent 40%,#000 46% 70%,transparent 75%);-webkit-mask:radial-gradient(circle,transparent 40%,#000 46% 70%,transparent 75%);animation:spinRev 8s linear infinite}
+.aura.aura-sakura::after{inset:6px;box-shadow:inset 0 0 0 2px #FFD6E8,0 0 14px #FF5C8A}
+.aura.aura-sombra{opacity:1!important;inset:-4px;background:radial-gradient(circle,#E8E0FF 0 10%,#6A4BC4 26%,#2A1450 46%,rgba(10,6,24,.85) 64%,transparent 79%);filter:drop-shadow(0 0 18px #6A4BC4)}
+.aura.aura-sombra::before{inset:-8px;background:repeating-conic-gradient(from 0deg,rgba(106,75,196,.7) 0 6deg,transparent 6deg 18deg);mask:radial-gradient(circle,transparent 38%,#000 44% 74%,transparent 78%);-webkit-mask:radial-gradient(circle,transparent 38%,#000 44% 74%,transparent 78%);animation:spin 12s linear infinite}
+.aura.aura-sombra::after{inset:5px;box-shadow:inset 0 0 0 2px #C9BDFF,inset 0 0 0 5px rgba(10,6,24,.9),0 0 18px #3A1A80}
+.aura.aura-oro{opacity:1!important;inset:-6px;background:radial-gradient(circle,#FFFFFF 0 16%,#FFF2B0 30%,#FFC93C 48%,rgba(184,134,11,.75) 66%,transparent 80%);box-shadow:0 0 26px rgba(255,201,60,.9)}
+.aura.aura-oro::before{inset:-10px;background:repeating-conic-gradient(from 0deg,rgba(255,255,255,.95) 0 4deg,rgba(255,201,60,.8) 4deg 9deg,transparent 9deg 20deg);mask:radial-gradient(circle,transparent 34%,#000 40% 76%,transparent 80%);-webkit-mask:radial-gradient(circle,transparent 34%,#000 40% 76%,transparent 80%);animation:spin 5s linear infinite}
+.aura.aura-oro::after{inset:3px;box-shadow:inset 0 0 0 3px #FFFFFF,inset 0 0 0 6px rgba(255,201,60,.9),0 0 22px #FFE29A;animation:aurap 1s steps(2) infinite}
+.aura.aura-galaxia{opacity:1!important;inset:-6px;background:radial-gradient(circle,#FFFFFF 0 8%,#FFE29A 14%,#FF5CC8 26%,#6A3DE8 44%,rgba(14,42,90,.85) 62%,transparent 80%);filter:drop-shadow(0 0 20px #9A6BFF)}
+.aura.aura-galaxia::before{inset:-10px;background:conic-gradient(from 0deg,transparent 0 20deg,rgba(255,255,255,.55) 40deg,transparent 70deg 140deg,rgba(255,92,200,.55) 160deg,transparent 190deg 260deg,rgba(126,231,255,.55) 280deg,transparent 310deg);mask:radial-gradient(circle,transparent 20%,#000 30% 76%,transparent 80%);-webkit-mask:radial-gradient(circle,transparent 20%,#000 30% 76%,transparent 80%);animation:spin 7s linear infinite}
+.aura.aura-galaxia::after{inset:6px;box-shadow:inset 0 0 0 2px #FFFFFF,0 0 22px #FF5CC8}
+.aura.aura-fenix{opacity:1!important;inset:-8px;background:radial-gradient(circle,#FFFFFF 0 14%,#FFF176 26%,#FF9100 42%,#FF2A00 58%,rgba(120,10,40,.7) 70%,transparent 80%);filter:drop-shadow(0 0 22px #FF6B2C) drop-shadow(0 0 8px #FFC93C)}
+.aura.aura-fenix::before{inset:-14px;background:conic-gradient(from 200deg,transparent 0 30deg,rgba(255,145,0,.9) 60deg,rgba(255,241,118,.95) 80deg,transparent 110deg 250deg,rgba(255,241,118,.95) 280deg,rgba(255,145,0,.9) 300deg,transparent 330deg);mask:radial-gradient(circle,transparent 30%,#000 38% 80%,transparent 84%);-webkit-mask:radial-gradient(circle,transparent 30%,#000 38% 80%,transparent 84%);animation:aurap 1s ease-in-out infinite}
+.aura.aura-fenix::after{inset:4px;box-shadow:inset 0 0 0 3px #FFF176,inset 0 0 0 6px rgba(255,107,44,.9),0 0 24px #FF9100}
+.pc-stage .petbox img,.petbox img{image-rendering:pixelated}
+
 @keyframes aurap{50%{transform:scale(1.12)}}
 @keyframes hue{to{filter:hue-rotate(360deg)}}
 @keyframes hueb{50%{box-shadow:inset 0 0 0 3px #FFC93C,inset 0 0 0 6px #0B0F1A,inset 0 0 0 8px #7C5CFF}}
@@ -307,7 +374,7 @@ button,.btn,.chip,.nav button{touch-action:manipulation}
 .seg.xpbar i{position:relative;background:repeating-linear-gradient(90deg,#9C84FF 0 8px,transparent 8px 10px)}
 .seg.xpbar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);background-size:40% 100%;background-repeat:no-repeat;animation:xps 1.8s steps(10) infinite}
 @keyframes xps{from{background-position:-60% 0}to{background-position:160% 0}}
-.evotrack{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.evotrack{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
 .evotrack i{height:8px;background:var(--line)}
 .evotrack i.on{background:var(--c)}
 .evotrack i.cur{animation:bl 1s steps(1) infinite}
@@ -2108,7 +2175,9 @@ function dogGrid(L,acc,ev,frame,skin){
   mir(6,ny+1,'k');
   // evolution gem
   if(ev>=1){set(11,5,'G');set(12,5,'G')}
-  if(ev>=3){set(11,4,'G');set(12,4,'G');set(11,6,'Gd');set(12,6,'Gd')}
+  if(ev>=4){set(11,4,'G');set(12,4,'G');set(11,6,'Gd');set(12,6,'Gd')}
+  if(ev>=8){set(10,5,'Gd');set(13,5,'Gd');set(11,3,'G');set(12,3,'G')}
+  if(ev>=11){set(10,4,'G');set(13,4,'G');set(11,4,'h');}
   // accessories
   if(acc==='bandana'){rect(6,17,12,1,'r');rect(8,18,8,1,'r');rect(10,19,4,1,'r');rect(11,20,2,1,'R');set(9,18,'h');set(14,18,'h')}
   if(acc==='gorro'){set(12,0,'y');set(11,0,'y');rect(11,1,2,1,'v');rect(10,2,4,1,'g');rect(10,3,4,1,'v');rect(9,4,6,1,'g');rect(9,5,6,1,'v');set(10,3,'h')}
@@ -2150,7 +2219,40 @@ function dogKey(p,frame){p=p||{};const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;
 function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return sprC.get(k);
   const g=dogGrid(L,(p&&p.acc)||'',ev,frame,sk),P=dogPalette(L,ev,sk,frame);const c=document.createElement('canvas');c.width=24;c.height=24;const x=c.getContext('2d');
   g.forEach((r,y)=>r.forEach((kk,i)=>{if(kk){x.fillStyle=P[kk]||'#FF00FF';x.fillRect(i,y,1,1)}}));sprC.set(k,c);return c}
-function petU(p,frame=0){const {k}=dogKey(p,frame);if(!urlC.has('u'+k))urlC.set('u'+k,petC(p,frame).toDataURL());return urlC.get('u'+k)}
+/* ================= PERROS EN ALTA DEFINICIÓN (48x48 con volumen, pelaje y luz) ================= */
+const hdC=new Map();
+function petHD(p,frame=0){const {k}=dogKey(p,frame);const key='hd|'+k;if(hdC.has(key))return hdC.get(key);
+  const src=petC(p,frame),S0=24,S1=48;const sd=src.getContext('2d').getImageData(0,0,S0,S0).data;
+  const px=(x,y)=>{if(x<0||y<0||x>=S0||y>=S0)return 0;const i=(y*S0+x)*4;return sd[i+3]?((sd[i]<<16)|(sd[i+1]<<8)|sd[i+2])+1:0};
+  /* 1) Scale2x: duplica la resolución redondeando diagonales */
+  const G=new Int32Array(S1*S1);
+  for(let y=0;y<S0;y++)for(let x=0;x<S0;x++){const P=px(x,y),A=px(x,y-1),B=px(x+1,y),C=px(x-1,y),D=px(x,y+1);
+    let e0=P,e1=P,e2=P,e3=P;if(C===A&&C!==D&&A!==B)e0=A;if(A===B&&A!==C&&B!==D)e1=B;if(D===C&&D!==B&&C!==A)e2=C;if(B===D&&B!==A&&D!==C)e3=D;
+    if(!P){e0=e0&&(px(x-1,y)&&px(x,y-1))?e0:0;e1=e1&&(px(x+1,y)&&px(x,y-1))?e1:0;e2=e2&&(px(x-1,y)&&px(x,y+1))?e2:0;e3=e3&&(px(x+1,y)&&px(x,y+1))?e3:0}
+    G[(y*2)*S1+x*2]=e0;G[(y*2)*S1+x*2+1]=e1;G[(y*2+1)*S1+x*2]=e2;G[(y*2+1)*S1+x*2+1]=e3}
+  const at=(x,y)=>(x<0||y<0||x>=S1||y>=S1)?0:G[y*S1+x];
+  const rgb=v=>{v--;return[(v>>16)&255,(v>>8)&255,v&255]};
+  const lum=c=>(c[0]*.299+c[1]*.587+c[2]*.114)/255;
+  const isOut=v=>{if(!v)return false;return lum(rgb(v))<.13};
+  const h=(x,y)=>{let n=(x*374761393+y*668265263+frame*97)|0;n=(n^(n>>>13))*1274126177|0;return((n^(n>>>16))>>>0)/4294967296};
+  const out=document.createElement('canvas');out.width=S1;out.height=S1;const ox=out.getContext('2d');const img=ox.createImageData(S1,S1),o=img.data;
+  for(let y=0;y<S1;y++)for(let x=0;x<S1;x++){const v=G[y*S1+x];if(!v)continue;let c=rgb(v);const i=(y*S1+x)*4;
+    if(isOut(v)){/* contorno selectivo: más suave del lado iluminado */
+      const nb=[at(x+1,y),at(x,y+1),at(x+1,y+1)].find(q=>q&&!isOut(q));const lit=!at(x-1,y)||!at(x,y-1);
+      if(nb&&lit){const b=rgb(nb);c=[b[0]*.42,b[1]*.42,b[2]*.42]}
+      o[i]=c[0];o[i+1]=c[1];o[i+2]=c[2];o[i+3]=255;continue}
+    const L=lum(c);let f=1;
+    const e=(dx,dy)=>{const q=at(x+dx,y+dy);return!q||isOut(q)};
+    if(e(-1,-1)||e(0,-1)||e(-1,0))f+=.16;else if(e(-2,-2)||e(0,-2)||e(-2,0))f+=.07;
+    if(e(1,1)||e(0,1)||e(1,0))f-=.2;else if(e(2,2)||e(0,2)||e(2,0))f-=.09;
+    f*=1.05-.13*(y/S1);
+    if(L>.16&&L<.97){const n=h(x>>1,y>>1),n2=h(x,y);if(n<.14)f-=.06;else if(n>.9)f+=.05;if(n2<.05)f-=.05;if(((x*3+y)%7===0)&&h(x+9,y)<.55)f-=.05;if(((x+y*2)%9===0)&&h(x,y+5)<.35)f+=.04}
+    if(L<.16&&e(0,-1)===false&&h(x,y)>.6){f+=.25}
+    o[i]=Math.max(0,Math.min(255,c[0]*f));o[i+1]=Math.max(0,Math.min(255,c[1]*f));o[i+2]=Math.max(0,Math.min(255,c[2]*f));o[i+3]=255}
+  /* brillo en los ojos: busca píxeles muy oscuros rodeados de pelaje en la mitad superior */
+  for(let y=6;y<30;y++)for(let x=8;x<40;x++){const v=G[y*S1+x];if(!v||!isOut(v))continue;const up=at(x,y-1),lf=at(x-1,y);if(up&&!isOut(up)&&lf&&!isOut(lf)&&at(x+1,y)&&isOut(at(x+1,y))&&at(x,y+1)&&isOut(at(x,y+1))){const i=(y*S1+x)*4;o[i]=255;o[i+1]=255;o[i+2]=255;o[i+3]=255}}
+  ox.putImageData(img,0,0);out._hd=1;hdC.set(key,out);return out}
+function petU(p,frame=0){const {k}=dogKey(p,frame);if(!urlC.has('u'+k))urlC.set('u'+k,petHD(p,frame).toDataURL());return urlC.get('u'+k)}
 function breedGrid(sel,attr){return `<input class="inp brsearch" type="search" placeholder="Buscar entre ${BREEDS.length} razas…" oninput="brFilter(this)" aria-label="Buscar raza"><div class="breeds">${BREEDS.map(b=>`<button class="brk ${sel===b.id?'on':''}" data-k="${b.id} ${b.k||''}" data-${attr}="${b.id}"><img class="spr" src="${petU({bid:b.id,coat:0,level:1})}" alt=""><span>${b.n}</span></button>`).join('')}</div>`}
 function coatRow(p,attr){const br=breedById(p.bid)||breedById(guessBreed(p.breed));return `<div class="cos">${br.coats.map((c,i)=>`<button data-${attr}="${i}" class="${!p.custom&&(p.coat|0)===i?'on':''}" aria-label="${esc(c[0])}" title="${esc(c[0])}"><img class="spr" src="${petU({...p,bid:br.id,coat:i,custom:false})}" alt=""></button>`).join('')}</div>`}
 function petHTML(p,size,o={}){return `<div class="petbox ${o.bob?'bob':''}" style="width:${size}px;height:${size}px;${o.style||''}"><img class="spr" src="${petU(p,0)}" alt="${esc(p&&p.name||'Mascota')}"><img class="spr f1" src="${petU(p,1)}" alt=""></div>`}
@@ -2366,6 +2468,12 @@ const AURAS=[
  {id:'relampago',n:'Aura Tormenta Eléctrica',r:'rara',tier:'medio',price:720,c:'#3C9DFF',c2:'#102C4E',cls:'aura-relampago',d:'Campo de plasma cian con arcos voltaicos y destellos eléctricos.'},
  {id:'vacio',n:'Aura Vacío Astral',r:'epica',tier:'medio',price:1400,c:'#9C84FF',c2:'#26154A',cls:'aura-vacio',d:'Nebulosa cósmica magenta-violeta con órbita de cristales astrales.'},
  {id:'divina',n:'Aura Supernova Celestial',r:'legendaria',tier:'largo',price:3100,c:'#FFC93C',c2:'#4A3408',cls:'aura-divina',d:'Doble halo sagrado de estrella dorada, rayos solares y ondas de luz.'},
+ {id:'hielo',n:'Aura Escarcha Andina',r:'rara',tier:'medio',price:560,c:'#7EE7FF',c2:'#0E2A4A',cls:'aura-hielo',d:'Cristales de hielo giratorios y copos de nieve que caen como en la cordillera.'},
+ {id:'sakura',n:'Aura Pétalos de Sakura',r:'rara',tier:'medio',price:640,c:'#FF8FB8',c2:'#4A0E2A',cls:'aura-sakura',d:'Corona floral rosada con pétalos que flotan alrededor de tu perro.'},
+ {id:'sombra',n:'Aura Sombra Lunar',r:'epica',tier:'medio',price:1650,c:'#8A6BFF',c2:'#0A0618',cls:'aura-sombra',d:'Humo violeta, ondas oscuras y un brillo de luna nueva.'},
+ {id:'oro',n:'Aura Tesoro Dorado',r:'epica',tier:'largo',price:2200,c:'#FFC93C',c2:'#4A3408',cls:'aura-oro',d:'Lluvia de monedas, rayos de oro y destellos de tesoro.'},
+ {id:'galaxia',n:'Aura Galaxia Espiral',r:'legendaria',tier:'largo',price:3600,c:'#FF5CC8',c2:'#0E1A4A',cls:'aura-galaxia',d:'Una galaxia completa gira alrededor: brazos de estrellas, nebulosa y ondas.'},
+ {id:'fenix',n:'Aura Renacer del Fénix',r:'legendaria',tier:'largo',price:4200,c:'#FF6B2C',c2:'#4A0A10',cls:'aura-fenix',d:'Alas de fuego que laten, brasas que se abren hacia los lados y rayos solares.'},
  {id:'rgb',n:'Aura Arcoíris RGB Legendaria',r:'rgb',tier:'largo',price:5500,c:'#FF0055',c2:'#3B0A45',cls:'aura-rgb',d:'¡El trofeo supremo! Vórtice prismático 360° RGB, rayos cristalinos, ondas y chispas multicolor.'}
 ];
 const skinById=id=>SKINS.find(s=>s.id===id)||SKINS[0];
@@ -3544,11 +3652,19 @@ function openShareSheet(blob,rec,photoUrl){const url=URL.createObjectURL(blob);c
 const EVO=[
  {lv:1,n:'Cachorro',c:'#9AA3C0',c2:'#4A5270',spark:0},
  {lv:5,n:'Explorador',c:'#D9894A',c2:'#7A4A1E',spark:1},
- {lv:10,n:'Aventurero',c:'#C9D3E8',c2:'#5F6A88',spark:2},
+ {lv:10,n:'Aventurero',c:'#C9D3E8',c2:'#5F6A88',spark:1},
+ {lv:15,n:'Rastreador',c:'#4FD18B',c2:'#1E6B45',spark:2},
  {lv:20,n:'Héroe',c:'#FFC93C',c2:'#A8740A',spark:3},
- {lv:35,n:'Campeón',c:'#9C84FF',c2:'#4E35C2',spark:4},
- {lv:50,n:'Leyenda',c:'#FF6B2C',c2:'#C2185B',spark:5}
+ {lv:28,n:'Guardián',c:'#7EA6FF',c2:'#2A4FB8',spark:3},
+ {lv:35,n:'Campeón',c:'#B48CFF',c2:'#5A35C2',spark:4},
+ {lv:42,n:'Maestro',c:'#FF5C7A',c2:'#9E1A38',spark:4},
+ {lv:50,n:'Leyenda',c:'#FF8A2C',c2:'#C2185B',spark:5},
+ {lv:65,n:'Mítico',c:'#7EE7FF',c2:'#C23DB8',spark:6},
+ {lv:80,n:'Titán',c:'#FF5A1A',c2:'#3A1A20',spark:7},
+ {lv:100,n:'Inmortal',c:'#FFFFFF',c2:'#9A6BFF',spark:8}
 ];
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+const evoTag=(i,n)=>`${i>=8?'✦':'★'} ${ROMAN[i]} · ${n}`;
 function evoOf(l){let i=0;EVO.forEach((x,j)=>{if((l||1)>=x.lv)i=j});return{...EVO[i],i,next:EVO[i+1]||null}}
 const rarOrder=r=>['comun','infrecuente','rara','epica','legendaria'].indexOf(r);
 function talentPtsTotal(){const p=S&&S.pet||{level:1,prestige:0};return 1+Math.floor((p.level||1)/3)+((p.prestige||0)*2)}
@@ -3566,12 +3682,12 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
   const bm=biomeById(p.biome);
   const fac=factionById(p.faction);
   const isRgb=au.id==='rgb'||sk.id==='arcoiris';
-  const sparkLv=isRgb?5:Math.max(e.spark,au.id!=='default'?3:0);
+  const sparkLv=isRgb?8:Math.max(e.spark,au.id!=='default'?(au.r==='legendaria'?6:au.r==='epica'?5:3):0);
   const tLeft=talentPtsLeft();
   return `<div class="pcard evo${e.i} ${isRgb?'aura-card-rgb':''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${e.c2}">
-  <canvas class="pfx" data-spark="${sparkLv}" data-aura="${au.id}" aria-hidden="true"></canvas>
+  <canvas class="pfx" data-spark="${sparkLv}" data-aura="${au.id}" aria-hidden="true"></canvas><div class="pc-frame f${e.i}" aria-hidden="true"></div>
   <div class="pc-in">
-   <div class="row between"><span class="evob">${'★'.repeat(e.i+1)} ${e.n.toUpperCase()}${p.prestige?` · P${p.prestige}`:''}</span><div class="row" style="gap:4px"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
+   <div class="row between"><span class="evob">${evoTag(e.i,e.n.toUpperCase())}${p.prestige?` · P${p.prestige}`:''}</span><div class="row" style="gap:4px"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
    <div class="row" style="gap:10px;align-items:flex-end">
      <button class="pc-stage ${bm.cls||''}" id="pcEvo" aria-label="Ver evoluciones de ${esc(p.name)}"><div class="aura ${au.cls||''}"></div><canvas class="pfx" data-spark="${Math.max(3,sparkLv)}" data-aura="${au.id}" aria-hidden="true"></canvas>${petHTML(p,120,{bob:true})}<div class="pedestal"></div></button>
      <div class="col" style="gap:7px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="lvbig"><span>NV</span>${p.level}</div><span class="sex-tag ${p.sex==='hembra'?'hembra':'macho'}">${ico(p.sex==='hembra'?'hembra':'macho')}<span>${p.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="t1 pcname">${esc(p.name)}</div>${p.title?`<span class="tag ceo">👑 ${esc(p.title)}</span>`:''}<div class="mute small">${esc(p.breed||'perro')}${p.kg?' · '+String(p.kg).replace('.',',')+' kg':''}${p.born?' · '+ageY(p.born):''}</div>
@@ -3682,7 +3798,7 @@ function openEvo(){const p=S.pet,e=evoOf(p.level),canPrest=p.level>=50&&(p.prest
     <div class="mute small">Al llegar a <b>Nivel 50 (Leyenda)</b> puedes Ascender: reinicias a Nivel 1 conservando todas tus Skins, Auras, Monedas y Colección, y ganas permanentemente <b>+15% XP, +5m de Anillo GPS y +2 Puntos de Talento</b>.</div>
     ${canPrest?`<button class="btn o" id="doPrestige">★ Ascender a Prestigio ${(p.prestige||0)+1} ★</button>`:`<div class="small" style="color:#C9BDFF">Actual: +${(p.prestige||0)*15}% XP · +${(p.prestige||0)*5}m Anillo GPS (Requiere Nivel 50)</div>`}
   </div>
-  ${EVO.map((x,j)=>`<div class="box row ${j===e.i?'hot':''}" style="${j>e.i?'opacity:.5':''}"><img class="spr" src="${petU({...p,evo:j})}" alt="" style="width:56px;height:56px;${j>e.i?'filter:brightness(0)':''}"><div class="grow col" style="gap:4px"><b style="color:${x.c}">${'★'.repeat(j+1)} ${x.n}</b><span class="mute small">Desde nivel ${x.lv}</span></div>${j<e.i?'<span class="tag g">OK</span>':j===e.i?'<span class="tag o">ACTUAL</span>':`<span class="tag d">NV ${x.lv}</span>`}</div>`).join('')}
+  ${EVO.map((x,j)=>`<div class="box row ${j===e.i?'hot':''}" style="${j>e.i?'opacity:.5':''}"><img class="spr" src="${petU({...p,evo:j})}" alt="" style="width:56px;height:56px;${j>e.i?'filter:brightness(0)':''}"><div class="grow col" style="gap:4px"><b style="color:${x.c}">${evoTag(j,x.n)}</b><span class="mute small">Desde nivel ${x.lv}</span></div>${j<e.i?'<span class="tag g">OK</span>':j===e.i?'<span class="tag o">ACTUAL</span>':`<span class="tag d">NV ${x.lv}</span>`}</div>`).join('')}
   <button class="btn" id="evClose">Cerrar</button>`,sh=>{
     sh.querySelector('#evClose').onclick=closeSheet;
     const dp=sh.querySelector('#doPrestige');
@@ -3696,7 +3812,7 @@ function openBadges_old(){sheet(`<div class="t1">MEDALLAS Y LOGROS</div><div cla
   ${BADGES.slice().sort((a,b)=>(S.badges.includes(b.id)-S.badges.includes(a.id))||rarOrder(b.r)-rarOrder(a.r)).map(b=>{const h=S.badges.includes(b.id);return `<div class="box row" style="${h?`box-shadow:inset 0 0 0 3px ${RAR[b.r].c}`:'opacity:.45'}"><span class="med" style="--c:${RAR[b.r].c};${h?'':'filter:grayscale(1)'}">${ico(b.i)}</span><div class="grow col" style="gap:3px"><b>${esc(b.n)}</b><span class="mute small">${esc(b.d)}</span></div><span class="tag" style="background:${RAR[b.r].c};color:#0B0F1A">${RAR[b.r].n}</span></div>`}).join('')}
   <button class="btn" id="bdClose">Cerrar</button>`,sh=>{sh.querySelector('#bdClose').onclick=closeSheet})}
 function evolveFx(oldL,newL){const a=evoOf(oldL),b=evoOf(newL);const ov=document.createElement('div');ov.className='evoov';ov.style.setProperty('--ec',b.c);
-  ov.innerHTML=`<div class="t2" style="color:#fff">¡${esc(S.pet.name.toUpperCase())} ESTÁ EVOLUCIONANDO!</div><div class="evostage">${petHTML({...S.pet,evo:a.i},140)}<div class="evonew">${petHTML({...S.pet,evo:b.i},140,{bob:true})}</div></div><div class="t1" style="color:${b.c};text-shadow:3px 3px 0 ${b.c2}">${'★'.repeat(b.i+1)} ${b.n.toUpperCase()}</div><div class="small">Nueva forma desbloqueada en nivel ${S.pet.level}</div><button class="btn o" style="min-width:200px">¡Genial!</button>`;
+  ov.innerHTML=`<div class="t2" style="color:#fff">¡${esc(S.pet.name.toUpperCase())} ESTÁ EVOLUCIONANDO!</div><div class="evostage">${petHTML({...S.pet,evo:a.i},140)}<div class="evonew">${petHTML({...S.pet,evo:b.i},140,{bob:true})}</div></div><div class="t1" style="color:${b.c};text-shadow:3px 3px 0 ${b.c2}">${evoTag(b.i,b.n.toUpperCase())}</div><div class="small">Nueva forma desbloqueada en nivel ${S.pet.level}</div><button class="btn o" style="min-width:200px">¡Genial!</button>`;
   $('#app').appendChild(ov);setTimeout(()=>boom(150),2200);ov.querySelector('button').onclick=()=>ov.remove()}
 /* sparkle & elemental aura particles over cards and stages */
 const PFX=new WeakMap();const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3707,6 +3823,12 @@ const AURA_PAL={
   relampago:['#FFFFFF','#9BF6FF','#00F5D4','#3C9DFF'],
   vacio:['#FF70A6','#C77DFF','#9C84FF','#FFFFFF'],
   divina:['#FFFFFF','#FFF6B7','#FFC93C','#FF9B1A'],
+  hielo:['#FFFFFF','#D6F6FF','#7EE7FF','#3C9DFF'],
+  sakura:['#FFD6E8','#FF8FB8','#FF5C8A','#FFFFFF'],
+  sombra:['#C9BDFF','#8A6BFF','#4A2A9A','#E8E0FF'],
+  oro:['#FFF2B0','#FFC93C','#FFE29A','#FFFFFF','#FF9B1A'],
+  galaxia:['#FFFFFF','#FF5CC8','#9A6BFF','#7EE7FF','#FFE29A'],
+  fenix:['#FFF176','#FFC93C','#FF9100','#FF2A00','#FFFFFF'],
   rgb:['#FF0055','#FF7A00','#FFE600','#00F5A0','#00D9F5','#9C84FF','#FF00C8','#FFFFFF']
 };
 function newP(W,H,l,ec,au){
@@ -3714,63 +3836,52 @@ function newP(W,H,l,ec,au){
   const c=pal[Math.floor(Math.random()*pal.length)];
   const r=Math.random();
   let kind='star';
-  if(au==='llamarada'||(l>=2&&r<.38))kind='ember';
+  const big=l>=4||au!=='default';
+  if(au==='hielo'&&r<.45)kind='snow';
+  else if(au==='sakura'&&r<.55)kind='petal';
+  else if(au==='oro'&&r<.42)kind='coin';
+  else if(au==='sombra'&&r<.4)kind='smoke';
+  else if((au==='llamarada'||au==='fenix')&&r<.6)kind='ember';
+  else if(au==='galaxia'&&r<.55)kind='orb';
+  else if(l>=2&&r<.3&&au==='default')kind='ember';
   else if((au==='esmeralda'||au==='vacio'||au==='divina'||au==='rgb')&&r<.35)kind='orb';
-  else if((au==='relampago'||au==='rgb')&&r<.22)kind='bolt';
-  return{
-    kind,
-    x:Math.random()*W,
-    y:kind==='ember'?H*(.5+Math.random()*.45):Math.random()*H*.92,
-    ang:Math.random()*Math.PI*2,
-    rad:Math.min(W,H)*(.28+Math.random()*.2),
-    v:.9+Math.random()*1.8,
-    ph:Math.random()*6.28,
-    t:0,
-    life:.9+Math.random()*1.9,
-    sz:Math.random()<.45?1:2,
-    c
-  };
-}
+  else if((au==='relampago'||au==='rgb')&&r<.24)kind='bolt';
+  else if(big&&r>.88)kind='flare';
+  else if(r>.8)kind='glint';
+  return{kind,x:Math.random()*W,y:(kind==='ember'||kind==='smoke')?H*(.5+Math.random()*.45):(kind==='snow'||kind==='petal'||kind==='coin')?-2-Math.random()*H*.3:Math.random()*H*.92,
+    ang:Math.random()*Math.PI*2,rad:Math.min(W,H)*(.22+Math.random()*.26),v:.9+Math.random()*1.8,ph:Math.random()*6.28,t:0,life:kind==='flare'?.6+Math.random()*.6:.9+Math.random()*1.9,
+    sz:Math.random()<.45?1:2,arm:Math.floor(Math.random()*3),c}}
 function animCards(dt){if(RM)return;$$('.pfx').forEach(cv=>{const r=cv.getBoundingClientRect();if(!r.width||r.bottom<0||r.top>innerHeight)return;const W=Math.ceil(r.width/3),H=Math.ceil(r.height/3);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
   const lvl=+cv.dataset.spark||0,au=cv.dataset.aura||'default';
-  let st=PFX.get(cv);if(!st||st.au!==au){st={p:[],au,ring:0,ec:getComputedStyle(cv.parentElement).getPropertyValue('--ec').trim()||'#FFC93C'};PFX.set(cv,st)}
-  const want=6+lvl*5+(au==='rgb'?14:au!=='default'?8:0);
+  let st=PFX.get(cv);if(!st||st.au!==au){st={p:[],au,ring:0,sweep:Math.random(),ec:getComputedStyle(cv.parentElement).getPropertyValue('--ec').trim()||'#FFC93C'};PFX.set(cv,st)}
+  const want=Math.min(90,10+lvl*7+(au==='rgb'?26:au==='default'?0:16));
   while(st.p.length<want){const q=newP(W,H,lvl,st.ec,au);q.t=Math.random()*q.life;st.p.push(q)}
-  const x=cv.getContext('2d');x.clearRect(0,0,W,H);
-  const cx=W/2,cy=H/2;
-  // Shockwave pulse ring for legendary / RGB auras
-  if(au==='divina'||au==='rgb'||au==='vacio'){
-    st.ring=((st.ring||0)+dt*(au==='rgb'?.9:.55))%1;
-    const rr=Math.min(W,H)*(.18+st.ring*.32);
-    x.globalAlpha=Math.max(0,(1-st.ring)*.65);
-    x.strokeStyle=au==='rgb'?AURA_PAL.rgb[Math.floor(st.ring*7)%7]:au==='divina'?'#FFF6B7':'#C77DFF';
-    x.lineWidth=1;
-    x.beginPath();x.arc(cx,cy,rr,0,Math.PI*2);x.stroke();
-  }
-  for(const q of st.p){
-    q.t+=dt;
-    if(q.kind==='ember'){q.y-=q.v*dt*11;q.x+=Math.sin(q.t*4+q.ph)*.28}
-    else if(q.kind==='orb'){q.ang+=dt*(au==='rgb'?2.6:1.7);q.x=cx+Math.cos(q.ang)*q.rad;q.y=cy+Math.sin(q.ang)*q.rad*.82}
-    if(q.t>q.life||q.y<-3)Object.assign(q,newP(W,H,lvl,st.ec,au));
-    const a=Math.sin(Math.PI*Math.min(1,q.t/q.life));x.globalAlpha=Math.max(0,a);
-    const X=Math.round(q.x),Y=Math.round(q.y);
-    if(q.kind==='star'){
-      x.fillStyle=q.c;
-      if(a>.35){x.fillRect(X-1,Y,3,1);x.fillRect(X,Y-1,1,3)}
-      if(a>.78&&(lvl>=2||au!=='default')){x.fillRect(X-2,Y,5,1);x.fillRect(X,Y-2,1,5);x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}
-      else{x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}
-    }else if(q.kind==='orb'){
-      x.fillStyle=q.c;x.fillRect(X-1,Y-1,3,3);
-      x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1);
-    }else if(q.kind==='bolt'){
-      x.fillStyle=q.c;
-      x.fillRect(X,Y,1,2);x.fillRect(X+1,Y+2,1,2);x.fillRect(X-1,Y+4,2,1);
-      x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1);
-    }else{
-      x.fillStyle=q.c;x.fillRect(X,Y,q.sz,q.sz);
-      if(a>.6){x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}
-    }
-  }
+  if(st.p.length>want)st.p.length=want;
+  const x=cv.getContext('2d');x.clearRect(0,0,W,H);const cx=W/2,cy=H/2,pal=AURA_PAL[au]||[st.ec,'#FFFFFF'];
+  /* ondas expansivas */
+  if(['divina','rgb','vacio','galaxia','fenix','oro','sombra'].includes(au)||lvl>=6){st.ring=((st.ring||0)+dt*(au==='rgb'?.9:.55))%1;
+    for(const off of [0,.5]){const rr2=(st.ring+off)%1,rr=Math.min(W,H)*(.16+rr2*.36);x.globalAlpha=Math.max(0,(1-rr2)*.6);x.strokeStyle=au==='rgb'?AURA_PAL.rgb[Math.floor(rr2*7)%7]:pal[0];x.lineWidth=1;x.beginPath();x.arc(cx,cy,rr,0,Math.PI*2);x.stroke()}}
+  /* rayos giratorios para auras legendarias y etapas altas */
+  if(['divina','rgb','oro','fenix','galaxia'].includes(au)||lvl>=8){st.rot=(st.rot||0)+dt*.6;x.globalAlpha=.22;x.strokeStyle=pal[0];x.lineWidth=1;const n=au==='rgb'?12:8;for(let i=0;i<n;i++){const a=st.rot+i/n*Math.PI*2,r1=Math.min(W,H)*.18,r2=Math.min(W,H)*.5;if(au==='rgb')x.strokeStyle=AURA_PAL.rgb[i%7];x.beginPath();x.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);x.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);x.stroke()}}
+  /* destello que barre la tarjeta */
+  if(au!=='default'||lvl>=5){st.sweep=(st.sweep+dt*.28)%1.6;if(st.sweep<1){const sx=-W*.3+st.sweep*W*1.6;x.globalAlpha=.35;x.fillStyle='#FFFFFF';for(let yy=0;yy<H;yy++){x.fillRect(Math.round(sx+yy*.5),yy,2,1)}x.globalAlpha=.15;for(let yy=0;yy<H;yy++){x.fillRect(Math.round(sx+yy*.5)+3,yy,1,1)}}}
+  for(const q of st.p){q.t+=dt;
+    if(q.kind==='ember'){q.y-=q.v*dt*11;q.x+=Math.sin(q.t*4+q.ph)*.28;if(au==='fenix')q.x+=(q.x<cx?-1:1)*dt*3}
+    else if(q.kind==='smoke'){q.y-=q.v*dt*5;q.x+=Math.sin(q.t*2+q.ph)*.2}
+    else if(q.kind==='snow'||q.kind==='petal'||q.kind==='coin'){q.y+=q.v*dt*(q.kind==='coin'?10:6);q.x+=Math.sin(q.t*(q.kind==='petal'?3:1.5)+q.ph)*(q.kind==='petal'?.5:.2)}
+    else if(q.kind==='orb'){if(au==='galaxia'){q.ang+=dt*1.2;const sp=q.rad*(1-((q.t/q.life)*.4));const a=q.ang+q.arm*2.094+sp*.12;q.x=cx+Math.cos(a)*sp;q.y=cy+Math.sin(a)*sp*.7}else{q.ang+=dt*(au==='rgb'?2.6:1.7);q.x=cx+Math.cos(q.ang)*q.rad;q.y=cy+Math.sin(q.ang)*q.rad*.82}}
+    if(q.t>q.life||q.y<-4||q.y>H+4)Object.assign(q,newP(W,H,lvl,st.ec,au));
+    const a=Math.sin(Math.PI*Math.min(1,q.t/q.life));x.globalAlpha=Math.max(0,a);const X=Math.round(q.x),Y=Math.round(q.y);
+    if(q.kind==='star'){x.fillStyle=q.c;if(a>.35){x.fillRect(X-1,Y,3,1);x.fillRect(X,Y-1,1,3)}if(a>.75&&(lvl>=2||au!=='default')){x.fillRect(X-2,Y,5,1);x.fillRect(X,Y-2,1,5);x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}else{x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}}
+    else if(q.kind==='flare'){const L2=Math.round(2+a*5);x.fillStyle=q.c;x.fillRect(X-L2,Y,L2*2+1,1);x.fillRect(X,Y-L2,1,L2*2+1);x.globalAlpha=a*.5;x.fillRect(X-1,Y-1,3,3);x.globalAlpha=a;x.fillStyle='#FFFFFF';x.fillRect(X-1,Y,3,1);x.fillRect(X,Y-1,1,3)}
+    else if(q.kind==='glint'){x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1);if(a>.6){x.fillStyle=q.c;x.fillRect(X-1,Y-1,1,1);x.fillRect(X+1,Y+1,1,1);x.fillRect(X+1,Y-1,1,1);x.fillRect(X-1,Y+1,1,1)}}
+    else if(q.kind==='orb'){x.fillStyle=q.c;x.fillRect(X-1,Y-1,3,3);x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}
+    else if(q.kind==='bolt'){x.fillStyle=q.c;x.fillRect(X,Y,1,2);x.fillRect(X+1,Y+2,1,2);x.fillRect(X-1,Y+4,2,1);x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}
+    else if(q.kind==='snow'){x.fillStyle=q.c;x.fillRect(X-1,Y,3,1);x.fillRect(X,Y-1,1,3);if(q.sz>1){x.fillRect(X-2,Y-2,1,1);x.fillRect(X+2,Y+2,1,1);x.fillRect(X+2,Y-2,1,1);x.fillRect(X-2,Y+2,1,1)}x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}
+    else if(q.kind==='petal'){x.fillStyle=q.c;const fl=Math.sin(q.t*6+q.ph)>0;x.fillRect(X,Y,fl?2:1,fl?1:2);x.fillStyle='#FFE0EC';x.fillRect(X,Y,1,1)}
+    else if(q.kind==='coin'){const fl=Math.abs(Math.sin(q.t*5+q.ph));x.fillStyle='#B8860B';x.fillRect(X-1,Y-1,fl>.5?3:1,3);x.fillStyle=q.c;x.fillRect(X-1,Y-1,fl>.5?2:1,2);if(fl>.85){x.fillStyle='#FFFFFF';x.fillRect(X-1,Y-1,1,1)}}
+    else if(q.kind==='smoke'){x.globalAlpha=a*.35;x.fillStyle=q.c;x.fillRect(X-2,Y-1,4,3);x.fillRect(X-1,Y-2,2,5)}
+    else{x.fillStyle=q.c;x.fillRect(X,Y,q.sz,q.sz);if(a>.6){x.fillStyle='#FFFFFF';x.fillRect(X,Y,1,1)}}}
   x.globalAlpha=1})}
 
 /* ================= FIREBASE: LOGIN CON GOOGLE + BASE DE DATOS ================= */
@@ -3886,7 +3997,7 @@ async function findByCode(code){code=(code||'').toUpperCase().replace(/[^A-Z0-9]
 async function profileOf(id){if(id===UID)return{pet:S.pet,weekXp:S.weekXp,weekKey:S.weekKey,totalKm:S.totals.km,terr:S.terrCount,name:'Tú',bc:S.badges.length,updated:Date.now()};if(SH.profiles[id])return SH.profiles[id];try{const s=await DB.doc('profiles/'+id).get();if(s.exists)return s.data()}catch(e){}return null}
 async function openProfile_old(id){const pr=await profileOf(id);if(!pr){toast('No se encontró este perfil','sos');return}const pet=pr.pet||{name:'Mascota'},e=evoOf(pet.level||1),st=frState(id);
   const wk=pr.weekKey===weekKey()?pr.weekXp||0:0;
-  sheet(`<div class="row" style="gap:12px"><div class="pc-stage" style="--ec:${e.c};--ec2:${e.c2};width:96px;height:96px"><div class="aura"></div>${petHTML(pet,72,{bob:true})}</div><div class="col" style="gap:4px;min-width:0"><span class="evob" style="--ec:${e.c};--ec2:${e.c2};align-self:flex-start">${'★'.repeat(e.i+1)} ${e.n.toUpperCase()}</span><div class="t1">${esc(pet.name)}</div><div class="mute small">${esc(id===UID?'Tú':(pr.name||personName(id)))} · ${esc((breedById(pet.bid)||{n:pet.breed||'perro'}).n)}</div></div></div>
+  sheet(`<div class="row" style="gap:12px"><div class="pc-stage" style="--ec:${e.c};--ec2:${e.c2};width:96px;height:96px"><div class="aura"></div>${petHTML(pet,72,{bob:true})}</div><div class="col" style="gap:4px;min-width:0"><span class="evob" style="--ec:${e.c};--ec2:${e.c2};align-self:flex-start">${evoTag(e.i,e.n.toUpperCase())}</span><div class="t1">${esc(pet.name)}</div><div class="mute small">${esc(id===UID?'Tú':(pr.name||personName(id)))} · ${esc((breedById(pet.bid)||{n:pet.breed||'perro'}).n)}</div></div></div>
   <div class="g4"><div class="mini"><span class="num">${pet.level||1}</span><span class="lbl">Nivel</span></div><div class="mini"><span class="num" style="color:#C9BDFF">${wk}</span><span class="lbl">XP sem.</span></div><div class="mini"><span class="num">${(+pr.totalKm||0).toFixed(1).replace('.',',')}</span><span class="lbl">Km</span></div><div class="mini"><span class="num">${pr.terr||0}</span><span class="lbl">Territ.</span></div></div>
   ${pr.updated?`<div class="mute small">Activo ${ago(pr.updated)==='ahora'?'ahora':'hace '+ago(pr.updated)}</div>`:''}
   ${st==='me'?`<div class="box dark"><span class="lbl">Tu código de amigo</span><div class="num" style="font-size:20px;letter-spacing:4px">${myCode()}</div></div>`:
@@ -4287,7 +4398,7 @@ async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se
   const badges=id===UID?BADGES.filter(b=>S.badges.includes(b.id)):[];
   sheet(`<div class="pf-head"><div class="pc-stage" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2};width:96px;height:96px"><div class="aura ${au.cls||''}"></div>${petHTML(pet,72,{bob:true})}</div>
    <div class="col" style="gap:6px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="t1" style="word-break:break-word">${esc(pet.name)}</div>${pet.title?`<span class="tag ceo">👑 ${esc(pet.title)}</span>`:''}<span class="sex-tag ${pet.sex==='hembra'?'hembra':'macho'}">${ico(pet.sex==='hembra'?'hembra':'macho')}<span>${pet.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="pf-counts"><div><b>${posts.length}</b><span>publ.</span></div><div><b>${pet.level||1}</b><span>nivel</span></div><div><b>${(+pr.totalKm||0).toFixed(0)}</b><span>km</span></div></div></div></div>
-  <div class="col" style="gap:3px"><b>${esc(id===UID?((MODE==='firebase'&&FBUSER&&FBUSER.displayName)||'Tú'):(pr.name||personName(id)))}</b><span class="small">${esc(br.n)} · <span style="color:${e.c}">${'★'.repeat(e.i+1)} ${e.n}</span></span><span class="mute small">${wk} XP esta semana · ${pr.terr||0} territorios${pr.updated&&id!==UID?' · activo hace '+ago(pr.updated):''}</span></div>
+  <div class="col" style="gap:3px"><b>${esc(id===UID?((MODE==='firebase'&&FBUSER&&FBUSER.displayName)||'Tú'):(pr.name||personName(id)))}</b><span class="small">${esc(br.n)} · <span style="color:${e.c}">${evoTag(e.i,e.n)}</span></span><span class="mute small">${wk} XP esta semana · ${pr.terr||0} territorios${pr.updated&&id!==UID?' · activo hace '+ago(pr.updated):''}</span></div>
   ${badges.length?`<div class="row" style="gap:6px;flex-wrap:wrap">${badges.slice(0,8).map(b=>`<img class="spr" src="${medalU(b)}" alt="${esc(b.n)}" title="${esc(b.n)}" style="width:30px;height:30px">`).join('')}</div>`:''}
   ${st==='me'?`<div class="g2"><button class="btn" id="pfEdit">Editar perro</button><button class="btn v" id="pfShare">Compartir código</button></div>`:
     st==='friend'?`<div class="g2"><button class="btn g" disabled>✓ Amigos</button><button class="btn sm r" id="pfDel">Eliminar</button></div>`:
