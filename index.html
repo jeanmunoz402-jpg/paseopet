@@ -876,6 +876,7 @@ body{background:var(--bg)}
 .chainrow.ready{background:linear-gradient(90deg,rgba(79,209,139,.14),transparent);border-radius:12px;padding:8px 6px}
 .chainrow.done{opacity:.6}
 .itcard.miss img{filter:brightness(0) opacity(.5)}
+.tag.ceo{background:linear-gradient(180deg,#FFE29A,#FFC93C 55%,#F5A623);color:#2A1E00;box-shadow:inset 0 0 0 2px #0E0A26,0 0 12px rgba(255,201,60,.6);font-weight:800;align-self:flex-start}
 </style>
 
 <div class="app" id="app">
@@ -2522,7 +2523,7 @@ function rollDay(){const t=dkey();if(S.today.d!==t)S.today={d:t,min:0,km:0};if(S
 let saveT=0;
 function save(now){clearTimeout(saveT);const go=()=>W8(mainPath(),()=>DB.doc(mainPath()).set(clone(S))).catch(()=>{});if(now)return go();saveT=setTimeout(go,1200)}
 let profT=0;
-function pushProfile(){clearTimeout(profT);profT=setTimeout(()=>{const p=S.pet;const body={name:MODE==='firebase'&&FBUSER?(FBUSER.displayName||'').split(' ')[0].slice(0,20):'',pet:{name:p.name,species:'perro',sex:p.sex||'macho',fur:p.fur,spot:p.spot,acc:p.acc,skin:p.skin||'natural',aura:p.aura||'default',biome:p.biome||'noche',faction:p.faction||'fuego',prestige:p.prestige||0,bid:p.bid||'',coat:p.coat|0,custom:!!p.custom,level:p.level,breed:p.breed},code:friendCode(UID),bc:S.badges.length,weekKey:S.weekKey,weekXp:S.weekXp,totalKm:+S.totals.km.toFixed(2),terr:S.terrCount,walker:S.walker.on?{on:true,price:S.walker.price,bio:S.walker.bio,zone:S.walker.zone,avail:!!S.walker.avail,lat:S.walker.lat||null,lng:S.walker.lng||null,ts:S.walker.ts||0,rating:S.walker.rating||null,jobs:S.walker.jobs}:null,updated:Date.now()};
+function pushProfile(){clearTimeout(profT);profT=setTimeout(()=>{const p=S.pet;const body={name:MODE==='firebase'&&FBUSER?(FBUSER.displayName||'').split(' ')[0].slice(0,20):'',pet:{name:p.name,species:'perro',sex:p.sex||'macho',fur:p.fur,spot:p.spot,acc:p.acc,skin:p.skin||'natural',aura:p.aura||'default',biome:p.biome||'noche',faction:p.faction||'fuego',prestige:p.prestige||0,bid:p.bid||'',coat:p.coat|0,custom:!!p.custom,level:p.level,breed:p.breed,title:p.title||''},code:friendCode(UID),bc:S.badges.length,weekKey:S.weekKey,weekXp:S.weekXp,totalKm:+S.totals.km.toFixed(2),terr:S.terrCount,walker:S.walker.on?{on:true,price:S.walker.price,bio:S.walker.bio,zone:S.walker.zone,avail:!!S.walker.avail,lat:S.walker.lat||null,lng:S.walker.lng||null,ts:S.walker.ts||0,rating:S.walker.rating||null,jobs:S.walker.jobs}:null,updated:Date.now()};
   W8('profiles/'+UID,()=>DB.doc('profiles/'+UID).set(body)).catch(()=>{})},800)}
 function addXp(n){const p=S.pet;p.xp+=n;let up=0;while(p.xp>=need(p.level)){p.xp-=need(p.level);p.level++;up++}S.weekXp+=n;return up}
 function notify(txt,icon){S.notif.unshift({txt,icon:icon||'bell',ts:Date.now(),read:false});S.notif=S.notif.slice(0,40);save()}
@@ -3573,7 +3574,7 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
    <div class="row between"><span class="evob">${'★'.repeat(e.i+1)} ${e.n.toUpperCase()}${p.prestige?` · P${p.prestige}`:''}</span><div class="row" style="gap:4px"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
    <div class="row" style="gap:10px;align-items:flex-end">
      <button class="pc-stage ${bm.cls||''}" id="pcEvo" aria-label="Ver evoluciones de ${esc(p.name)}"><div class="aura ${au.cls||''}"></div><canvas class="pfx" data-spark="${Math.max(3,sparkLv)}" data-aura="${au.id}" aria-hidden="true"></canvas>${petHTML(p,120,{bob:true})}<div class="pedestal"></div></button>
-     <div class="col" style="gap:7px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="lvbig"><span>NV</span>${p.level}</div><span class="sex-tag ${p.sex==='hembra'?'hembra':'macho'}">${ico(p.sex==='hembra'?'hembra':'macho')}<span>${p.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="t1 pcname">${esc(p.name)}</div><div class="mute small">${esc(p.breed||'perro')}${p.kg?' · '+String(p.kg).replace('.',',')+' kg':''}${p.born?' · '+ageY(p.born):''}</div>
+     <div class="col" style="gap:7px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="lvbig"><span>NV</span>${p.level}</div><span class="sex-tag ${p.sex==='hembra'?'hembra':'macho'}">${ico(p.sex==='hembra'?'hembra':'macho')}<span>${p.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="t1 pcname">${esc(p.name)}</div>${p.title?`<span class="tag ceo">👑 ${esc(p.title)}</span>`:''}<div class="mute small">${esc(p.breed||'perro')}${p.kg?' · '+String(p.kg).replace('.',',')+' kg':''}${p.born?' · '+ageY(p.born):''}</div>
      <div class="row" style="gap:5px;flex-wrap:wrap"><span class="tag g" style="font-size:6.5px">📡 ALCANCE GPS ${pickupRadius()}M</span>${S.boosts&&(S.boosts.radar||S.boosts.xp2||S.boosts.luck||S.boosts.lure)?`<span class="tag y" style="font-size:6.5px">⚡ POTENCIADOR ACTIVO</span>`:''}</div></div>
    </div>
    <div class="care-bar">
@@ -4285,7 +4286,7 @@ async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se
   const posts=SH.posts.filter(p=>p.uid===id);const wk=pr.weekKey===weekKey()?pr.weekXp||0:0;const br=breedById(pet.bid)||{n:pet.breed||'Perro'};
   const badges=id===UID?BADGES.filter(b=>S.badges.includes(b.id)):[];
   sheet(`<div class="pf-head"><div class="pc-stage" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2};width:96px;height:96px"><div class="aura ${au.cls||''}"></div>${petHTML(pet,72,{bob:true})}</div>
-   <div class="col" style="gap:6px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="t1" style="word-break:break-word">${esc(pet.name)}</div><span class="sex-tag ${pet.sex==='hembra'?'hembra':'macho'}">${ico(pet.sex==='hembra'?'hembra':'macho')}<span>${pet.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="pf-counts"><div><b>${posts.length}</b><span>publ.</span></div><div><b>${pet.level||1}</b><span>nivel</span></div><div><b>${(+pr.totalKm||0).toFixed(0)}</b><span>km</span></div></div></div></div>
+   <div class="col" style="gap:6px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="t1" style="word-break:break-word">${esc(pet.name)}</div>${pet.title?`<span class="tag ceo">👑 ${esc(pet.title)}</span>`:''}<span class="sex-tag ${pet.sex==='hembra'?'hembra':'macho'}">${ico(pet.sex==='hembra'?'hembra':'macho')}<span>${pet.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="pf-counts"><div><b>${posts.length}</b><span>publ.</span></div><div><b>${pet.level||1}</b><span>nivel</span></div><div><b>${(+pr.totalKm||0).toFixed(0)}</b><span>km</span></div></div></div></div>
   <div class="col" style="gap:3px"><b>${esc(id===UID?((MODE==='firebase'&&FBUSER&&FBUSER.displayName)||'Tú'):(pr.name||personName(id)))}</b><span class="small">${esc(br.n)} · <span style="color:${e.c}">${'★'.repeat(e.i+1)} ${e.n}</span></span><span class="mute small">${wk} XP esta semana · ${pr.terr||0} territorios${pr.updated&&id!==UID?' · activo hace '+ago(pr.updated):''}</span></div>
   ${badges.length?`<div class="row" style="gap:6px;flex-wrap:wrap">${badges.slice(0,8).map(b=>`<img class="spr" src="${medalU(b)}" alt="${esc(b.n)}" title="${esc(b.n)}" style="width:30px;height:30px">`).join('')}</div>`:''}
   ${st==='me'?`<div class="g2"><button class="btn" id="pfEdit">Editar perro</button><button class="btn v" id="pfShare">Compartir código</button></div>`:
@@ -5167,6 +5168,13 @@ BADGES.push(
  {id:'x_luna',n:'Aullido lunar',i:'moon',r:'legendaria',secret:1,d:'Encontraste el hueso lunar',t:s=>!!(s.found||{}).luna_llena}
 );
 
+/* ================= CREADOR DEL JUEGO ================= */
+const CREATOR_EMAILS=['jean.munoz402@gmail.com'];
+function creatorGrant(){try{const em=(FBUSER&&FBUSER.email||'').toLowerCase();if(!CREATOR_EMAILS.includes(em))return;ensureDogs();
+  const yui=S.dogs.find(d=>(d.name||'').trim().toLowerCase()==='yui');if(!yui)return;let ch=false;
+  if(yui.title!=='CEO PaseoPet'){yui.title='CEO PaseoPet';ch=true}
+  if(!S.ceoLv){if(yui.level<10){yui.level=10;yui.xp=0}S.ceoLv=1;ch=true}
+  if(ch){save(true);pushProfile();toast('👑 Yui es la CEO de PaseoPet','corona','#FFC93C');try{render()}catch(e){}}}catch(e){}}
 /* ================= LOOP ================= */
 let lastT=performance.now(),acc=0,uiAcc=0,cardAcc=0,trAcc=0;
 function loop(t){const dt=Math.min(.1,(t-lastT)/1000);lastT=t;acc+=dt;uiAcc+=dt;
@@ -5211,7 +5219,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
