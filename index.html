@@ -944,6 +944,22 @@ body{background:var(--bg)}
 .chainrow.done{opacity:.6}
 .itcard.miss img{filter:brightness(0) opacity(.5)}
 .tag.ceo{background:linear-gradient(180deg,#FFE29A,#FFC93C 55%,#F5A623);color:#2A1E00;box-shadow:inset 0 0 0 2px #0E0A26,0 0 12px rgba(255,201,60,.6);font-weight:800;align-self:flex-start}
+/* ===== Ángeles de la manada ===== */
+.angelbox{background:linear-gradient(180deg,rgba(159,196,255,.12),rgba(255,201,60,.05));box-shadow:inset 0 0 0 2px rgba(159,196,255,.45)}
+.dogslot.ang{background:radial-gradient(circle at 50% 35%,rgba(214,246,255,.22),transparent 70%)}
+.dogslot.ang.on{box-shadow:inset 0 0 0 2px #9FC4FF,0 0 14px rgba(159,196,255,.5)}
+.angbox{position:relative}
+.angfloat{animation:angFloat 2.6s ease-in-out infinite}
+@keyframes angFloat{50%{transform:translateY(-4px)}}
+.angchip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 3px;background:rgba(159,196,255,.16);box-shadow:inset 0 0 0 2px rgba(159,196,255,.6);color:#D6E6FF;font:inherit;font-size:9px;cursor:pointer;align-self:flex-start}
+.angchip img{width:30px;height:27px;image-rendering:pixelated}
+.tag.angtrait{background:rgba(159,196,255,.2);color:#D6E6FF}
+.angphrase{font-style:italic;color:#D6E6FF;max-width:30ch}
+.angwelcome .angbox{filter:drop-shadow(0 0 18px rgba(159,196,255,.7))}
+.skycv{width:100%;max-width:300px;aspect-ratio:1;align-self:center;image-rendering:pixelated;box-shadow:inset 0 0 0 2px #2A3470}
+.letter{padding:10px;gap:4px}
+.angpre{box-shadow:inset 0 0 0 2px rgba(159,196,255,.45)}
+@media (prefers-reduced-motion:reduce){.angfloat{animation:none}}
 </style>
 
 <div class="app" id="app">
@@ -2571,7 +2587,7 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
   const spr=(c,cx,by)=>{const w=c.width*u,h=c.height*u;ctx.drawImage(c,Math.round(cx-w/2),Math.round(by-h),Math.round(w),Math.round(h))};
   if(L.home){const m=merc(L.home.lat,L.home.lng);spr(iconC('home',light?'#1A1020':'#F4F6FB'),X(m.x),Y(m.y)+4*u)}
   const prRing=L.me?pickupRadius():0;
-  if(L.items)for(const it of L.items){if(it.got)continue;const d=itemById(it.id),c=RAR[d.r].c,m=merc(it.lat,it.lng),cx=X(m.x),gy=Y(m.y);
+  if(L.items)for(const it of L.items){if(it.got)continue;const d=itemById(it.id),c=RAR[d.r].c,m=merc(it.lat,it.lng),cx=X(m.x),gy=Y(m.y);if(it.ang)angelGlow(ctx,cx,gy,u,now);
     const inR=!!(L.me&&hav(L.me,it)<=prRing),sc=inR?1.3:1,bob=Math.sin(now/(inR?170:330)+cx*.07)*2*u,sz=v=>v*u*sc;
     ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(cx,gy,sz(8),sz(3),0,0,7);ctx.fill();
     const bh=sz(12+d.lv*9),bg=ctx.createLinearGradient(0,gy-bh,0,gy);bg.addColorStop(0,c+'00');bg.addColorStop(1,c+(inR?'CC':'88'));ctx.fillStyle=bg;ctx.fillRect(cx-sz(3),gy-bh,sz(6),bh);
@@ -2608,7 +2624,7 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
     if(au==='rgb'){const cols=['#FF0055','#FF9B1A','#FFE600','#2CE6A6','#3C9DFF','#9C84FF'];for(let i=0;i<6;i++){ctx.strokeStyle=cols[(i+ph)%6];ctx.lineWidth=lw(1.5);ctx.beginPath();ctx.arc(cx,cy-10*u,(10+i*2)*u,0,7);ctx.stroke()}}
     else{const ac=({esmeralda:'#2CE6A6',llamarada:'#FF6B2C',relampago:'#3C9DFF',vacio:'#9C84FF',divina:'#FFC93C'})[au]||'#FF6B2C';ctx.strokeStyle=ac;ctx.lineWidth=lw(1.5);ctx.strokeRect(cx-rr,cy-rr,rr*2,rr*2)}
     if(L.crewPets)L.crewPets.forEach((cp,i)=>{const ox=(i%2?1:-1)*(15+Math.floor(i/2)*11)*u,bb=(Math.floor(now/400+i)%2)*u;spr(petC(cp,0),cx+ox,cy+5*u-bb)});
-    spr(petC(mp,Math.floor(now/500)%6===0?1:0),cx,cy);cv._me={x:cx,y:cy-10*u}}
+    if(L.angel)angelDraw(ctx,L,cx,cy,u,now,spr);spr(petC(mp,Math.floor(now/500)%6===0?1:0),cx,cy);cv._me={x:cx,y:cy-10*u}}
 }
 function fitCamLL(pts,w,h,pad){let a=1e18,b=-1e18,c=1e18,d=-1e18;for(const p of pts){const m=merc(p.lat,p.lng);a=Math.min(a,m.x);b=Math.max(b,m.x);c=Math.min(c,m.y);d=Math.max(d,m.y)}const mpp=Math.max((b-a)/Math.max(10,w-2*pad),(d-c)/Math.max(10,h-2*pad),.6);return{x:(a+b)/2,y:(c+d)/2,mpp}}
 function drawMini(cv,pts,col){if(!pts||pts.length<2){const r=cv.getBoundingClientRect();cv.width=Math.ceil(r.width/PX);cv.height=Math.ceil(r.height/PX);const x=cv.getContext('2d');x.fillStyle='#121A2E';x.fillRect(0,0,cv.width,cv.height);return}const r=cv.getBoundingClientRect();drawWorld(cv,fitCamLL(pts,r.width,r.height,24),{trail:pts,trailColor:col,noTiles:true})}
@@ -2884,7 +2900,7 @@ function renderPre(){
   $('#s-walk').innerHTML=`
   <div class="row between"><div class="t1">PREPARAR PASEO</div><span class="tag ${gpsReady?'g':'y'}">PROCESO EN 3 PASOS</span></div>
   <div class="box row" style="padding:10px 12px">${petHTML(p,48,{bob:true})}<div class="grow col" style="gap:3px"><div class="t2">${esc(p.name)} · Listo para salir</div><span class="lbl" style="color:#C9BDFF">NV ${p.level} · Racha ${p.streak} días · Meta hoy ${Math.round(S.today.min)}/${p.goal} min</span></div></div>
-  ${crewHTML()}
+  ${crewHTML()}${angelPreHTML()}
 
   <div class="step-box ${gpsReady?'ok':g&&g.err?'warn':''}">
     <div class="step-hdr"><span class="step-badge">PASO 1 · SEÑAL Y CLIMA</span><button class="chip" id="gpsChip">${gpsTxt}</button></div>
@@ -2947,7 +2963,7 @@ function startWalk(resume){
   const start=resume?null:PLAN.gps;
   WK=resume||{t0:Date.now(),pausedMs:0,pauseAt:0,paused:false,auto:false,moving:0,dist:0,trail:[],last:null,lastMoveTs:Date.now(),fastSince:0,vehicle:false,hexes:[],hexInfo:{},items:[],got:[],events:[],splits:[],lastSplitMoving:0,hour:new Date().getHours(),mode:PLAN.mode,goalKm:PLAN.km,goalHit:false,guide:PLAN.mode==='ruta'&&S.routes[PLAN.route]?S.routes[PLAN.route].pts:null,targets:PLAN.mode==='conquista'?pickTargets(start):null,acc:start?start.acc:null,pos:start?{lat:start.lat,lng:start.lng}:null,cam:{mpp:1.4}};
   if(WK.pos)watchChunks(WK.pos.lat,WK.pos.lng);
-  if(!resume){ensureDogs();WK.crew=(PLAN.crew&&PLAN.crew.length?PLAN.crew:[S.pet.pid]).slice()}if(!resume&&start)spawnStreetItems(WK,start);if(S.bgMode!==false)bgKeepAlive(true);
+  if(!resume){ensureDogs();WK.crew=(PLAN.crew&&PLAN.crew.length?PLAN.crew:[S.pet.pid]).slice()}if(!resume&&start)spawnStreetItems(WK,start);if(!resume)angelWalkStart(WK);if(S.bgMode!==false)bgKeepAlive(true);
   {const lc=$('#liveCv');if(lc&&!lc._tap){lc._tap=1;lc.addEventListener('click',liveTap)}}
   $('#o-live').hidden=false;$('#o-live').classList.toggle('eco',!!S.eco);$('#ecoBtn').textContent=S.eco?'VER MAPA':'AHORRO';renderEvBtns();updateLive();
   startWatch();requestWake();persistActive();
@@ -2960,7 +2976,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState!==
 function onFix(pos){if(!WK)return;const c=pos.coords,p={lat:c.latitude,lng:c.longitude,ts:pos.timestamp||Date.now()};WK.acc=c.accuracy;WK.pos={lat:p.lat,lng:p.lng};WK.lastFixTs=Date.now();if(WK.lostWarned){WK.lostWarned=false;toast('GPS recuperado','gps','#4FD18B')}
   $('#gpsPill').textContent=c.accuracy>40?`GPS DÉBIL ±${Math.round(c.accuracy)}M`:`GPS ±${Math.round(c.accuracy)}M`;
   if(WK.paused)return;if(c.accuracy>50)return;
-  if(c.accuracy<=25)sniffFix(p,c.accuracy);
+  if(c.accuracy<=25)sniffFix(p,c.accuracy);angelFix(p);
   if(!WK.last){WK.last=p;WK.trail.push({lat:p.lat,lng:p.lng});onPoint(p);return}
   const d=hav(WK.last,p),dt=(p.ts-WK.last.ts)/1000;if(dt<=0)return;const v=d/dt;
   if(v>12){WK.jumps=(WK.jumps||0)+1;if(WK.jumps===5)toast('GPS inestable: los saltos de ubicación no cuentan para el paseo','gps','#FFC93C');return}
@@ -3004,7 +3020,7 @@ function updateLive(){if(!WK)return;const el=elapsed();$('#lTime').textContent=f
   }
 }
 function drawLive(){if(S.eco)return;if(!WK.pos){drawWorld($('#liveCv'),{...(()=>{const c=S.home||DEF_CENTER;return merc(c.lat,c.lng)})(),mpp:WK.cam.mpp},{});return}const m=merc(WK.pos.lat,WK.pos.lng);const cells={...SH.cells};for(const k of WK.hexes){if(['new','steal'].includes(WK.hexInfo[k]))cells[k]={o:UID,s:1}}
-  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home})}
+  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home,angel:WK.angel?angelById(WK.angel):null})}
 function renderEvBtns(){const cnt={};if(WK&&WK.events)for(const e of WK.events)cnt[e.t]=(cnt[e.t]||0)+1;$('#evBtns').innerHTML=EVS.map(([k,n])=>`<button data-ev="${k}" aria-label="${n}">${ico(k)}<span>${n}</span>${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`).join('');$$('#evBtns button').forEach(b=>b.onclick=()=>logEvent(b.dataset.ev))}
 async function logEvent(t){if(!WK)return;const pos=WK.pos||WK.last;if(!pos){toast('Esperando GPS para ubicar el evento','gps');return}
   const e={t,lat:+pos.lat.toFixed(6),lng:+pos.lng.toFixed(6),at:Math.round(elapsed())};
@@ -3035,7 +3051,7 @@ function endWalk(){if(!WK)return;const w=WK;
   if(w.dist<50){sheet(`<div class="t1">¿DESCARTAR?</div><div>El paseo fue muy corto (${fmtKm(w.dist)} km). Para guardarlo necesitas al menos 50 metros.</div><button class="btn r" id="dk">Descartar</button><button class="btn" id="dc">Seguir paseando</button>`,sh=>{sh.querySelector('#dk').onclick=()=>{stopWatch();bgKeepAlive(false);WK=null;clearActive();$('#o-live').hidden=true;closeSheet();updateFloat()};sh.querySelector('#dc').onclick=()=>{closeSheet();$('#o-live').hidden=false;if(watchId==null)startWatch()}});return}
   const time=Math.round(elapsed());
   stopWatch();bgKeepAlive(false);try{wakeLock&&wakeLock.release()}catch(e){}WK=null;clearActive();$('#o-live').hidden=true;updateFloat();
-  finalize({crew:w.crew,well:wellSnap(w),dist:w.dist,time,moving:w.moving,trail:w.trail,hexes:w.hexes,hexInfo:w.hexInfo,got:w.got,bossBonus:w.bossBonus||0,events:w.events,splits:w.splits,hour:w.hour,targets:w.targets,photos:w.photos||[],t0:w.t0,date:dkey(new Date(w.t0))})}
+  finalize({crew:w.crew,angel:w.angel||null,well:wellSnap(w),dist:w.dist,time,moving:w.moving,trail:w.trail,hexes:w.hexes,hexInfo:w.hexInfo,got:w.got,bossBonus:w.bossBonus||0,events:w.events,splits:w.splits,hour:w.hour,targets:w.targets,photos:w.photos||[],t0:w.t0,date:dkey(new Date(w.t0))})}
 
 /* ================= FINALIZE + SUMMARY ================= */
 async function finalize(w){
@@ -3065,7 +3081,7 @@ async function finalize(w){
   S.parks=S.parks||{};const parkRes=wb&&wb.parks.length?await commitParks(wb.parks):[];S.stat=S.stat||{};S.stat.leads=(S.stat.leads||0)+parkRes.filter(x=>x.newLead).length;
   const cw=calcWalkCoins(w,terr,wb,parkRes,firstToday,misDone,p.streak);
   const coins=w.manual?0:cw.total;S.coins=(S.coins||0)+coins;
-  const lv=addXp(gained);if(w.manual)S.weekXp=Math.max(0,S.weekXp-gained);const crewRes=giveCrewXp(w.crew,gained,today);
+  const lv=addXp(gained);if(w.manual)S.weekXp=Math.max(0,S.weekXp-gained);const crewRes=giveCrewXp(w.crew,gained,today);angelFinalize(w);
   const sp=w.dist/Math.max(1,w.moving);p.cls=terr.taken>=6?'Explorador':sp>1.6?'Velocista':w.dist>4000?'Resistente':(w.events||[]).filter(e=>e.t==='amigo').length>=2?'Sociable':p.cls==='Novato'?'Paseador':p.cls;
   const newB=[];if(!w.manual)for(const b of BADGES)if(!S.badges.includes(b.id)&&b.t(S,w)){S.badges.push(b.id);newB.push(b)}
   const pts=slimLL(w.trail||[],7);
@@ -3124,7 +3140,7 @@ function postStep1(o,anim){const sm=POST.sm,p=S.pet,r=sm.rec;
   <div class="g3" style="text-align:center"><div class="mini"><span class="num" id="cntKm">${anim?'0,00':fmtKm(r.dist)}</span><span class="lbl">Km</span></div><div class="mini"><span class="num">${fmtTime(r.time)}</span><span class="lbl">Tiempo</span></div><div class="mini"><span class="num">${fmtPace(r.moving||r.time,r.dist)}</span><span class="lbl">Ritmo</span></div></div>
   <div class="box vio"><div class="row between"><span class="tag" id="sumLvl">NV ${anim?sm.old.level:p.level}</span><span class="num" style="font-size:18px;color:#C9BDFF" id="sumXp">+${anim?0:sm.gained} XP</span></div><div class="seg"><i id="sumBar" style="width:${(anim?sm.old.xp/need(sm.old.level):p.xp/need(p.level))*100}%"></i></div><div class="row between mute small"><span>Racha ${p.streak}${sm.mult>1?' · x'+sm.mult:''}${sm.hm&&sm.hm!==1?` · ritmo x${String(sm.hm).replace('.',',')}`:''}</span><span>${sm.firstToday?'+25 primer paseo del día':''}</span></div><div class="lvup" id="lvup" ${anim||!sm.lv?'hidden':''}>${sm.lv?`¡SUBISTE A NIVEL ${p.level}!`:''}</div></div>
   <div class="box" style="box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)"><div class="row between"><div class="row" style="gap:8px">${ico16('mCoin')}<span class="t2" style="color:var(--gold)">MONEDAS DE PASEO</span></div><span class="num" style="font-size:18px;color:var(--gold)">+${sm.coins||0}</span></div>
-   ${(sm.coinBreak||[]).length?`<div class="col small" style="gap:3px">${sm.coinBreak.map(([lbl,val])=>`<div class="row between"><span class="mute">${esc(lbl)}</span><b style="color:var(--gold)">+${val}</b></div>`).join('')}</div>`:''}
+   ${(sm.coinBreak||[]).length?`<div class="col small" style="gap:3px">${sm.coinBreak.map(([lbl,val])=>`<div class="row between"><span class="mute">${esc(lbl)}</span><b style="color:var(--gold)">${String(val).startsWith('+')?val:'+'+val}</b></div>`).join('')}</div>`:''}
    <div class="mute small">Saldo actual: <b style="color:var(--gold)">${S.coins||0} monedas</b> · canjéalas en la Tienda por Skins y Auras RGB.</div></div>
   ${rewards.length?`<div><div class="lbl" style="margin-bottom:8px">Recompensas</div><div class="g3">${rewards.map((x,i)=>`<div class="rcard" style="--c:${x.c};animation-delay:${anim?.5+i*.15:0}s">${ico(x.i)}<span>${esc(x.n)}</span><span class="lbl" style="color:${x.c}">${x.s}</span></div>`).join('')}</div></div>`:''}
   ${r.pts.length>1?`<div class="box"><div class="row between"><span class="t2">Recorrido</span><button class="btn sm" id="replay">Repetición</button></div><canvas class="mapthumb" id="sumCv" style="height:230px"></canvas></div>`:''}
@@ -3317,7 +3333,7 @@ function renderPack(){rollDay();const p=S.pet;
   const inbox=SH.reqWalker.filter(r=>['pendiente','aceptada','en_camino','paseando'].includes(r.status));
   const wts=(S.weights||[]).slice(-12);
   $('#s-pack').innerHTML=`<div class="hdr"><div class="t1" style="flex:1">MI MANADA</div><span class="tag ${MODE==='local'?'d':'g'}">${MODE==='local'?'Sin cuenta':MODE==='firebase'?'Cuenta Google':'Compartido'}</span><button class="iconbtn" id="setBtn2" aria-label="Ajustes">${ico('gear')}</button></div>
-  ${dogsBoxHTML()}
+  ${dogsBoxHTML()}${angelsBoxHTML()}
   ${petCardHTML({edit:true})}
   <div class="box"><div class="row between"><span class="t2">Estilo</span><button class="coinbtn" id="pkStoreBtn" style="height:32px">${ico16('mCoin')}<span>${S.coins||0} · Ir a Tienda ►</span></button></div><div class="cos">${COS.map(c=>{const ok=c.price?owned(c.id):!c.ok||c.ok(S);return `<button data-acc="${c.id}" class="${p.acc===c.id?'on':''} ${ok?'':'lock'}" aria-label="${c.n}${ok?'':c.price?' cuesta '+c.price+' monedas':' bloqueado: '+c.req}"><img class="spr" src="${petU({...p,acc:c.id})}" alt="">${ok?'':c.price?`<span class="cprice">${c.price}</span>`:`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}).join('')}</div><div class="mute small">En la <b>Tienda</b> puedes canjear tus monedas de paseo por <b>Skins para tu perro</b> y <b>Auras hasta Arcoíris RGB</b>.</div>
    <div class="field"><label>Color</label>${coatRow(p,'pcoat')}</div>
@@ -3690,7 +3706,7 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
    <div class="row between"><span class="evob">${evoTag(e.i,e.n.toUpperCase())}${p.prestige?` · P${p.prestige}`:''}</span><div class="row" style="gap:4px"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
    <div class="row" style="gap:10px;align-items:flex-end">
      <button class="pc-stage ${bm.cls||''}" id="pcEvo" aria-label="Ver evoluciones de ${esc(p.name)}"><div class="aura ${au.cls||''}"></div><canvas class="pfx" data-spark="${Math.max(3,sparkLv)}" data-aura="${au.id}" aria-hidden="true"></canvas>${petHTML(p,120,{bob:true})}<div class="pedestal"></div></button>
-     <div class="col" style="gap:7px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="lvbig"><span>NV</span>${p.level}</div><span class="sex-tag ${p.sex==='hembra'?'hembra':'macho'}">${ico(p.sex==='hembra'?'hembra':'macho')}<span>${p.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="t1 pcname">${esc(p.name)}</div>${p.title?`<span class="tag ceo">👑 ${esc(p.title)}</span>`:''}<div class="mute small">${esc(p.breed||'perro')}${p.kg?' · '+String(p.kg).replace('.',',')+' kg':''}${p.born?' · '+ageY(p.born):''}</div>
+     <div class="col" style="gap:7px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="lvbig"><span>NV</span>${p.level}</div><span class="sex-tag ${p.sex==='hembra'?'hembra':'macho'}">${ico(p.sex==='hembra'?'hembra':'macho')}<span>${p.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="t1 pcname">${esc(p.name)}</div>${p.title?`<span class="tag ceo">👑 ${esc(p.title)}</span>`:''}${angelChip()}<div class="mute small">${esc(p.breed||'perro')}${p.kg?' · '+String(p.kg).replace('.',',')+' kg':''}${p.born?' · '+ageY(p.born):''}</div>
      <div class="row" style="gap:5px;flex-wrap:wrap"><span class="tag g" style="font-size:6.5px">📡 ALCANCE GPS ${pickupRadius()}M</span>${S.boosts&&(S.boosts.radar||S.boosts.xp2||S.boosts.luck||S.boosts.lure)?`<span class="tag y" style="font-size:6.5px">⚡ POTENCIADOR ACTIVO</span>`:''}</div></div>
    </div>
    <div class="care-bar">
@@ -5006,7 +5022,7 @@ function chimeSfx(){if(S&&S.sound===false)return;const ac=audioCtx();if(!ac)retu
 function grabSfx(lv){if(S&&S.sound===false)return;const ac=audioCtx();if(!ac)return;const t0=ac.currentTime+.02,notes=[659,784,988,1318,1568].slice(0,2+Math.min(3,lv||1));notes.forEach((f,i)=>{const t=t0+i*.06,o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.18)})}
 /* recolección: tocar dentro del anillo, o automática al pasar encima */
 const AUTO_R=22;
-function collectItem(it,tapped){if(!WK||it.got)return;it.got=true;let d=itemById(it.id);
+function collectItem(it,tapped){if(!WK||it.got)return;it.got=true;angelCollected(it);let d=itemById(it.id);
   if(d.baseId==='caja'){S.stat=S.stat||{};S.stat.boxes=(S.stat.boxes||0)+1;const n=Math.random()<.15?2:1,inner=[];for(let i=0;i<n;i++){const b=pickNormal();if(b.id==='caja'||b.id==='huevo')continue;const k=`${b.id}:${rollRarity(.05)}`;inner.push(k);WK.got.push(k)}
     setTimeout(()=>toast(inner.length?`🎁 ¡Caja sorpresa! Adentro había: ${inner.map(k=>esc(itemById(k).fullName)).join(' y ')}`:'🎁 La caja estaba vacía... ¡qué broma!','regalo','#FF5CC8'),900);if(inner.length)d=itemById(inner[0])}
   else{WK.got.push(it.id);if(d.baseId==='huevo'){S.eggs=(S.eggs||[]).concat([{at:+(S.totals.km+WK.dist/1000+3).toFixed(2)}]);setTimeout(()=>toast('🥚 Huevo misterioso: eclosiona cuando camines 3 km más','huevo','#FF5CC8'),900)}}
@@ -5048,11 +5064,11 @@ function dogsBoxHTML(){ensureDogs();const n=S.dogs.length;
   return `<div class="box"><div class="row between"><span class="t2">Tus perros</span><span class="tag d">${n} de ${MAX_DOGS}</span></div>
   <div class="dogrow">${S.dogs.map((d,i)=>`<button class="dogslot ${i===S.activeDog?'on':''}" data-dog="${i}" aria-label="${esc(d.name||'Perro')}">${petHTML(d,56,{bob:i===S.activeDog})}<b>${esc(d.name||'Sin nombre')}</b><span>Nv ${d.level} · ${esc((breedById(d.bid)||{n:d.breed||''}).n.split(' (')[0])}</span>${i===S.activeDog?'<em>Activo</em>':''}</button>`).join('')}${n<MAX_DOGS?`<button class="dogslot add" id="addDog"><span class="plus">+</span><b>Agregar</b><span>otro perro</span></button>`:''}</div>
   <div class="mute small">${n>1?'Toca un perro para jugar con él. En cada paseo eliges quiénes salen y todos ganan XP.':'¿Tienes más de un perro? Agrega hasta 4 y paséalos juntos.'}</div></div>`}
-function bindDogsBox(root){(root||document).querySelectorAll('[data-dog]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dog;if(i===S.activeDog){toast(`${esc(S.pet.name)} es tu perro activo`,'paw','#2CE6A6');return}openDogMenu(i)});const a=(root||document).querySelector('#addDog');if(a)a.onclick=openAddDog}
+function bindDogsBox(root){(root||document).querySelectorAll('[data-dog]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dog;openDogMenu(i)});const a=(root||document).querySelector('#addDog');if(a)a.onclick=openAddDog}
 function openDogMenu(i){const d=S.dogs[i];let armed=false;
   sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${petHTML(d,96,{bob:true})}<div class="t1">${esc((d.name||'').toUpperCase())}</div><div class="mute small">Nivel ${d.level} · Racha ${d.streak||0} días</div></div>
-  <button class="btn o big" id="dmUse">Jugar con ${esc(d.name)}</button><button class="btn r" id="dmDel">Quitar de mi manada</button><button class="btn" id="dmNo">Cancelar</button>`,sh=>{
-  sh.querySelector('#dmUse').onclick=()=>{closeSheet();setActiveDog(i)};sh.querySelector('#dmNo').onclick=closeSheet;
+  ${i===S.activeDog?'':`<button class="btn o big" id="dmUse">Jugar con ${esc(d.name)}</button>`}<button class="btn" id="dmAng">🌈 Despedir: cruzó el puente del arcoíris</button><button class="btn r" id="dmDel">Quitar de mi manada</button><button class="btn" id="dmNo">Cancelar</button>`,sh=>{
+  if(sh.querySelector('#dmUse'))sh.querySelector('#dmUse').onclick=()=>{closeSheet();setActiveDog(i)};sh.querySelector('#dmNo').onclick=closeSheet;sh.querySelector('#dmAng').onclick=()=>openFarewell(i);
   sh.querySelector('#dmDel').onclick=e=>{if(!armed){armed=true;e.currentTarget.textContent=`Toca otra vez: se borra ${d.name} y su progreso`;return}S.dogs.splice(i,1);if(S.activeDog>i)S.activeDog--;S.pet=S.dogs[S.activeDog];save();closeSheet();toast(`${esc(d.name)} salió de tu manada`,'paw','#FFC93C');render()}})}
 function openAddDog(){ensureDogs();if(S.dogs.length>=MAX_DOGS){toast(`Puedes tener hasta ${MAX_DOGS} perros`,'paw','#FFC93C');return}
   const br0=breedById('quiltro');const p=Object.assign(newState().pet,{pid:newPid(),name:'',bid:br0.id,breed:br0.n,coat:0,custom:false,size:br0.size,acc:'bandana',level:1,xp:0,streak:0,best:0,last:'',happy:80});
@@ -5075,6 +5091,152 @@ function openAddDog(){ensureDogs();if(S.dogs.length>=MAX_DOGS){toast(`Puedes ten
       S.dogs.push(p);save();const idx=S.dogs.length-1;coinSfx();boom(50);closeSheet();
       sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${petHTML(p,96,{bob:true})}<div class="t1">¡BIENVENIDO, ${esc(p.name.toUpperCase())}!</div><div class="mute small">Ya es parte de tu manada. Puedes cambiar de perro cuando quieras desde Manada.</div></div><button class="btn o big" id="anUse">Jugar con ${esc(p.name)} ahora</button><button class="btn" id="anLater">Seguir con ${esc(S.pet.name)}</button>`,s2=>{
         s2.querySelector('#anUse').onclick=()=>{closeSheet();setActiveDog(idx)};s2.querySelector('#anLater').onclick=()=>{closeSheet();render()}})}})}
+/* ================= ÁNGELES DE LA MANADA ================= */
+const MAX_ANGELS=3;
+const ANG_WING=["....oo...","..ooWWo..",".oWWWWWo.","oWWWWWWWo","oWWWWWWo.",".oWWWWo..","..oWWo...","...oo...."];
+const angLook=d=>({bid:d.bid,breed:d.breed,coat:d.coat|0,custom:!!d.custom,fur:d.fur||'',spot:d.spot||'',sex:d.sex||'macho',size:d.size||'',acc:'',level:1});
+function angels(){if(!Array.isArray(S.angels))S.angels=[];return S.angels}
+const angelById=id=>angels().find(a=>a.id===id);
+function angelActive(){const a=S&&S.angelOn&&angelById(S.angelOn);return a||null}
+function angelC(a,frame=0,hd=false){const k=`ang|${hd?1:0}|${frame}|${JSON.stringify(a.look)}`;if(sprC.has(k))return sprC.get(k);
+  const base=hd?petHD(a.look,0):petC(a.look,0),m=base.width/24,GW=34,GH=31;
+  const c=document.createElement('canvas');c.width=GW*m;c.height=GH*m;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  const R=(gx,gy,w,h,col)=>{x.fillStyle=col;x.fillRect(Math.round(gx*m),Math.round(gy*m),Math.ceil(w*m),Math.ceil(h*m))};
+  /* resplandor */
+  const g=x.createRadialGradient(17*m,17*m,2*m,17*m,17*m,16*m);g.addColorStop(0,'rgba(214,246,255,.55)');g.addColorStop(.6,'rgba(170,210,255,.18)');g.addColorStop(1,'rgba(170,210,255,0)');x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+  /* alas (aletean con el cuadro) */
+  const wy=frame?9:10;
+  ANG_WING.forEach((row,yy)=>[...row].forEach((ch,xx)=>{if(ch==='.')return;const col=ch==='W'?'#FFFFFF':'#9FC4FF';R(xx,wy+yy,1,1,col);R(GW-1-xx,wy+yy,1,1,col)}));
+  R(2,wy+3,1,1,'#E2EEFF');R(GW-3,wy+3,1,1,'#E2EEFF');R(3,wy+4,2,1,'#E2EEFF');R(GW-5,wy+4,2,1,'#E2EEFF');
+  /* perro aclarado y un poco translúcido */
+  const t=document.createElement('canvas');t.width=base.width;t.height=base.height;const tx=t.getContext('2d');tx.drawImage(base,0,0);tx.globalCompositeOperation='source-atop';tx.fillStyle='rgba(225,238,255,.26)';tx.fillRect(0,0,t.width,t.height);
+  x.globalAlpha=.9;x.drawImage(t,5*m,6*m);x.globalAlpha=1;
+  /* aureola */
+  R(13,2,8,1,'#FFC93C');R(12,3,1,1,'#FFC93C');R(21,3,1,1,'#FFC93C');R(13,4,8,1,'#FFC93C');R(14,2,2,1,'#FFF6B7');R(14,4,6,1,'#B8860B');
+  sprC.set(k,c);return c}
+function angelU(a,frame=0){const k=`angU|${frame}|${JSON.stringify(a.look)}`;if(!urlC.has(k))urlC.set(k,angelC(a,frame,true).toDataURL());return urlC.get(k)}
+function angelHTML(a,size,o={}){return `<div class="petbox angbox ${o.bob===false?'':'angfloat'}" style="width:${size}px;height:${Math.round(size*31/34)}px"><img class="spr" src="${angelU(a,0)}" alt="${esc(a.name)}"><img class="spr f1" src="${angelU(a,1)}" alt=""></div>`}
+/* ---- caja en Manada ---- */
+function angelsBoxHTML(){const A=angels();
+  return `<div class="box angelbox"><div class="row between"><span class="t2">🪽 Ángeles de la manada</span><span class="tag d">${A.length} de ${MAX_ANGELS}</span></div>
+  ${A.length?`<div class="dogrow">${A.map(a=>`<button class="dogslot ang ${S.angelOn===a.id?'on':''}" data-angel="${a.id}">${angelHTML(a,60)}<b>${esc(a.name)}</b><span>${esc(a.years||'Siempre con nosotros')}</span>${S.angelOn===a.id?'<em>Te acompaña</em>':''}</button>`).join('')}${A.length<MAX_ANGELS?`<button class="dogslot add" data-angel-new="1"><span class="plus">+</span><b>Agregar</b><span>un ángel</span></button>`:''}</div>
+  <div class="mute small">Tus perros que cruzaron el puente del arcoíris pueden acompañarte en cada paseo.</div>`
+  :`<div class="mute small">¿Tuviste un perro que ya no está? Crea su ángel: te acompaña en los paseos, cuida tus recuerdos y guarda su lugar favorito. Siempre gratis.</div><button class="btn" data-angel-new="1">🪽 Crear un ángel</button>`}</div>`}
+function angelPreHTML(){const A=angels();if(!A.length)return '';const a=angelActive();
+  return `<div class="box angpre" style="padding:12px"><div class="row" style="gap:10px;align-items:center">${a?angelHTML(a,48):'<span style="font-size:26px">🪽</span>'}<div class="grow col" style="gap:2px"><b>${a?`${esc(a.name)} te acompaña`:'Sin ángel en este paseo'}</b><span class="mute small">${a?'Te guía hacia un tesoro y recuerda sus lugares.':'Toca para que un ángel salga contigo.'}</span></div><button class="btn sm" data-angel-cycle="1">${A.length>1||!a?'Cambiar':'Quitar'}</button></div></div>`}
+function angelChip(){const a=angelActive();const p=S.pet;let h='';
+  if(a)h+=`<button class="angchip" data-angel="${a.id}" aria-label="Ver a ${esc(a.name)}"><img src="${angelU(a,0)}" alt=""><span>Te acompaña ${esc(a.name)}</span></button>`;
+  if(p.trait)h+=`<span class="tag angtrait">🪽 ${esc(p.trait.n)}</span>`;return h}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-angel],[data-angel-new],[data-angel-cycle]');if(!t||!S)return;
+  if(t.dataset.angelNew){openAngelEditor(null);return}
+  if(t.dataset.angelCycle){const A=angels();const ids=[...A.map(a=>a.id),null];const i=ids.indexOf(S.angelOn||null);S.angelOn=A.length===1?(S.angelOn?null:A[0].id):ids[(i+1)%ids.length];save();renderPre();return}
+  openAngel(t.dataset.angel)});
+/* ---- crear / editar ---- */
+function openAngelEditor(id,fromDog){const old=id&&angelById(id);
+  if(!old&&angels().length>=MAX_ANGELS){toast(`Puedes guardar hasta ${MAX_ANGELS} ángeles`,'paw','#9FC4FF');return}
+  const br0=breedById('quiltro');
+  const a=old?JSON.parse(JSON.stringify(old)):{id:'a'+Math.random().toString(36).slice(2,8),name:'',look:fromDog?angLook(fromDog):angLook({bid:br0.id,breed:br0.n,coat:0}),years:'',likes:'',phrase:'',bday:'',fav:null,legacy:null,stars:0,walks:0,letters:[],ts:Date.now()};
+  if(fromDog&&!old){a.name=fromDog.name||'';a.legacy={level:fromDog.level|0,best:fromDog.best|0,born:fromDog.born||''};if(fromDog.born)a.bday=fromDog.born.slice(5)}
+  const yrs=(a.years||'').split('–');
+  sheet(`<div class="t1">${old?'EDITAR ÁNGEL':'UN ÁNGEL PARA TU MANADA'}</div>
+  <div class="mute small">${old?'Cambia lo que quieras, cuando quieras.':'Tómate tu tiempo. Todo es opcional salvo el nombre y puedes editarlo después.'}</div>
+  <div class="row" style="gap:12px;align-items:center"><div id="anPrev">${angelHTML(a,92)}</div><div class="field grow"><label>Nombre</label><input class="inp" id="anName" maxlength="20" value="${esc(a.name)}" placeholder="Ej: Toby" autocomplete="off"></div></div>
+  ${fromDog?'':`<div class="field"><label>Raza</label>${breedGrid(a.look.bid,'anb')}</div><div class="field"><label>Color</label><div id="anCoat">${coatRow(a.look,'anc')}</div></div>`}
+  <div class="g2"><div class="field"><label>Llegó (año)</label><input class="inp" id="anY1" inputmode="numeric" maxlength="4" placeholder="2010" value="${esc(yrs[0]||'')}"></div><div class="field"><label>Partió (año)</label><input class="inp" id="anY2" inputmode="numeric" maxlength="4" placeholder="2023" value="${esc(yrs[1]||'')}"></div></div>
+  <div class="field"><label>Su cumpleaños (opcional)</label><input class="inp" type="date" id="anBday" value="${a.bday?'2000-'+a.bday:''}"><span class="mute small">Ese día verás un recuerdo especial. No te pedimos la fecha de partida.</span></div>
+  <div class="field"><label>Lo que más le gustaba</label><input class="inp" id="anLikes" maxlength="60" value="${esc(a.likes)}" placeholder="Ej: la pelota roja y las siestas al sol"></div>
+  <div class="field"><label>Una frase para recordarlo</label><input class="inp" id="anPhrase" maxlength="80" value="${esc(a.phrase)}" placeholder="Ej: El mejor compañero de siestas"></div>
+  <div id="anMsg"></div>
+  <button class="btn o big" id="anOk">${old?'Guardar':'Crear su ángel'}</button><button class="btn" id="anNo">Cancelar</button>`,sh=>{
+    const prev=()=>{sh.querySelector('#anPrev').innerHTML=angelHTML(a,92)};
+    const bindCoat=()=>sh.querySelectorAll('[data-anc]').forEach(b=>b.onclick=()=>{a.look.coat=+b.dataset.anc;a.look.custom=false;sh.querySelectorAll('[data-anc]').forEach(x=>x.classList.toggle('on',x===b));prev()});
+    sh.querySelectorAll('[data-anb]').forEach(b=>b.onclick=()=>{const br=breedById(b.dataset.anb);a.look.bid=br.id;a.look.breed=br.n;a.look.coat=0;a.look.custom=false;sh.querySelectorAll('[data-anb]').forEach(x=>x.classList.toggle('on',x===b));sh.querySelector('#anCoat').innerHTML=coatRow(a.look,'anc');bindCoat();prev()});
+    bindCoat();sh.querySelector('#anNo').onclick=()=>{if(fromDog)delete fromDog._remove;closeSheet()};
+    sh.querySelector('#anOk').onclick=()=>{const nm=sh.querySelector('#anName').value.trim();if(!nm){sh.querySelector('#anMsg').innerHTML='<div class="banner small">Escribe su nombre.</div>';return}
+      const y1=sh.querySelector('#anY1').value.replace(/\D/g,'').slice(0,4),y2=sh.querySelector('#anY2').value.replace(/\D/g,'').slice(0,4);
+      a.name=nm.slice(0,20);a.years=y1||y2?`${y1}–${y2}`:'';const bd=sh.querySelector('#anBday').value;a.bday=bd?bd.slice(5):'';
+      a.likes=sh.querySelector('#anLikes').value.trim().slice(0,60);a.phrase=sh.querySelector('#anPhrase').value.trim().slice(0,80);
+      if(old)Object.assign(old,a);else{angels().push(a);if(!S.angelOn)S.angelOn=a.id}
+      if(fromDog&&!old&&fromDog._remove){delete fromDog._remove;const i=S.dogs.indexOf(fromDog);if(i>=0&&S.dogs.length>1){S.dogs.splice(i,1);if(S.activeDog>i)S.activeDog--;else if(S.activeDog===i)S.activeDog=0;S.activeDog=Math.min(S.activeDog,S.dogs.length-1);S.pet=S.dogs[S.activeDog];PLAN.crew=null;pushProfile()}}
+      save();closeSheet();
+      if(!old){sheet(`<div class="col angwelcome" style="align-items:center;gap:10px;text-align:center">${angelHTML(a,130)}<div class="t1">${esc(a.name.toUpperCase())} TE ACOMPAÑA</div><div class="small">${fromDog?`${esc(a.name)} cruzó el puente del arcoíris. Su nivel ${a.legacy.level} y su mejor racha de ${a.legacy.best} días quedan guardados como su legado.`:`Desde hoy ${esc(a.name)} sale contigo a pasear.`}</div><div class="mute small">En el paseo te guía hacia un tesoro y, en su lugar favorito, aparece un recuerdo.</div></div><button class="btn o big" id="awOk">Gracias</button>`,s2=>{s2.querySelector('#awOk').onclick=()=>{closeSheet();render()}})}
+      else{toast(`Guardamos los cambios de ${esc(a.name)}`,'paw','#9FC4FF');render()}}})}
+/* ---- despedir a un perro de la manada ---- */
+function openFarewell(i){const d=S.dogs[i];if(!d)return;
+  if(angels().length>=MAX_ANGELS){toast(`Ya tienes ${MAX_ANGELS} ángeles. Quita uno para agregar otro.`,'paw','#9FC4FF');return}
+  const only=S.dogs.length<2;
+  sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${petHTML(d,96)}<div class="t1">DESPEDIR A ${esc((d.name||'').toUpperCase())}</div>
+  <div class="small">Lo sentimos mucho. ${esc(d.name)} se convertirá en un ángel que te acompaña en los paseos. Su nivel ${d.level} y su mejor racha quedan guardados como su legado.</div>
+  ${only?`<div class="mute small">Como es tu único perro, su perfil se mantiene para que sigas usando la app. Cuando llegue un nuevo compañero, podrás agregarlo en Manada.</div>`:''}</div>
+  <button class="btn o big" id="fwOk">🌈 Crear su ángel</button><button class="btn" id="fwNo">Ahora no</button>`,sh=>{
+    sh.querySelector('#fwNo').onclick=closeSheet;
+    sh.querySelector('#fwOk').onclick=()=>{closeSheet();const src=only?Object.assign({},d):d;if(!only)src._remove=1;openAngelEditor(null,src)}})}
+/* ---- ficha del ángel ---- */
+function openAngel(id){const a=angelById(id);if(!a)return;let armed=false;const on=S.angelOn===a.id;
+  sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${angelHTML(a,120)}<div class="t1">${esc(a.name.toUpperCase())}</div>${a.years?`<div class="mute small">${esc(a.years)}</div>`:''}${a.phrase?`<div class="small angphrase">“${esc(a.phrase)}”</div>`:''}${a.likes?`<div class="mute small">Le encantaba: ${esc(a.likes)}</div>`:''}
+  <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:center"><span class="tag">⭐ ${a.stars||0} estrellas</span><span class="tag">🐾 ${a.walks||0} paseos juntos</span>${a.legacy?`<span class="tag y">Legado: Nv ${a.legacy.level} · racha ${a.legacy.best}</span>`:''}</div>
+  ${a.fav?`<div class="mute small">📍 Su lugar favorito: ${esc(a.fav.n||'marcado en el mapa')}</div>`:''}</div>
+  <button class="btn o big" id="agOn">${on?'Que descanse en este paseo':`Que ${esc(a.name)} me acompañe`}</button>
+  <div class="g2"><button class="btn" id="agSky">✨ Cielo de la manada</button><button class="btn" id="agLet">💌 Cartas</button></div>
+  <div class="g2"><button class="btn" id="agFav">📍 ${a.fav?'Cambiar':'Marcar'} lugar favorito</button><button class="btn" id="agEd">Editar</button></div>
+  <button class="btn r" id="agDel">Quitar de mis ángeles</button><button class="btn" id="agNo">Cerrar</button>`,sh=>{
+    sh.querySelector('#agNo').onclick=closeSheet;
+    sh.querySelector('#agOn').onclick=()=>{S.angelOn=on?null:a.id;save();closeSheet();toast(on?`${esc(a.name)} descansa esta vez`:`${esc(a.name)} te acompaña en tus paseos`,'paw','#9FC4FF');render()};
+    sh.querySelector('#agSky').onclick=()=>openSky(a.id);sh.querySelector('#agLet').onclick=()=>openLetters(a.id);
+    sh.querySelector('#agFav').onclick=()=>openFav(a.id);sh.querySelector('#agEd').onclick=()=>openAngelEditor(a.id);
+    sh.querySelector('#agDel').onclick=e=>{if(!armed){armed=true;e.currentTarget.textContent=`Toca otra vez: se quitan ${a.name}, sus cartas y su cielo`;return}S.angels=angels().filter(x=>x.id!==a.id);if(S.angelOn===a.id)S.angelOn=null;save();closeSheet();render()}})}
+function openFav(id){const a=angelById(id);if(!a)return;
+  sheet(`<div class="t1">SU LUGAR FAVORITO</div><div class="mute small">Ve al parque, la plaza o la calle que más le gustaba a ${esc(a.name)} y márcalo. Cuando pases por ahí en un paseo, aparecerá un recuerdo.</div>
+  <div class="field"><label>Nombre del lugar</label><input class="inp" id="fvN" maxlength="40" value="${esc(a.fav&&a.fav.n||'')}" placeholder="Ej: Plaza Los Aromos"></div><div id="fvMsg"></div>
+  <button class="btn o big" id="fvOk">📍 Marcar dónde estoy ahora</button>${a.fav?'<button class="btn r" id="fvDel">Quitar lugar</button>':''}<button class="btn" id="fvNo">Volver</button>`,sh=>{
+    sh.querySelector('#fvNo').onclick=()=>openAngel(id);if(sh.querySelector('#fvDel'))sh.querySelector('#fvDel').onclick=()=>{a.fav=null;save();openAngel(id)};
+    sh.querySelector('#fvOk').onclick=async()=>{const msg=sh.querySelector('#fvMsg');msg.innerHTML='<div class="banner small">Buscando tu ubicación…</div>';
+      const f=(WK&&WK.pos)||await getFix(15000);if(!f||f.lat==null){msg.innerHTML='<div class="banner small">No pudimos obtener el GPS. Revisa el permiso de ubicación e inténtalo otra vez.</div>';return}
+      a.fav={lat:+f.lat.toFixed(6),lng:+f.lng.toFixed(6),n:sh.querySelector('#fvN').value.trim().slice(0,40)};save();toast(`Guardamos el lugar favorito de ${esc(a.name)}`,'gps','#9FC4FF');openAngel(id)}})}
+function openLetters(id){const a=angelById(id);if(!a)return;a.letters=a.letters||[];
+  sheet(`<div class="t1">CARTAS PARA ${esc(a.name.toUpperCase())}</div><div class="mute small">Solo tú puedes leerlas. Nadie más las ve.</div>
+  <textarea class="inp" id="ltT" maxlength="500" rows="4" placeholder="Hoy pasé por tu plaza y me acordé de ti…"></textarea><button class="btn o" id="ltOk">Guardar carta</button>
+  <div class="col" style="gap:8px">${a.letters.slice().reverse().map(l=>`<div class="box letter"><span class="mute small">${esc(l.d)}</span><div class="small">${esc(l.t)}</div></div>`).join('')||'<div class="mute small">Aún no hay cartas.</div>'}</div>
+  <button class="btn" id="ltNo">Volver</button>`,sh=>{sh.querySelector('#ltNo').onclick=()=>openAngel(id);
+    sh.querySelector('#ltOk').onclick=()=>{const t=sh.querySelector('#ltT').value.trim();if(!t)return;a.letters.push({d:new Date().toLocaleDateString('es-CL'),t:t.slice(0,500)});a.letters=a.letters.slice(-60);save();openLetters(id)}})}
+/* ---- cielo de la manada: cada paseo enciende una estrella y se forma su constelación ---- */
+const SKY_N=30;
+function skyPoints(a){const c=petC(a.look,0),d=c.getContext('2d').getImageData(0,0,24,24).data,on=(x,y)=>x>=0&&y>=0&&x<24&&y<24&&d[(y*24+x)*4+3]>0;const E=[];
+  for(let y=0;y<24;y++)for(let x=0;x<24;x++)if(on(x,y)&&(!on(x-1,y)||!on(x+1,y)||!on(x,y-1)||!on(x,y+1)))E.push([x,y]);
+  const cx=12,cy=12;E.sort((p,q)=>Math.atan2(p[1]-cy,p[0]-cx)-Math.atan2(q[1]-cy,q[0]-cx));const out=[];for(let i=0;i<SKY_N;i++)out.push(E[Math.floor(i*E.length/SKY_N)]);return out}
+function openSky(id){const a=angelById(id);if(!a)return;const n=Math.min(SKY_N,a.stars||0);
+  sheet(`<div class="t1">CIELO DE LA MANADA</div><div class="mute small">Cada paseo con ${esc(a.name)} enciende una estrella. Con ${SKY_N} estrellas se forma su constelación.</div>
+  <canvas id="skyCv" class="skycv" width="240" height="240" aria-label="Constelación de ${esc(a.name)}: ${n} de ${SKY_N} estrellas"></canvas>
+  <div class="row between"><span class="tag">⭐ ${n} de ${SKY_N}</span>${n>=SKY_N?`<span class="tag y">¡Constelación de ${esc(a.name)} completa!</span>`:''}</div><button class="btn" id="skNo">Volver</button>`,sh=>{
+    sh.querySelector('#skNo').onclick=()=>openAngel(id);const cv=sh.querySelector('#skyCv'),x=cv.getContext('2d'),P=skyPoints(a);let raf=0;
+    const rnd=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647})();const bg=Array.from({length:90},()=>[rnd()*240,rnd()*240,rnd()]);
+    const tick=t=>{if(!cv.isConnected){cancelAnimationFrame(raf);return}x.fillStyle='#0A0824';x.fillRect(0,0,240,240);
+      for(const [bx,by,bs] of bg){x.globalAlpha=.25+.35*Math.abs(Math.sin(t/900+bs*20));x.fillStyle='#C9D6FF';x.fillRect(bx|0,by|0,1,1)}
+      const map=p=>[24+p[0]*8,24+p[1]*8];x.globalAlpha=.55;x.strokeStyle='#9FC4FF';x.lineWidth=1;x.beginPath();for(let i=0;i<n;i++){const [px,py]=map(P[i]);i?x.lineTo(px+.5,py+.5):x.moveTo(px+.5,py+.5)}if(n>=SKY_N){const [px,py]=map(P[0]);x.lineTo(px+.5,py+.5)}x.stroke();
+      for(let i=0;i<SKY_N;i++){const [px,py]=map(P[i]);if(i<n){const tw=.7+.3*Math.sin(t/400+i);x.globalAlpha=tw;x.fillStyle='#FFFFFF';x.fillRect(px-1,py,3,1);x.fillRect(px,py-1,1,3);x.fillStyle='#FFE29A';x.fillRect(px,py,1,1);if(i===n-1){x.globalAlpha=.4*tw;x.fillRect(px-3,py,7,1);x.fillRect(px,py-3,1,7)}}else{x.globalAlpha=.18;x.fillStyle='#6A78B0';x.fillRect(px,py,1,1)}}
+      x.globalAlpha=1;raf=requestAnimationFrame(tick)};raf=requestAnimationFrame(tick)})}
+/* ---- en el paseo ---- */
+function angelMark(w){if(!w||!w.angel||w.angMarked)return;const free=(w.items||[]).filter(it=>!it.got);if(!free.length)return;free[Math.floor(Math.random()*free.length)].ang=1;w.angMarked=1}
+function angelWalkStart(w){const a=angelActive();if(!a)return;w.angel=a.id;angelMark(w);
+  setTimeout(()=>toast(`🪽 ${esc(a.name)} sale contigo. Busca el destello azul: te guía a un tesoro.`,'paw','#9FC4FF'),2600)}
+function angelFix(p){if(!WK||!WK.angel)return;angelMark(WK);if(WK.angFav)return;const a=angelById(WK.angel);if(!a||!a.fav)return;
+  if(hav(p,a.fav)<=60&&(WK.dist||0)>=25){WK.angFav=1;WK.energy=Math.min(100,(WK.energy??100)+10);vib([30,60,30]);
+    sheet(`<div class="col" style="align-items:center;gap:10px;text-align:center">${angelHTML(a,110)}<div class="t1">AQUÍ LE ENCANTABA VENIR</div><div class="small">${esc(a.fav.n||'Este lugar')} era el favorito de ${esc(a.name)}.</div>${a.phrase?`<div class="small angphrase">“${esc(a.phrase)}”</div>`:''}</div><button class="btn o big" id="afOk">Seguir paseando</button>`,sh=>{sh.querySelector('#afOk').onclick=closeSheet})}}
+function angelCollected(it){if(!it.ang||!WK||!WK.angel)return;const a=angelById(WK.angel);if(a)setTimeout(()=>toast(`🪽 ${esc(a.name)} encontró esto para ti`,'paw','#9FC4FF'),1300)}
+function angelGlow(ctx,cx,gy,u,now){const r=(14+Math.sin(now/300)*3)*u;const g=ctx.createRadialGradient(cx,gy-8*u,2*u,cx,gy-8*u,r);g.addColorStop(0,'rgba(214,246,255,.7)');g.addColorStop(1,'rgba(159,196,255,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,gy-8*u,r,0,7);ctx.fill();
+  ctx.fillStyle='#FFFFFF';const s=Math.floor(now/250)%4;for(let i=0;i<4;i++){if(i===s)continue;const an=i*1.57+now/900,px=cx+Math.cos(an)*r*.8,py=gy-8*u+Math.sin(an)*r*.8;ctx.fillRect(Math.round(px-u),Math.round(py),Math.round(3*u),Math.round(u));ctx.fillRect(Math.round(px),Math.round(py-u),Math.round(u),Math.round(3*u))}}
+function angelDraw(ctx,L,cx,cy,u,now,spr){const a=L.angel;if(!a)return;const fl=Math.sin(now/650)*3*u,ox=-20*u,oy=-16*u+fl;
+  ctx.globalAlpha=.6;ctx.fillStyle='#FFFFFF';for(let i=1;i<=3;i++){const tt=(now/700+i*.33)%1;ctx.globalAlpha=.5*(1-tt);ctx.fillRect(Math.round(cx+ox-(4+i*4)*u),Math.round(cy+oy-(2+tt*6)*u),Math.round(2*u),Math.round(2*u))}
+  ctx.globalAlpha=.92;spr(angelC(a,Math.floor(now/320)%2),cx+ox,cy+oy);ctx.globalAlpha=1}
+function angelFinalize(w){if(!w.angel||w.manual||!(w.moving>=120))return;const a=angelById(w.angel);if(!a)return;
+  a.walks=(a.walks||0)+1;a.stars=Math.min(999,(a.stars||0)+1);S.pet.happy=Math.min(100,(S.pet.happy||70)+3);
+  if(a.walks>=10&&!(S.pet.trait&&S.pet.trait.from===a.id)){S.pet.trait={n:`Aprendió de ${a.name}`,from:a.id};setTimeout(()=>toast(`🪽 ${esc(S.pet.name)} aprendió de ${esc(a.name)} después de 10 paseos juntos`,'paw','#9FC4FF'),4200)}
+  else setTimeout(()=>toast(`✨ ${esc(a.name)} encendió una estrella en tu cielo (${Math.min(SKY_N,a.stars)} de ${SKY_N})`,'paw','#9FC4FF'),4200)}
+/* ---- cumpleaños ---- */
+function angelBirthday(){if(!S||!S.onboarded)return;const md=dkey().slice(5),y=dkey().slice(0,4);const a=angels().find(x=>x.bday===md);if(!a)return;S.angBday=S.angBday||{};if(S.angBday[a.id]===y)return;S.angBday[a.id]=y;save();
+  sheet(`<div class="col" style="align-items:center;gap:10px;text-align:center">${angelHTML(a,130)}<div class="t1">HOY ES EL CUMPLEAÑOS DE ${esc(a.name.toUpperCase())}</div><div class="small">Un día para recordarlo con cariño.${a.likes?` Le encantaba ${esc(a.likes)}.`:''}</div></div><button class="btn o big" id="bdWalk">🐾 Pasear en su honor</button><button class="btn" id="bdNo">Cerrar</button>`,sh=>{
+    sh.querySelector('#bdNo').onclick=closeSheet;sh.querySelector('#bdWalk').onclick=()=>{S.angelOn=a.id;save();closeSheet();go('walk')}})}
+
 /* quiénes salen al paseo */
 function crewHTML(){ensureDogs();if(S.dogs.length<2)return '';PLAN.crew=(PLAN.crew||[S.pet.pid]).filter(pid=>S.dogs.some(d=>d.pid===pid));if(!PLAN.crew.includes(S.pet.pid))PLAN.crew.unshift(S.pet.pid);
   return `<div class="box" style="padding:12px"><div class="row between"><span class="t2">¿Quiénes salen hoy?</span><span class="tag d">${PLAN.crew.length} de ${S.dogs.length}</span></div>
@@ -5330,7 +5492,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(creatorGrant,1500);setTimeout(angelBirthday,3500);setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
