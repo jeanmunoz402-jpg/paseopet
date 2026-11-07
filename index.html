@@ -998,6 +998,7 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .pc-chips .angchip img{width:26px;height:24px}
 .care-btn{font-size:13px!important}
 .sex-tag,.fac-tag{font-size:12px!important}
+.cv-wx{margin-top:8px;align-self:center;font-family:var(--pix);font-size:13px;color:#FFF6D8;padding:4px 10px;background:rgba(14,10,38,.55);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 </style>
 
 <div class="app" id="app">
@@ -4543,6 +4544,38 @@ async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se
 
 function openBadges(){sheet(`<div class="t1">MEDALLAS Y LOGROS</div><div class="mute small">${S.badges.length} de ${BADGES.length} desbloqueadas. Toca una para ver cómo conseguirla.</div>${medalsGridHTML()}<button class="btn" id="bdClose">Cerrar</button>`,sh=>{bindMedals(sh);sh.querySelector('#bdClose').onclick=closeSheet})}
 
+/* ================= PORTADA VIVA: hora, clima y estación ================= */
+const CV_PAL={
+  amanecer:{sky:['#2A2458','#4A3070','#7A4280','#B0588A','#E07A88','#F4A08A','#FFC59A','#FFE0B0'],skyG:['#3A3A5A','#4E4A68','#665E78','#807488','#9A8A96','#B4A2A4','#CBB8B2','#DCCCC0'],stars:.3,sun:[.22,.92,11],sunCore:'#FFF2C4',sunEdge:'#FFB870',sunGlow:'#FFB870',hill:'#4A3A6E',snowcap:'#F2E6F6',city:'#3A2E5E',win:'#5A4A7E',lights:true,trunk:'#3A2A30',road:'#4A3A40',road2:'#5A4650',tint:null},
+  dia:{sky:['#2E7BE5','#3C8CF0','#4C9CF6','#5EACFA','#72BAFC','#88C8FE','#A0D4FF','#BCE2FF'],skyG:['#7A8494','#848E9E','#8E98A8','#98A2B0','#A2ACBA','#ACB6C2','#B6C0CA','#C0C8D2'],stars:0,sun:[.24,.2,10],sunCore:'#FFF6B0',sunEdge:'#FFE066',sunGlow:'#FFF6B0',hill:'#5A7AA8',snowcap:'#FFFFFF',city:'#4A5A88',win:'#8AA0C8',lights:false,trunk:'#4A2E1A',road:'#6A5A5A',road2:'#7A6A68',tint:null},
+  tarde:{sky:['#1E1548','#2A1B58','#3D2266','#5A2A6E','#7E336E','#A8456A','#D46A5A','#F09A52'],skyG:['#2A2440','#36304C','#443C58','#544862','#64546A','#74606E','#867072','#988276'],stars:.25,sun:[.74,.9,12],sunCore:'#FFE07A',sunEdge:'#FF8A3C',sunGlow:'#FF9E5A',hill:'#2A1F55',snowcap:'#F6D6E6',city:'#1A1440',win:'#3A2E70',lights:true,trunk:'#2A1E28',road:'#3A2A30',road2:'#4A3540',tint:null},
+  noche:{sky:['#05040F','#0B0820','#100C2A','#140F33','#1A1340','#1E1548','#24184F','#2A1B58'],skyG:['#0E0E18','#141420','#181828','#1C1C2E','#202034','#24243A','#282840','#2C2C46'],stars:.9,sun:null,hill:'#1A1440',snowcap:'#C9D6FF',city:'#100C2E',win:'#262058',lights:true,trunk:'#1A1420',road:'#2A2028',road2:'#3A2C36',tint:'rgba(10,8,40,.12)'}};
+const CV_SEASON={
+  verano:{leaf:'#1F7A3A',leaf2:'#2CA850',grass:'#2CE6A6',grass2:'#1F8F6A',flower:['#FFE066','#FF8FB8'],fruit:null,bloom:null,snow:false,snowcap:false},
+  otono:{leaf:'#C9541E',leaf2:'#F2A134',grass:'#C9A040',grass2:'#8A6A2A',flower:null,fruit:null,bloom:null,snow:false,snowcap:true},
+  invierno:{leaf:'#2A5A3A',leaf2:'#3E7A50',grass:'#C9D6E6',grass2:'#7A8CA0',flower:null,fruit:null,bloom:null,snow:false,snowcap:true},
+  primavera:{leaf:'#3EA858',leaf2:'#7AD88A',grass:'#5FE08A',grass2:'#2E9F58',flower:['#FF8FB8','#FFE066','#FFFFFF','#C9A6FF'],fruit:null,bloom:'#FFB8D6',snow:false,snowcap:false}};
+const CV_NAMES={amanecer:'Amanecer',dia:'Día',tarde:'Atardecer',noche:'Noche'};
+const CV_SNAMES={verano:'verano',otono:'otoño',invierno:'invierno',primavera:'primavera'};
+const CV_WNAMES={clear:'',cloud:'Nublado',rain:'Lluvia',storm:'Tormenta',snow:'Nieve',fog:'Niebla'};
+function cvWxOf(code){if(code==null)return 'clear';if(code>=95)return 'storm';if((code>=71&&code<=77)||code===85||code===86)return 'snow';if(code>=51)return 'rain';if(code===45||code===48)return 'fog';if(code===3)return 'cloud';return 'clear'}
+function coverState(){let lat=-33.45,code=null,temp=null,sr=null,ss=null;
+  try{const c=JSON.parse(localStorage.getItem(WXKEY)||'null');if(c&&c.d){if(c.loc&&c.loc.lat!=null)lat=c.loc.lat;if(Date.now()-c.at<3*3600e3&&c.d.current){code=c.d.current.weather_code;temp=c.d.current.temperature_2m}const dl=c.d.daily;if(dl&&dl.sunrise){const today=new Date().toISOString().slice(0,10);const i=Math.max(0,dl.time.indexOf(today));sr=new Date(dl.sunrise[i]);ss=new Date(dl.sunset[i])}}}catch(e){}
+  if(code==null){try{const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';if(/^(Europe|Asia|Africa\/(Cairo|Casablanca|Lagos)|America\/(New_York|Chicago|Denver|Los_Angeles|Mexico|Toronto|Vancouver|Havana|Guatemala|Costa_Rica|Panama|Bogota|Caracas|Santo_Domingo|Puerto_Rico|Tegucigalpa|Managua|El_Salvador|Monterrey|Cancun|Tijuana))/.test(tz))lat=Math.abs(lat)}catch(e){}}
+  const now=new Date(),h=now.getHours()+now.getMinutes()/60;
+  const srH=sr&&!isNaN(sr)?sr.getHours()+sr.getMinutes()/60:6.8,ssH=ss&&!isNaN(ss)?ss.getHours()+ss.getMinutes()/60:20;
+  const phase=h>=srH-.6&&h<srH+1?'amanecer':h>=srH+1&&h<ssH-1.2?'dia':h>=ssH-1.2&&h<ssH+.6?'tarde':'noche';
+  const m=now.getMonth(),south=lat<0;const sIdx=[0,0,1,1,1,2,2,2,3,3,3,0][m];
+  const season=(south?['verano','otono','invierno','primavera']:['invierno','primavera','verano','otono'])[sIdx];
+  const st={phase,season,wx:cvWxOf(code),temp,lat};
+  try{const q=new URLSearchParams(location.search).get('portada');if(q){const [a,b,c]=q.split(',');if(CV_PAL[a])st.phase=a;if(CV_WNAMES[b]!=null)st.wx=b;if(CV_SEASON[c])st.season=c}}catch(e){}
+  cvLabel(st);return st}
+function cvLabel(st){const em={amanecer:'🌅',dia:'☀️',tarde:'🌇',noche:'🌙'}[st.phase];const wem={cloud:'☁️',rain:'🌧️',storm:'⛈️',snow:'❄️',fog:'🌫️'}[st.wx];
+  st.em=wem||em;st.label=`${CV_NAMES[st.phase]} de ${CV_SNAMES[st.season]}${st.wx!=='clear'?' · '+CV_WNAMES[st.wx]:''}${st.temp!=null?' · '+Math.round(st.temp)+'°C':''}`}
+async function coverLiveWx(st){if(inClaude()||navigator.onLine===false)return false;try{if(new URLSearchParams(location.search).get('portada'))return false}catch(e){}
+  let loc=null;try{const c=JSON.parse(localStorage.getItem(WXKEY)||'null');if(c&&c.loc)loc=c.loc;if(c&&Date.now()-c.at<20*60e3)return false}catch(e){}
+  loc=loc||DEF_CENTER;try{const d=await fetchJ(`https://api.open-meteo.com/v1/forecast?latitude=${loc.lat.toFixed(2)}&longitude=${loc.lng.toFixed(2)}&current=temperature_2m,weather_code,is_day&timezone=auto`);
+    if(d&&d.current){st.wx=cvWxOf(d.current.weather_code);st.temp=d.current.temperature_2m;cvLabel(st);return true}}catch(e){}return false}
 /* ================= PORTADA ÉPICA + PANTALLA COMPLETA ================= */
 const fsEnabled=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
@@ -4561,7 +4594,7 @@ function playScreenWipe(onMid){
 }
 function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=false;$('#nav').hidden=true;ob.classList.add('obc');
   ob.innerHTML=`<div class="cover" id="cvRoot"><canvas id="cvC" aria-hidden="true"></canvas><div class="cv-ui">
-   <div class="cv-top"><img class="cv-brand" src="${APP_LOGO}" alt="PaseoPet"><div class="cv-sub">CADA PASEO ES UNA AVENTURA</div></div>
+   <div class="cv-top"><img class="cv-brand" src="${APP_LOGO}" alt="PaseoPet"><div class="cv-sub">CADA PASEO ES UNA AVENTURA</div><div class="cv-wx" id="cvWx" aria-live="polite"></div></div>
    <div class="grow"></div>
    <div class="cv-btns">
      <div class="cv-req">★ PANTALLA COMPLETA OBLIGATORIA ★</div>
@@ -4574,26 +4607,63 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
   const dogs=[{bid:'beagle',coat:0,acc:'bandana',level:5},{bid:'husky',coat:0,acc:'',level:20},{bid:'pomerania',coat:0,acc:'gorro',level:1},{bid:'collie',coat:0,acc:'lentes',level:10},{bid:'shiba',coat:0,acc:'corona',level:50}];
   const stars=Array.from({length:70},(_,i)=>({x:hash2(i,1),y:hash2(i,2)*.5,p:hash2(i,3)*6,b:hash2(i,4)>.85}));
   const floaters=['hueso','juego','gema','trofeo','galleta','corona'].map((id,i)=>({id,x:hash2(i,9),y:.18+hash2(i,8)*.22,p:i}));
+  /* ---- escena viva: hora del día, clima y estación ---- */
+  const CV=coverState();
+  const setChip=()=>{const el=$('#cvWx');if(el)el.innerHTML=`<span>${CV.em}</span> ${CV.label}`};setChip();
+  coverLiveWx(CV).then(ch=>{if(ch&&!done)setChip()});
+  const P=()=>CV_PAL[CV.phase];
+  const cvRain=Array.from({length:90},(_,i)=>({x:hash2(i,21),y:hash2(i,22),v:.8+hash2(i,23)*.6}));
+  const cvSnow=Array.from({length:70},(_,i)=>({x:hash2(i,31),y:hash2(i,32),v:.3+hash2(i,33)*.5,p:hash2(i,34)*6}));
+  const cvLeaf=Array.from({length:18},(_,i)=>({x:hash2(i,41),y:hash2(i,42),v:.25+hash2(i,43)*.3,p:hash2(i,44)*6}));
   const draw=t=>{if(done)return;const r=cv.getBoundingClientRect();const W=180,H=Math.max(200,Math.round(W*r.height/Math.max(1,r.width)));if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
-    const x=cv.getContext('2d');x.imageSmoothingEnabled=false;const s=(t-T0)/1000;const gy=Math.round(H*.66);
-    const sky=['#0B0820','#140F33','#1E1548','#2A1B58','#3D2266','#5A2A6E','#7E336E','#A8456A','#D46A5A','#F09A52'];const bh=Math.ceil(gy/sky.length);
+    const x=cv.getContext('2d');x.imageSmoothingEnabled=false;const s=(t-T0)/1000;const gy=Math.round(H*.66);const pal=P(),se=CV_SEASON[CV.season];
+    const wet=CV.wx==='rain'||CV.wx==='storm',grey=wet||CV.wx==='cloud'||CV.wx==='fog'||CV.wx==='snow';
+    const sky=grey?pal.skyG:pal.sky;const bh=Math.ceil(gy/sky.length);
     sky.forEach((c,i)=>{x.fillStyle=c;x.fillRect(0,i*bh,W,bh+1);if(i>0){x.fillStyle=sky[i-1];for(let k=(i%2);k<W;k+=2)x.fillRect(k,i*bh,1,1)}});
-    for(const st of stars){const tw=Math.sin(s*2+st.p)>.2;if(!tw&&!st.b)continue;x.fillStyle=st.b?'#FFC93C':'#FFFFFF';const sx=Math.round(st.x*W),sy=Math.round(st.y*gy);x.fillRect(sx,sy,1,1);if(st.b&&tw){x.fillRect(sx-1,sy,3,1);x.fillRect(sx,sy-1,1,3)}}
-    const ss=(s%7)/1.2;if(ss<1){x.fillStyle='#FFFFFF';const sx=Math.round(150-ss*120),sy=Math.round(10+ss*40);for(let k=0;k<6;k++){x.globalAlpha=1-k/6;x.fillRect(sx+k,sy-Math.round(k/3),1,1)}x.globalAlpha=1}
-    const mx=W-38,my=Math.round(gy*.22),mr=14;for(let yy=-mr;yy<=mr;yy++)for(let xx=-mr;xx<=mr;xx++){const d=xx*xx+yy*yy;if(d<=mr*mr){x.fillStyle=d>(mr-2)*(mr-2)?'#FFE7A8':(xx+yy>6?'#F2D58A':'#FFF4D2');x.fillRect(mx+xx,my+yy,1,1)}}
-    [[-5,-3,3],[4,4,2],[2,-7,2]].forEach(([a,b,rr])=>{for(let yy=-rr;yy<=rr;yy++)for(let xx=-rr;xx<=rr;xx++)if(xx*xx+yy*yy<=rr*rr){x.fillStyle='#E8C97A';x.fillRect(mx+a+xx,my+b+yy,1,1)}});
-    x.fillStyle='rgba(255,231,168,.08)';x.beginPath();x.arc(mx,my,mr+8,0,7);x.fill();
-    const layer=(spd,col,fn)=>{x.fillStyle=col;const off=(s*spd)%W;for(let i=-1;i<2;i++)fn(i*W-off)};
-    x.fillStyle='#2A1F55';for(let i=0;i<W;i++){const q=i+s*4;const h=Math.round(18+10*Math.sin(q*.05)+6*Math.sin(q*.13));x.fillRect(i,gy-h-16,1,h+16)}
-    x.fillStyle='#1A1440';const off2=(s*10)%240;for(let b=0;b<24;b++){const bx=Math.round(((b*10-off2)%240+240)%240)-30,bw=8,bhh=Math.round(10+hash2(b,5)*22);x.fillStyle='#1A1440';x.fillRect(bx,gy-bhh-4,bw,bhh+4);for(let wy=gy-bhh;wy<gy-4;wy+=3)for(let wx=bx+1;wx<bx+bw-1;wx+=3){if(hash2(wx+b*31,wy)>.55){const on=Math.sin(s*1.5+wx*.7+wy)>-.6;x.fillStyle=on?'#FFC93C':'#3A2E70';x.fillRect(wx,wy,1,1)}}}
-    {const cc=iconC('cloud');for(let k=0;k<4;k++){const cx=((k*55-s*(5+k*2))%(W+40)+W+40)%(W+40)-30,cy=Math.round(gy*(.42+k*.07));x.globalAlpha=.35+k*.08;x.drawImage(cc,0,0,cc.width,cc.height,Math.round(cx),cy,18+k*4,18+k*4);x.globalAlpha=1}}
-    const off3=(s*22)%60;x.fillStyle='#163028';for(let i=-1;i<5;i++){const tx=Math.round(i*60-off3+15);x.fillRect(tx+4,gy-14,2,14);for(let k=0;k<10;k++){x.fillStyle=k%3?'#1F4A3A':'#2C6A50';x.fillRect(tx+5-k*.6-.5,gy-26+k,Math.round(k*1.2)+1,1)}x.fillStyle='#163028';const tx2=tx+30;x.fillRect(tx2-6,gy-8,14,8);x.fillStyle='#1F4A3A';x.fillRect(tx2-4,gy-11,10,3)}
-    x.fillStyle='#2CE6A6';x.fillRect(0,gy,W,1);x.fillStyle='#1F8F6A';x.fillRect(0,gy+1,W,2);const off4=Math.round(s*40)%8;for(let i=-8;i<W;i+=8){x.fillStyle='#2CE6A6';x.fillRect(i-off4+2,gy-1,1,1);x.fillRect(i-off4+5,gy-2,1,2)}
-    x.fillStyle='#3A2A30';x.fillRect(0,gy+3,W,H-gy-3);x.fillStyle='#4A3540';for(let yy=gy+6;yy<H;yy+=6)for(let i=-12;i<W;i+=12){x.fillRect(i-((off4*1.5+yy)%12)+((yy/6)%2)*6,yy,5,2)}
+    /* estrellas y estrella fugaz (solo de noche y al atardecer) */
+    if(pal.stars&&!wet){for(const st of stars){if(st.y>pal.stars)continue;const tw=Math.sin(s*2+st.p)>.2;if(!tw&&!st.b)continue;x.fillStyle=st.b?'#FFC93C':'#FFFFFF';x.globalAlpha=grey?.35:1;const sx=Math.round(st.x*W),sy=Math.round(st.y*gy);x.fillRect(sx,sy,1,1);if(st.b&&tw){x.fillRect(sx-1,sy,3,1);x.fillRect(sx,sy-1,1,3)}x.globalAlpha=1}
+      if(CV.phase==='noche'&&!grey){const ss=(s%7)/1.2;if(ss<1){x.fillStyle='#FFFFFF';const sx=Math.round(150-ss*120),sy=Math.round(10+ss*40);for(let k=0;k<6;k++){x.globalAlpha=1-k/6;x.fillRect(sx+k,sy-Math.round(k/3),1,1)}x.globalAlpha=1}}}
+    /* sol o luna */
+    const disc=(cx,cy,rr,fn)=>{for(let yy=-rr;yy<=rr;yy++)for(let xx=-rr;xx<=rr;xx++){const d=xx*xx+yy*yy;if(d<=rr*rr){x.fillStyle=fn(xx,yy,d);x.fillRect(cx+xx,cy+yy,1,1)}}};
+    if(CV.phase==='noche'){const mx=W-38,my=Math.round(gy*.22),mr=14;x.globalAlpha=grey?.45:1;disc(mx,my,mr,(xx,yy,d)=>d>(mr-2)*(mr-2)?'#FFE7A8':(xx+yy>6?'#F2D58A':'#FFF4D2'));[[-5,-3,3],[4,4,2],[2,-7,2]].forEach(([a,b,rr])=>disc(mx+a,my+b,rr,()=>'#E8C97A'));x.fillStyle='rgba(255,231,168,.08)';x.beginPath();x.arc(mx,my,mr+8,0,7);x.fill();x.globalAlpha=1}
+    else{const sx=pal.sun[0]*W,sy=Math.round(pal.sun[1]*gy),sr=pal.sun[2];x.globalAlpha=grey?.35:1;x.fillStyle=pal.sunGlow;for(let k=3;k>0;k--){x.globalAlpha=(grey?.06:.12);x.beginPath();x.arc(sx,sy,sr+k*6,0,7);x.fill()}x.globalAlpha=grey?.4:1;disc(Math.round(sx),sy,sr,(xx,yy,d)=>d>(sr-2)*(sr-2)?pal.sunEdge:pal.sunCore);
+      if(!grey&&CV.phase==='dia'){x.fillStyle=pal.sunEdge;for(let k=0;k<8;k++){const a=k*Math.PI/4+s*.3;x.fillRect(Math.round(sx+Math.cos(a)*(sr+5)),Math.round(sy+Math.sin(a)*(sr+5)),2,2)}}x.globalAlpha=1}
+    /* cerros: nevados en invierno */
+    for(let i=0;i<W;i++){const q=i+s*4;const h=Math.round(18+10*Math.sin(q*.05)+6*Math.sin(q*.13));x.fillStyle=pal.hill;x.fillRect(i,gy-h-16,1,h+16);if(se.snowcap&&h>20){x.fillStyle=pal.snowcap;x.fillRect(i,gy-h-16,1,Math.max(1,Math.round((h-20)*.7)))}}
+    /* ciudad: luces encendidas de tarde y de noche */
+    const off2=(s*10)%240;for(let b=0;b<24;b++){const bx=Math.round(((b*10-off2)%240+240)%240)-30,bw=8,bhh=Math.round(10+hash2(b,5)*22);x.fillStyle=pal.city;x.fillRect(bx,gy-bhh-4,bw,bhh+4);if(CV.season==='invierno'||CV.wx==='snow'){x.fillStyle='#E6F0FF';x.fillRect(bx,gy-bhh-4,bw,1)}for(let wy=gy-bhh;wy<gy-4;wy+=3)for(let wx=bx+1;wx<bx+bw-1;wx+=3){if(hash2(wx+b*31,wy)>.55){const on=pal.lights&&Math.sin(s*1.5+wx*.7+wy)>-.6;x.fillStyle=on?'#FFC93C':pal.win;x.fillRect(wx,wy,1,1)}}}
+    /* nubes: más y más oscuras con mal tiempo */
+    {const cc=iconC('cloud');const nC=grey?7:4;for(let k=0;k<nC;k++){const cx=((k*37-s*(5+k*2))%(W+40)+W+40)%(W+40)-30,cy=Math.round(gy*(grey?.06+k*.05:.42+k*.07));x.globalAlpha=grey?.75:.35+k*.08;if(grey)x.filter=wet?'brightness(.55) saturate(.4)':'brightness(.85) saturate(.5)';x.drawImage(cc,0,0,cc.width,cc.height,Math.round(cx),cy,grey?26+k*3:18+k*4,grey?26+k*3:18+k*4);x.filter='none';x.globalAlpha=1}}
+    /* árboles según estación */
+    const off3=(s*22)%60;for(let i=-1;i<5;i++){const tx=Math.round(i*60-off3+15);x.fillStyle=pal.trunk;x.fillRect(tx+4,gy-10,2,10);
+      for(let k=0;k<18;k++){const w=Math.round(k*.75)+1;x.fillStyle=CV.season==='invierno'?(k%4===0?'#F2F6FF':k%3?'#1F4A3A':'#2C6A50'):(k%3?se.leaf:se.leaf2);x.fillRect(tx+5-w/2|0,gy-28+k,w,1)}
+      const tx2=tx+30;x.fillStyle=pal.trunk;x.fillRect(tx2,gy-14,2,14);
+      if(CV.season==='invierno'){x.fillRect(tx2-5,gy-18,1,5);x.fillRect(tx2+6,gy-19,1,6);x.fillRect(tx2-4,gy-16,10,1);x.fillRect(tx2-2,gy-21,1,5);x.fillRect(tx2+3,gy-22,1,6);x.fillStyle='#F2F6FF';[[-5,-19],[6,-20],[-2,-22],[3,-23],[0,-17],[-4,-17],[5,-17]].forEach(([a,b])=>x.fillRect(tx2+a,gy+b,1,1))}
+      else{x.fillStyle=se.leaf;x.fillRect(tx2-7,gy-24,16,10);x.fillRect(tx2-5,gy-27,12,3);x.fillRect(tx2-8,gy-21,18,5);x.fillStyle=se.leaf2;x.fillRect(tx2-4,gy-24,6,3);x.fillRect(tx2+3,gy-19,4,2);
+        if(se.bloom){x.fillStyle=se.bloom;[[-6,-22],[2,-26],[6,-20],[-2,-18],[7,-24],[-4,-25],[0,-21],[4,-17]].forEach(([a,b])=>x.fillRect(tx2+a,gy+b,2,1))}
+        if(CV.season==='otono'){x.fillStyle='#F2A134';x.fillRect(tx2-9,gy-1,3,1);x.fillRect(tx2+7,gy-1,2,1);x.fillStyle='#C23B22';x.fillRect(tx2+10,gy-1,2,1)}}}
+    /* suelo: pasto por estación, nieve o charcos */
+    const snowy=se.snow||CV.wx==='snow';x.fillStyle=snowy?'#F2F6FF':se.grass;x.fillRect(0,gy,W,1);x.fillStyle=snowy?'#C9D6EE':se.grass2;x.fillRect(0,gy+1,W,2);const off4=Math.round(s*40)%8;
+    if(!snowy)for(let i=-8;i<W;i+=8){x.fillStyle=se.grass;x.fillRect(i-off4+2,gy-1,1,1);x.fillRect(i-off4+5,gy-2,1,2);if(se.flower&&(i/8)%2===0){x.fillStyle=se.flower[(i/8)%se.flower.length|0];x.fillRect(i-off4+3,gy-3,2,2)}if(CV.season==='otono'&&(i/8)%2===1){x.fillStyle=(i/8)%4===1?'#E8892C':'#C23B22';x.fillRect(i-off4+1,gy,2,1)}}
+    else for(let i=-8;i<W;i+=8){x.fillStyle='#FFFFFF';x.fillRect(i-off4+2,gy-1,3,1)}
+    x.fillStyle=pal.road;x.fillRect(0,gy+3,W,H-gy-3);x.fillStyle=pal.road2;for(let yy=gy+6;yy<H;yy+=6)for(let i=-12;i<W;i+=12){x.fillRect(i-((off4*1.5+yy)%12)+((yy/6)%2)*6,yy,5,2)}
     x.fillStyle='#8A6A50';x.fillRect(0,gy+10,W,1);x.fillStyle='#6A5040';for(let i=-10;i<W;i+=10)x.fillRect(i-(Math.round(s*60)%10),gy+16,5,1);
+    if(wet){for(let k=0;k<6;k++){const px=((hash2(k,51)*W-s*40)%W+W)%W,py=gy+8+Math.round(hash2(k,52)*(H-gy-14));x.fillStyle='rgba(159,196,255,.35)';x.fillRect(Math.round(px),py,10,2);x.fillStyle='rgba(255,255,255,.5)';x.fillRect(Math.round(px)+2,py,3,1)}}
+    if(snowy){x.fillStyle='rgba(242,246,255,.55)';for(let i=0;i<W;i+=3)x.fillRect(i,gy+3,2,1+(i%5===0?1:0))}
+    /* objetos flotantes */
     floaters.forEach(f=>{const fx=((f.x*W-s*14)%(W+20)+W+20)%(W+20)-10,fy=Math.round(f.y*gy+Math.sin(s*2+f.p)*3);const c=iconC(f.id);x.globalAlpha=.9;x.drawImage(c,Math.round(fx),fy);x.globalAlpha=1;if(Math.sin(s*3+f.p)>.8){x.fillStyle='#FFFFFF';x.fillRect(Math.round(fx)+9,fy-1,1,1)}});
-    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(d,Math.floor(s*1.3+i*.7)%5===0?1:0);const dx=Math.round(sp*(i+.5)-12+Math.sin(s*1.2+i)*4),dy=gy-23+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+5,gy,14,2);x.drawImage(c,dx,dy);if(fr&&i%2){x.fillStyle='#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
-    for(let k=0;k<14;k++){const px=(hash2(k,7)*W+s*(8+k))%W,py=gy-((s*12+k*9)%(gy*.8));if(Math.sin(s*4+k)>0){x.fillStyle=k%3?'#FFC93C':'#C9BDFF';x.fillRect(Math.round(px),Math.round(py),1,1)}}
+    /* perros (con charcos que salpican cuando llueve) */
+    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(d,Math.floor(s*1.3+i*.7)%5===0?1:0);const dx=Math.round(sp*(i+.5)-12+Math.sin(s*1.2+i)*4),dy=gy-23+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+5,gy,14,2);x.drawImage(c,dx,dy);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
+    /* partículas de estación: hojas (otoño), pétalos (primavera), luciérnagas (noches de verano) */
+    if(CV.season==='otono'||CV.season==='primavera'){for(const l of cvLeaf){const ly=((l.y+s*l.v*.12)%1)*H*.9,lx=((l.x*W+Math.sin(s*1.4+l.p)*10-s*8)%W+W)%W;x.fillStyle=CV.season==='otono'?['#E8892C','#C23B22','#F2B134'][(l.p*3|0)%3]:['#FF8FB8','#FFD6E8','#FFFFFF'][(l.p*3|0)%3];const fl=Math.sin(s*5+l.p)>0;x.fillRect(Math.round(lx),Math.round(ly),fl?2:1,fl?1:2)}}
+    if(CV.season==='verano'&&CV.phase!=='dia'&&!wet){for(let k=0;k<14;k++){const px=(hash2(k,7)*W+Math.sin(s*.8+k)*8+W)%W,py=gy-10-hash2(k,8)*gy*.35+Math.sin(s*1.3+k)*4;if(Math.sin(s*3+k*1.7)>.1){x.fillStyle='#E6FF7A';x.fillRect(Math.round(px),Math.round(py),1,1);x.globalAlpha=.3;x.fillRect(Math.round(px)-1,Math.round(py)-1,3,3);x.globalAlpha=1}}}
+    else if(!wet&&CV.wx!=='snow'){for(let k=0;k<14;k++){const px=(hash2(k,7)*W+s*(8+k))%W,py=gy-((s*12+k*9)%(gy*.8));if(Math.sin(s*4+k)>0){x.fillStyle=k%3?'#FFC93C':'#C9BDFF';x.fillRect(Math.round(px),Math.round(py),1,1)}}}
+    /* clima: lluvia, tormenta, nieve, niebla */
+    if(wet){x.fillStyle=CV.phase==='noche'?'rgba(175,198,255,.55)':'rgba(220,232,255,.6)';for(const d of cvRain){const yy=((d.y+s*d.v*1.6)%1)*H,xx=((d.x*W-s*d.v*25)%W+W)%W;x.fillRect(Math.round(xx),Math.round(yy),1,3)}}
+    if(CV.wx==='storm'){const f=(s%5.3);if(f<.12||(f>.22&&f<.3)){x.fillStyle='rgba(255,255,255,.45)';x.fillRect(0,0,W,H);x.fillStyle='#FFF6B0';let lx=60+((s*13|0)%60),ly=0;while(ly<gy*.6){const nx=lx+((ly*7|0)%5)-2;x.fillRect(nx,ly,2,5);lx=nx;ly+=5}}}
+    if(CV.wx==='snow'){for(const f of cvSnow){const yy=((f.y+s*f.v*.25)%1)*H,xx=((f.x*W+Math.sin(s+f.p)*6)%W+W)%W;x.fillStyle='#FFFFFF';x.fillRect(Math.round(xx),Math.round(yy),f.v>.6?2:1,f.v>.6?2:1)}}
+    if(CV.wx==='fog'){for(let k=0;k<4;k++){const yy=gy-30+k*12,o=(s*(4+k*2))%W;x.fillStyle='rgba(220,226,240,.18)';x.fillRect(0,yy,W,6);x.fillStyle='rgba(220,226,240,.12)';x.fillRect(-o,yy+6,W*2,3)}}
+    if(pal.tint){x.fillStyle=pal.tint;x.fillRect(0,0,W,H)}
     raf=requestAnimationFrame(draw)};
   raf=requestAnimationFrame(draw);
   const finish=v=>{if(done)return;done=true;
