@@ -998,6 +998,7 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .pc-chips .angchip img{width:26px;height:24px}
 .care-btn{font-size:13px!important}
 .sex-tag,.fac-tag{font-size:12px!important}
+.cv-wx.hol{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.cv-wx.hol b{font-size:15px;color:#FFE29A}.cv-wx.hol span{font-size:12px;color:#C9BDFF}
 .cv-wx{margin-top:8px;align-self:center;font-family:var(--pix);font-size:13px;color:#FFF6D8;padding:4px 10px;background:rgba(14,10,38,.55);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
 </style>
 
@@ -4544,6 +4545,49 @@ async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se
 
 function openBadges(){sheet(`<div class="t1">MEDALLAS Y LOGROS</div><div class="mute small">${S.badges.length} de ${BADGES.length} desbloqueadas. Toca una para ver cómo conseguirla.</div>${medalsGridHTML()}<button class="btn" id="bdClose">Cerrar</button>`,sh=>{bindMedals(sh);sh.querySelector('#bdClose').onclick=closeSheet})}
 
+/* ================= FECHAS ESPECIALES EN LA PORTADA (4 días antes y 1 después) ================= */
+function easterDate(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da)}
+const PATRIAS={CL:[9,18,'Fiestas Patrias','🇨🇱',['#0039A6','#FFFFFF','#D52B1E'],1],AR:[7,9,'Día de la Independencia','🇦🇷',['#74ACDF','#FFFFFF','#74ACDF']],MX:[9,16,'Día de la Independencia','🇲🇽',['#006847','#FFFFFF','#CE1126']],PE:[7,28,'Fiestas Patrias','🇵🇪',['#D91023','#FFFFFF','#D91023']],CO:[7,20,'Día de la Independencia','🇨🇴',['#FCD116','#003893','#CE1126']],UY:[8,25,'Día de la Independencia','🇺🇾',['#0038A8','#FFFFFF','#FCD116']],PY:[5,15,'Día de la Independencia','🇵🇾',['#D52B1E','#FFFFFF','#0038A8']],BO:[8,6,'Día de la Independencia','🇧🇴',['#D52B1E','#F9E300','#007934']],EC:[8,10,'Primer Grito de Independencia','🇪🇨',['#FFDD00','#034EA2','#ED1C24']],VE:[7,5,'Día de la Independencia','🇻🇪',['#FFCC00','#00247D','#CF142B']],ES:[10,12,'Fiesta Nacional','🇪🇸',['#AA151B','#F1BF00','#AA151B']],US:[7,4,'Independence Day','🇺🇸',['#B22234','#FFFFFF','#3C3B6E']],BR:[9,7,'Dia da Independência','🇧🇷',['#009C3B','#FFDF00','#002776']]};
+function holidayList(y,nat){const L=[
+  {id:'anonuevo',n:`Año Nuevo ${y}`,em:'🎆',d:new Date(y,0,1),hat:'party'},
+  {id:'anonuevo',n:`Año Nuevo ${y+1}`,em:'🎆',d:new Date(y+1,0,1),hat:'party'},
+  {id:'sanvalentin',n:'San Valentín',em:'💘',d:new Date(y,1,14),hat:null},
+  {id:'pascua',n:'Pascua de Resurrección',em:'🐣',d:easterDate(y),hat:'ears'},
+  {id:'diaperro',n:'Día Internacional del Perro',em:'🐶',d:new Date(y,7,26),hat:'party'},
+  {id:'animales',n:'Día Mundial de los Animales',em:'🐾',d:new Date(y,9,4),hat:null},
+  {id:'halloween',n:'Halloween',em:'🎃',d:new Date(y,9,31),hat:'witch'},
+  {id:'navidad',n:'Navidad',em:'🎄',d:new Date(y,11,25),hat:'santa'}];
+  const p=PATRIAS[nat];if(p)L.push({id:'patrias',n:p[2],em:p[3],d:new Date(y,p[0]-1,p[1]),hat:null,col:p[4],kites:!!p[5],days:p[5]?3:1});
+  return L}
+function holidayNow(nat){const now=new Date();const t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  try{const q=new URLSearchParams(location.search).get('fiesta');if(q){const all=[...holidayList(now.getFullYear(),nat||'CL'),...holidayList(now.getFullYear(),'CL')];const h=all.filter(x=>x.id===q).sort((a,b)=>(a.d<t0)-(b.d<t0)||Math.abs(a.d-t0)-Math.abs(b.d-t0))[0];if(h){const k=+(new URLSearchParams(location.search).get('falta')||0);return{...h,left:k}}}}catch(e){}
+  for(const h of holidayList(now.getFullYear(),nat)){const len=h.days||1;const start=new Date(h.d);start.setDate(start.getDate()-4);const end=new Date(h.d);end.setDate(end.getDate()+len);
+    if(t0>=start&&t0<=end){const left=Math.round((h.d-t0)/864e5);return{...h,left}}}
+  return null}
+function holidayLabel(h){if(h.left>1)return `Faltan ${h.left} días para ${h.n}`;if(h.left===1)return `¡Mañana es ${h.n}!`;
+  return {navidad:'¡Feliz Navidad!',anonuevo:`¡Feliz ${h.n}!`,sanvalentin:'¡Feliz San Valentín!',pascua:'¡Felices Pascuas!',diaperro:'¡Feliz Día del Perro!',animales:'¡Feliz Día de los Animales!',halloween:'¡Feliz Halloween!',patrias:`¡Felices ${h.n}!`}[h.id]||h.n}
+function cvHolidaySky(x,W,H,gy,s,h){const R=(a,b,w,hh,c)=>{x.fillStyle=c;x.fillRect(Math.round(a),Math.round(b),w,hh)};
+  if(h.id==='anonuevo'||h.id==='patrias'||(h.id==='navidad'&&h.left<=0)){/* fuegos artificiales */
+    const cols=h.col||['#FFC93C','#FF5CC8','#7EE7FF','#2CE6A6','#FF6B2C'];for(let k=0;k<4;k++){const per=2.4+k*.37,tt=((s+k*.9)%per)/per;const cx=20+hash2(k,61+Math.floor((s+k*.9)/per))*(W-40),cy=12+hash2(k,62+Math.floor((s+k*.9)/per))*gy*.4;
+      if(tt<.25){R(cx,cy+(1-tt/.25)*gy*.5,1,3,'#FFF6B0')}else{const r=(tt-.25)/.75,rad=4+r*16;x.globalAlpha=1-r;for(let a=0;a<12;a++){const an=a/12*Math.PI*2;R(cx+Math.cos(an)*rad,cy+Math.sin(an)*rad+r*r*6,1,1,cols[(a+k)%cols.length]);R(cx+Math.cos(an)*rad*.6,cy+Math.sin(an)*rad*.6+r*r*4,1,1,'#FFFFFF')}x.globalAlpha=1}}}
+  if(h.id==='navidad'){/* trineo cruzando el cielo y guirnalda */
+    const sx=((s*18)%(W+80))-40,sy=Math.round(gy*.18+Math.sin(s)*4);x.globalAlpha=.85;for(let k=0;k<3;k++){R(sx+k*9,sy+1,6,2,'#6A3E1E');R(sx+k*9+4,sy-1,1,2,'#6A3E1E')}R(sx+28,sy,10,4,'#D52B1E');R(sx+28,sy+4,11,1,'#FFC93C');R(sx+31,sy-3,4,3,'#D52B1E');R(sx+32,sy-4,2,1,'#FFFFFF');x.globalAlpha=1;R(sx+2,sy-1,1,1,'#FF3B3B');
+    for(let i=0;i<W;i+=1){const yy=Math.round(6+Math.sin(i*.12)*3);R(i,yy,1,1,'#2A6A3A')}for(let i=4;i<W;i+=9){const yy=Math.round(7+Math.sin(i*.12)*3);const on=Math.sin(s*4+i)>-.3;R(i,yy+1,2,2,on?['#FF3B3B','#FFC93C','#2CE6A6','#7EE7FF'][(i/9|0)%4]:'#3A2A30')}}
+  if(h.id==='sanvalentin'||h.id==='animales'){for(let k=0;k<12;k++){const yy=gy-((s*10+k*23)%(gy*.9)),xx=(hash2(k,71)*W+Math.sin(s+k)*6+W)%W;x.globalAlpha=.85;if(h.id==='sanvalentin'){const c=k%2?'#FF5C8A':'#FF8FB8';R(xx,yy,2,1,c);R(xx+3,yy,2,1,c);R(xx-1,yy+1,7,2,c);R(xx,yy+3,5,1,c);R(xx+1,yy+4,3,1,c);R(xx+2,yy+5,1,1,c)}else{const c=k%2?'#FFC93C':'#C9BDFF';R(xx,yy+2,4,3,c);R(xx-1,yy,1,2,c);R(xx+1,yy-1,1,2,c);R(xx+3,yy-1,1,2,c);R(xx+5,yy,1,2,c)}x.globalAlpha=1}}
+  if(h.id==='halloween'){x.fillStyle='rgba(255,107,44,.10)';x.fillRect(0,0,W,gy);for(let k=0;k<5;k++){const bx=((s*(16+k*4)+k*50)%(W+30))-15,by=gy*.15+k*9+Math.sin(s*3+k)*5,fl=Math.sin(s*12+k)>0;R(bx,by,3,2,'#0A0612');R(bx-3,by+(fl?-1:1),3,1,'#0A0612');R(bx+3,by+(fl?-1:1),3,1,'#0A0612')}}
+  if(h.id==='diaperro'){const c=iconC('hueso');for(let k=0;k<8;k++){const yy=((s*12+k*31)%(gy*.9)),xx=(hash2(k,81)*W+W)%W;x.globalAlpha=.8;x.drawImage(c,Math.round(xx),Math.round(yy),8,8);x.globalAlpha=1}}
+  if(h.id==='patrias'){/* banderines y volantines */
+    const cols=h.col;for(let i=-4;i<W;i+=8){const yy=Math.round(4+Math.sin((i+4)*.09)*3);R(i,yy,8,1,'#3A2A30');const c=cols[((i+4)/8|0)%cols.length];R(i+1,yy+1,6,2,c);R(i+2,yy+3,4,1,c);R(i+3,yy+4,2,1,c)}
+    if(h.kites){[[.2,.22,'#D52B1E'],[.55,.12,'#0039A6'],[.82,.3,'#FFC93C']].forEach(([kx,ky,c],k)=>{const cx=kx*W+Math.sin(s*.8+k)*5,cy=ky*gy+Math.cos(s+k)*3;for(let r=0;r<5;r++){R(cx-r,cy+r,r*2+1,1,c)}for(let r=4;r>=0;r--){R(cx-r,cy+9-r,r*2+1,1,c)}R(cx,cy,1,10,'#FFFFFF');x.globalAlpha=.6;for(let t=0;t<16;t++)R(cx+Math.sin(t*.4+s*2)*2,cy+10+t*2,1,1,'#F6EAC8');x.globalAlpha=1})}}}
+function cvHolidayGround(x,W,H,gy,s,h){const R=(a,b,w,hh,c)=>{x.fillStyle=c;x.fillRect(Math.round(a),Math.round(b),w,hh)};
+  if(h.id==='halloween'){for(let k=0;k<4;k++){const px=((k*50+20-s*22)%(W+40)+W+40)%(W+40)-20;R(px,gy-5,7,5,'#FF7A1A');R(px+1,gy-6,5,1,'#FF7A1A');R(px+3,gy-8,1,2,'#3E8A4A');R(px+1,gy-4,1,1,'#2A1408');R(px+5,gy-4,1,1,'#2A1408');R(px+2,gy-2,3,1,'#2A1408');x.globalAlpha=.3;R(px-2,gy-7,11,8,'#FFC93C');x.globalAlpha=1}}
+  if(h.id==='pascua'){const cs=['#FF8FB8','#7EE7FF','#FFE066','#C9A6FF','#2CE6A6'];for(let k=0;k<7;k++){const px=((k*28+10-s*22)%(W+20)+W+20)%(W+20)-10;const c=cs[k%cs.length];R(px,gy-4,4,4,c);R(px+1,gy-5,2,1,c);R(px,gy-3,4,1,'#FFFFFF')}}
+  if(h.id==='navidad'){for(let k=0;k<3;k++){const px=((k*62+40-s*22)%(W+30)+W+30)%(W+30)-15;R(px,gy-5,6,5,['#D52B1E','#2CE6A6','#3C9DFF'][k]);R(px+2,gy-5,2,5,'#FFC93C');R(px,gy-3,6,1,'#FFC93C');R(px+1,gy-6,1,1,'#FFC93C');R(px+4,gy-6,1,1,'#FFC93C')}}}
+function cvHat(x,dx,dy,h,i){const R=(a,b,w,hh,c)=>{x.fillStyle=c;x.fillRect(a,b,w,hh)};const cx=dx+12,ty=dy+2;
+  if(h.hat==='santa'){R(cx-4,ty,8,2,'#FFFFFF');R(cx-3,ty-2,6,2,'#D52B1E');R(cx-1,ty-4,4,2,'#D52B1E');R(cx+3,ty-5,2,2,'#FFFFFF')}
+  else if(h.hat==='party'){const c=['#FF5CC8','#FFC93C','#2CE6A6','#7EE7FF','#9A6BFF'][i%5];R(cx-3,ty,6,1,c);R(cx-2,ty-1,4,1,c);R(cx-2,ty-2,4,1,'#FFFFFF');R(cx-1,ty-3,2,1,c);R(cx-1,ty-4,2,1,c);R(cx,ty-6,1,2,'#FFF6B0')}
+  else if(h.hat==='witch'){R(cx-5,ty,10,1,'#2A1440');R(cx-3,ty-1,6,1,'#2A1440');R(cx-3,ty-2,6,1,'#FF7A1A');R(cx-2,ty-4,4,2,'#2A1440');R(cx-1,ty-6,2,2,'#2A1440');R(cx+1,ty-7,1,1,'#2A1440')}
+  else if(h.hat==='ears'){R(cx-4,ty-5,2,6,'#FFFFFF');R(cx+2,ty-5,2,6,'#FFFFFF');R(cx-3,ty-4,1,4,'#FF8FB8');R(cx+3,ty-4,1,4,'#FF8FB8')}}
 /* ================= PORTADA VIVA: hora, clima y estación ================= */
 const CV_PAL={
   amanecer:{sky:['#2A2458','#4A3070','#7A4280','#B0588A','#E07A88','#F4A08A','#FFC59A','#FFE0B0'],skyG:['#3A3A5A','#4E4A68','#665E78','#807488','#9A8A96','#B4A2A4','#CBB8B2','#DCCCC0'],stars:.3,sun:[.22,.92,11],sunCore:'#FFF2C4',sunEdge:'#FFB870',sunGlow:'#FFB870',hill:'#4A3A6E',snowcap:'#F2E6F6',city:'#3A2E5E',win:'#5A4A7E',lights:true,trunk:'#3A2A30',road:'#4A3A40',road2:'#5A4650',tint:null},
@@ -4567,7 +4611,8 @@ function coverState(){let lat=-33.45,code=null,temp=null,sr=null,ss=null;
   const phase=h>=srH-.6&&h<srH+1?'amanecer':h>=srH+1&&h<ssH-1.2?'dia':h>=ssH-1.2&&h<ssH+.6?'tarde':'noche';
   const m=now.getMonth(),south=lat<0;const sIdx=[0,0,1,1,1,2,2,2,3,3,3,0][m];
   const season=(south?['verano','otono','invierno','primavera']:['invierno','primavera','verano','otono'])[sIdx];
-  const st={phase,season,wx:cvWxOf(code),temp,lat};
+  let nat='CL';try{nat=(S&&S.pet&&S.pet.nat)||detectNat()}catch(e){}
+  const st={phase,season,wx:cvWxOf(code),temp,lat,hol:holidayNow(nat)};
   try{const q=new URLSearchParams(location.search).get('portada');if(q){const [a,b,c]=q.split(',');if(CV_PAL[a])st.phase=a;if(CV_WNAMES[b]!=null)st.wx=b;if(CV_SEASON[c])st.season=c}}catch(e){}
   cvLabel(st);return st}
 function cvLabel(st){const em={amanecer:'🌅',dia:'☀️',tarde:'🌇',noche:'🌙'}[st.phase];const wem={cloud:'☁️',rain:'🌧️',storm:'⛈️',snow:'❄️',fog:'🌫️'}[st.wx];
@@ -4609,7 +4654,7 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
   const floaters=['hueso','juego','gema','trofeo','galleta','corona'].map((id,i)=>({id,x:hash2(i,9),y:.18+hash2(i,8)*.22,p:i}));
   /* ---- escena viva: hora del día, clima y estación ---- */
   const CV=coverState();
-  const setChip=()=>{const el=$('#cvWx');if(el)el.innerHTML=`<span>${CV.em}</span> ${CV.label}`};setChip();
+  const setChip=()=>{const el=$('#cvWx');if(!el)return;el.classList.toggle('hol',!!CV.hol);el.innerHTML=CV.hol?`<b>${CV.hol.em} ${esc(holidayLabel(CV.hol))}</b><span>${CV.em} ${CV.label}</span>`:`<span>${CV.em} ${CV.label}</span>`};setChip();
   coverLiveWx(CV).then(ch=>{if(ch&&!done)setChip()});
   const P=()=>CV_PAL[CV.phase];
   const cvRain=Array.from({length:90},(_,i)=>({x:hash2(i,21),y:hash2(i,22),v:.8+hash2(i,23)*.6}));
@@ -4634,9 +4679,10 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
     const off2=(s*10)%240;for(let b=0;b<24;b++){const bx=Math.round(((b*10-off2)%240+240)%240)-30,bw=8,bhh=Math.round(10+hash2(b,5)*22);x.fillStyle=pal.city;x.fillRect(bx,gy-bhh-4,bw,bhh+4);if(CV.season==='invierno'||CV.wx==='snow'){x.fillStyle='#E6F0FF';x.fillRect(bx,gy-bhh-4,bw,1)}for(let wy=gy-bhh;wy<gy-4;wy+=3)for(let wx=bx+1;wx<bx+bw-1;wx+=3){if(hash2(wx+b*31,wy)>.55){const on=pal.lights&&Math.sin(s*1.5+wx*.7+wy)>-.6;x.fillStyle=on?'#FFC93C':pal.win;x.fillRect(wx,wy,1,1)}}}
     /* nubes: más y más oscuras con mal tiempo */
     {const cc=iconC('cloud');const nC=grey?7:4;for(let k=0;k<nC;k++){const cx=((k*37-s*(5+k*2))%(W+40)+W+40)%(W+40)-30,cy=Math.round(gy*(grey?.06+k*.05:.42+k*.07));x.globalAlpha=grey?.75:.35+k*.08;if(grey)x.filter=wet?'brightness(.55) saturate(.4)':'brightness(.85) saturate(.5)';x.drawImage(cc,0,0,cc.width,cc.height,Math.round(cx),cy,grey?26+k*3:18+k*4,grey?26+k*3:18+k*4);x.filter='none';x.globalAlpha=1}}
+    if(CV.hol)cvHolidaySky(x,W,H,gy,s,CV.hol);
     /* árboles según estación */
     const off3=(s*22)%60;for(let i=-1;i<5;i++){const tx=Math.round(i*60-off3+15);x.fillStyle=pal.trunk;x.fillRect(tx+4,gy-10,2,10);
-      for(let k=0;k<18;k++){const w=Math.round(k*.75)+1;x.fillStyle=CV.season==='invierno'?(k%4===0?'#F2F6FF':k%3?'#1F4A3A':'#2C6A50'):(k%3?se.leaf:se.leaf2);x.fillRect(tx+5-w/2|0,gy-28+k,w,1)}
+      for(let k=0;k<18;k++){const w=Math.round(k*.75)+1;x.fillStyle=CV.season==='invierno'?(k%4===0?'#F2F6FF':k%3?'#1F4A3A':'#2C6A50'):(k%3?se.leaf:se.leaf2);x.fillRect(tx+5-w/2|0,gy-28+k,w,1)}if(CV.hol&&CV.hol.id==='navidad'){[[0,-27,'#FFC93C'],[-2,-22,'#FF3B3B'],[3,-20,'#7EE7FF'],[-4,-16,'#2CE6A6'],[2,-14,'#FF3B3B'],[6,-12,'#FFC93C']].forEach(([a,b,c],q)=>{x.fillStyle=Math.sin(s*5+q+i)>-.2?c:'#1F4A3A';x.fillRect(tx+5+a,gy+b,1,1)})}
       const tx2=tx+30;x.fillStyle=pal.trunk;x.fillRect(tx2,gy-14,2,14);
       if(CV.season==='invierno'){x.fillRect(tx2-5,gy-18,1,5);x.fillRect(tx2+6,gy-19,1,6);x.fillRect(tx2-4,gy-16,10,1);x.fillRect(tx2-2,gy-21,1,5);x.fillRect(tx2+3,gy-22,1,6);x.fillStyle='#F2F6FF';[[-5,-19],[6,-20],[-2,-22],[3,-23],[0,-17],[-4,-17],[5,-17]].forEach(([a,b])=>x.fillRect(tx2+a,gy+b,1,1))}
       else{x.fillStyle=se.leaf;x.fillRect(tx2-7,gy-24,16,10);x.fillRect(tx2-5,gy-27,12,3);x.fillRect(tx2-8,gy-21,18,5);x.fillStyle=se.leaf2;x.fillRect(tx2-4,gy-24,6,3);x.fillRect(tx2+3,gy-19,4,2);
@@ -4650,10 +4696,11 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
     x.fillStyle='#8A6A50';x.fillRect(0,gy+10,W,1);x.fillStyle='#6A5040';for(let i=-10;i<W;i+=10)x.fillRect(i-(Math.round(s*60)%10),gy+16,5,1);
     if(wet){for(let k=0;k<6;k++){const px=((hash2(k,51)*W-s*40)%W+W)%W,py=gy+8+Math.round(hash2(k,52)*(H-gy-14));x.fillStyle='rgba(159,196,255,.35)';x.fillRect(Math.round(px),py,10,2);x.fillStyle='rgba(255,255,255,.5)';x.fillRect(Math.round(px)+2,py,3,1)}}
     if(snowy){x.fillStyle='rgba(242,246,255,.55)';for(let i=0;i<W;i+=3)x.fillRect(i,gy+3,2,1+(i%5===0?1:0))}
+    if(CV.hol)cvHolidayGround(x,W,H,gy,s,CV.hol);
     /* objetos flotantes */
     floaters.forEach(f=>{const fx=((f.x*W-s*14)%(W+20)+W+20)%(W+20)-10,fy=Math.round(f.y*gy+Math.sin(s*2+f.p)*3);const c=iconC(f.id);x.globalAlpha=.9;x.drawImage(c,Math.round(fx),fy);x.globalAlpha=1;if(Math.sin(s*3+f.p)>.8){x.fillStyle='#FFFFFF';x.fillRect(Math.round(fx)+9,fy-1,1,1)}});
     /* perros (con charcos que salpican cuando llueve) */
-    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(d,Math.floor(s*1.3+i*.7)%5===0?1:0);const dx=Math.round(sp*(i+.5)-12+Math.sin(s*1.2+i)*4),dy=gy-23+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+5,gy,14,2);x.drawImage(c,dx,dy);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
+    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(CV.hol&&CV.hol.hat?{...d,acc:''}:d,Math.floor(s*1.3+i*.7)%5===0?1:0);const dx=Math.round(sp*(i+.5)-12+Math.sin(s*1.2+i)*4),dy=gy-23+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+5,gy,14,2);x.drawImage(c,dx,dy);if(CV.hol&&CV.hol.hat)cvHat(x,dx,dy,CV.hol,i);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
     /* partículas de estación: hojas (otoño), pétalos (primavera), luciérnagas (noches de verano) */
     if(CV.season==='otono'||CV.season==='primavera'){for(const l of cvLeaf){const ly=((l.y+s*l.v*.12)%1)*H*.9,lx=((l.x*W+Math.sin(s*1.4+l.p)*10-s*8)%W+W)%W;x.fillStyle=CV.season==='otono'?['#E8892C','#C23B22','#F2B134'][(l.p*3|0)%3]:['#FF8FB8','#FFD6E8','#FFFFFF'][(l.p*3|0)%3];const fl=Math.sin(s*5+l.p)>0;x.fillRect(Math.round(lx),Math.round(ly),fl?2:1,fl?1:2)}}
     if(CV.season==='verano'&&CV.phase!=='dia'&&!wet){for(let k=0;k<14;k++){const px=(hash2(k,7)*W+Math.sin(s*.8+k)*8+W)%W,py=gy-10-hash2(k,8)*gy*.35+Math.sin(s*1.3+k)*4;if(Math.sin(s*3+k*1.7)>.1){x.fillStyle='#E6FF7A';x.fillRect(Math.round(px),Math.round(py),1,1);x.globalAlpha=.3;x.fillRect(Math.round(px)-1,Math.round(py)-1,3,3);x.globalAlpha=1}}}
