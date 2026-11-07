@@ -1000,6 +1000,13 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .sex-tag,.fac-tag{font-size:12px!important}
 .cv-wx.hol{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}.cv-wx.hol b{font-size:15px;color:#FFE29A}.cv-wx.hol span{font-size:12px;color:#C9BDFF}
 .cv-wx{margin-top:8px;align-self:center;font-family:var(--pix);font-size:13px;color:#FFF6D8;padding:4px 10px;background:rgba(14,10,38,.55);box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+.pact-dog{position:relative;filter:drop-shadow(0 0 14px rgba(255,143,184,.45))}
+.pact-heart{position:absolute;right:-8px;top:-4px;font-size:22px;color:#FF5C8A;animation:pactBeat 1.1s ease-in-out infinite}
+@keyframes pactBeat{50%{transform:scale(1.25)}}
+.pact-list{gap:8px}.pact-it{display:flex;gap:10px;align-items:flex-start;padding:10px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.1)}
+.pact-it>span{font-size:22px;line-height:1;flex:none}.pact-it>div{display:flex;flex-direction:column;gap:2px}
+.pact-ban{text-align:center;box-shadow:inset 0 0 0 2px #FF8FB8}
+@media (prefers-reduced-motion:reduce){.pact-heart{animation:none}}
 </style>
 
 <div class="app" id="app">
@@ -4395,7 +4402,7 @@ function renderSettings(){const p=S.pet;let acct='';
   else if(MODE==='shared'){acct=`<div class="acct"><img class="spr av" src="${petU(p)}" alt=""><div class="col" style="gap:3px"><b>Cuenta de Claude</b><span class="mute small">Estás usando PaseoPet dentro de Claude con tu cuenta.</span></div></div><div class="mute small">Para entrar con Gmail, abre PaseoPet desde tu sitio web.</div>`}
   else{acct=`<div class="acct"><img class="spr av" src="${petU(p)}" alt=""><div class="col" style="gap:3px"><b>Sin cuenta</b><span class="mute small">Tus datos viven solo en este teléfono.</span></div></div>${fbConfigured()?`<button class="btn big" id="stIn" style="background:#fff;color:#1F1F1F;gap:12px">${gIcon()}Entrar con Google</button><div class="mute small">Al entrar, tus datos de este teléfono pasan a tu cuenta.</div>`:'<div class="banner small">El inicio con Google aún no está activado en esta copia (falta pegar FIREBASE_CONFIG en el archivo).</div>'}`}
   const notif=window.Notification?Notification.permission:'unsupported';
-  $('#s-settings').innerHTML=`<div class="row between"><button class="btn sm" id="stBack">◄ Volver</button><div class="t1">AJUSTES</div><span style="width:70px"></span></div>
+  $('#s-settings').innerHTML=`<div class="row between"><button class="btn sm" id="stBack">◄ Volver</button><div class="t1">AJUSTES</div><span style="width:70px"></span></div><button class="btn" id="stPact">🤝 El Pacto del Paseo</button>
   <div class="box hot"><span class="t2">Cuenta</span>${acct}</div>
   <div class="box"><span class="t2">Paseos y mapa</span>
    <button class="setrow" id="stMap">${ico('pin')}<span><b>Estilo del mapa</b><br><span class="mute small">${esc(mapStyle().n)}</span></span><span class="chev">►</span></button>
@@ -4419,7 +4426,7 @@ function renderSettings(){const p=S.pet;let acct='';
    <button class="btn r" id="stReset">${setResetArm?'Toca otra vez: se borra todo':'Borrar todos mis datos'}</button></div>
   <div class="box dark" style="align-items:center;text-align:center"><img src="${APP_LOGO}" alt="PaseoPet" style="width:92px;height:auto;filter:drop-shadow(0 4px 0 rgba(0,0,0,.45))"><div class="t2">PASEOPET v2.0</div><div class="mute small">Creado por <b style="color:var(--gold)">Jean &quot;morningstar&quot; Muñoz</b>, Chile.<br>Mapas © OpenStreetMap contributors · Clima: Open-Meteo.com</div></div>`;
   hydrateIcons($('#s-settings'));
-  $('#stBack').onclick=()=>go(SET_BACK||'home');
+  $('#stBack').onclick=()=>go(SET_BACK||'home');$('#stPact').onclick=()=>honorPact();
   const o=$('#stOut');if(o)o.onclick=signOutFB;const i=$('#stIn');if(i)i.onclick=signInAgain;
   $('#stMap').onclick=openMapStyle;$('#stGps').onclick=openGpsHelp;
   $('#stHome').onclick=async()=>{const f=await getFix(10000);if(f.err){gpsFail(f.err);return}S.home={lat:f.lat,lng:f.lng};save();renderSettings();toast('Casa guardada (solo la ves tú)','home')};
@@ -5464,6 +5471,29 @@ function angelBirthday(){if(!S||!S.onboarded)return;const md=dkey().slice(5),y=d
   sheet(`<div class="col" style="align-items:center;gap:10px;text-align:center">${angelHTML(a,130)}<div class="t1">HOY ES EL CUMPLEAÑOS DE ${esc(a.name.toUpperCase())}</div><div class="small">Un día para recordarlo con cariño.${a.likes?` Le encantaba ${esc(a.likes)}.`:''}</div></div><button class="btn o big" id="bdWalk">🐾 Pasear en su honor</button><button class="btn" id="bdNo">Cerrar</button>`,sh=>{
     sh.querySelector('#bdNo').onclick=closeSheet;sh.querySelector('#bdWalk').onclick=()=>{S.angelOn=a.id;save();closeSheet();go('walk')}})}
 
+/* ================= EL PACTO DEL PASEO (mensaje contra la trampa) ================= */
+function honorPact(after){const p=S.pet,nm=esc(p.name||'tu perro');const again=!!S.pact;
+  sheet(`<div class="col pact" style="align-items:center;gap:10px;text-align:center">
+   <div class="pact-dog">${petHTML(p,104,{bob:true})}<span class="pact-heart" aria-hidden="true">❤</span></div>
+   <div class="t1">EL PACTO DEL PASEO</div>
+   <div class="small">PaseoPet no puede saber si ${nm} va contigo. Podrías caminar solo y sumar puntos igual… pero el juego es solo la excusa. <b>El premio de verdad es ${nm}.</b></div></div>
+   <div class="col pact-list">
+    <div class="pact-it"><span>❤️</span><div><b>Menos estrés</b><span class="mute small">Salir a pasear le baja la ansiedad y el aburrimiento de estar en casa.</span></div></div>
+    <div class="pact-it"><span>👃</span><div><b>Olfatear lo cansa (en el buen sentido)</b><span class="mute small">Oler la calle es su forma de leer el mundo. Un rato de olfateo lo deja tranquilo y feliz.</span></div></div>
+    <div class="pact-it"><span>💪</span><div><b>Cuerpo sano</b><span class="mute small">Caminar lo mantiene en su peso y cuida sus articulaciones y su corazón.</span></div></div>
+    <div class="pact-it"><span>🏡</span><div><b>Mejor convivencia</b><span class="mute small">Un perro bien paseado suele ladrar menos, romper menos y dormir mejor.</span></div></div>
+   </div>
+   <div class="banner pact-ban">Si haces trampa, pierde ${nm}. Si lo sacas a pasear, <b>ganan los dos</b>. 🐾</div>
+   ${again?`<div class="mute small" style="text-align:center">Prometiste pasear con ${nm} el ${new Date(S.pact.at).toLocaleDateString('es-CL')}. ¡Gracias!</div><button class="btn o big" id="pcOk">Cerrar</button>`
+   :`<button class="btn o big" id="pcOk">🤝 Prometo pasear con ${nm}</button><button class="btn" id="pcLater">Leer después</button>`}`,sh=>{
+    const fin=()=>{closeSheet();after&&setTimeout(after,400)};
+    sh.querySelector('#pcOk').onclick=()=>{if(!again){S.pact={at:Date.now()};save();vib([20,40,20]);setTimeout(()=>toast(`¡Trato hecho! ${nm} te lo agradece 🐾`,'paw','#FF8FB8'),300)}fin()};
+    const l=sh.querySelector('#pcLater');if(l)l.onclick=fin})}
+/* ventanas de bienvenida en fila, para que no se tapen entre sí */
+function startupQueue(steps){const wrap=()=>$('#sheetWrap');let i=0;
+  const next=()=>{if(i>=steps.length)return;if(wrap()&&!wrap().hidden){setTimeout(next,700);return}const fn=steps[i++];let opened=false;try{opened=fn()}catch(e){}setTimeout(next,opened?900:50)};
+  setTimeout(next,1800)}
+
 /* quiénes salen al paseo */
 function crewHTML(){ensureDogs();if(S.dogs.length<2)return '';PLAN.crew=(PLAN.crew||[S.pet.pid]).filter(pid=>S.dogs.some(d=>d.pid===pid));if(!PLAN.crew.includes(S.pet.pid))PLAN.crew.unshift(S.pet.pid);
   return `<div class="box" style="padding:12px"><div class="row between"><span class="t2">¿Quiénes salen hoy?</span><span class="tag d">${PLAN.crew.length} de ${S.dogs.length}</span></div>
@@ -5719,7 +5749,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();setTimeout(creatorGrant,1500);setTimeout(angelBirthday,3500);setTimeout(handleFriendLink,600);setTimeout(()=>exitHint(false),2500);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);startupQueue([()=>{if(S.pact)return false;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
