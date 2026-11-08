@@ -1015,6 +1015,9 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 @media (prefers-reduced-motion:reduce){.petbox img.pstrip{animation:none}}
 .nav button:not(.on):not(.go) img[data-ico]{filter:saturate(.45) brightness(.85)}
 .nav button.on img[data-ico]{filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
+.quotaban{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:9999;display:flex;gap:10px;align-items:flex-start;padding:12px;background:#2A2058;color:#FFF6D8;box-shadow:inset 0 0 0 3px #FFC93C,4px 4px 0 rgba(0,0,0,.6)}
+.quotaban button{margin-left:auto;background:none;border:0;color:#FFF6D8;font-size:18px;cursor:pointer}
+.feedmore{width:100%}.media.nophoto img{display:none}
 </style>
 
 <div class="app" id="app">
@@ -2538,7 +2541,7 @@ function LocalDB(){
 }
 let DB=null,USER=null,UID=null,MODE='firebase',SAMPLE,DOWN;
 const wq=new Map();
-function W8(path,fn){const p=(wq.get(path)||Promise.resolve()).then(fn).catch(e=>{console.warn('write',path,e);if(e&&e.code==='quota_exceeded')toast('Se llenó el espacio de datos de la app. Borra publicaciones antiguas.','sos');else if(e&&e.code==='invalid_argument')toast(MODE==='firebase'?'No se pudo guardar: revisa las reglas de Firestore.':'No se pudo guardar: tu acceso es de solo lectura.','sos');throw e});wq.set(path,p.catch(()=>{}));return p}
+function W8(path,fn){const p=(wq.get(path)||Promise.resolve()).then(fn).catch(e=>{console.warn('write',path,e);if(e&&e.code==='quota_exceeded')quotaCheck(e);else if(e&&e.code==='invalid_argument')toast(MODE==='firebase'?'No se pudo guardar: revisa las reglas de Firestore.':'No se pudo guardar: tu acceso es de solo lectura.','sos');throw e});wq.set(path,p.catch(()=>{}));return p}
 const mainPath=()=>`data/users/${UID}/main`;
 const walksCol=()=>DB.doc(mainPath()).collection('walks');
 
@@ -2931,28 +2934,92 @@ function rollDay(){const t=dkey();if(S.today.d!==t)S.today={d:t,min:0,km:0};if(S
   if(S.pet.last&&S.pet.last!==t&&S.pet.last!==dkey(daysAgo(1))&&S.pet.streak){S.pet.streak=0}
   const idle=S.pet.last?Math.floor((new Date(t)-new Date(S.pet.last))/86400000):0;if(idle>1)S.pet.happy=Math.max(30,S.pet.happy-idle*4);refreshMis()}
 let saveT=0;
-function save(now){clearTimeout(saveT);const go=()=>W8(mainPath(),()=>DB.doc(mainPath()).set(clone(S))).catch(()=>{});if(now)return go();saveT=setTimeout(go,1200)}
+function save(now){clearTimeout(saveT);if(S)S.savedAt=Date.now();if(MODE==='firebase')backupLocal();const go=()=>W8(mainPath(),()=>DB.doc(mainPath()).set(clone(S))).catch(()=>{});if(now)return go();saveT=setTimeout(go,1200)}
 let profT=0;
 function pushProfile(){clearTimeout(profT);profT=setTimeout(()=>{const p=S.pet;const body={name:MODE==='firebase'&&FBUSER?(FBUSER.displayName||'').split(' ')[0].slice(0,20):'',pet:{name:p.name,species:'perro',sex:p.sex||'macho',fur:p.fur,spot:p.spot,acc:p.acc,skin:p.skin||'natural',aura:p.aura||'default',biome:p.biome||'noche',faction:p.faction||'fuego',prestige:p.prestige||0,bid:p.bid||'',coat:p.coat|0,custom:!!p.custom,level:p.level,breed:p.breed,title:p.title||'',nat:p.nat||''},code:friendCode(UID),bc:S.badges.length,weekKey:S.weekKey,weekXp:S.weekXp,totalKm:+S.totals.km.toFixed(2),terr:S.terrCount,walker:S.walker.on?{on:true,price:S.walker.price,bio:S.walker.bio,zone:S.walker.zone,avail:!!S.walker.avail,lat:S.walker.lat||null,lng:S.walker.lng||null,ts:S.walker.ts||0,rating:S.walker.rating||null,jobs:S.walker.jobs}:null,updated:Date.now()};
   W8('profiles/'+UID,()=>DB.doc('profiles/'+UID).set(body)).catch(()=>{})},800)}
 function addXp(n){const p=S.pet;p.xp+=n;let up=0;while(p.xp>=need(p.level)){p.xp-=need(p.level);p.level++;up++}S.weekXp+=n;return up}
 function notify(txt,icon){S.notif.unshift({txt,icon:icon||'bell',ts:Date.now(),read:false});S.notif=S.notif.slice(0,40);save()}
 
+/* ================= SOCIAL LIGERO: cuida los límites del plan gratis de Firebase ================= */
+const FEED_PAGE=10,FEEDX={more:true,loading:false,last:null,at:0};
+const POSTX=new Map(),PHC=new Map(),PHP=new Map();
+const postById=id=>SH.posts.find(x=>x.id===id)||POSTX.get(id);
+const QUOTA={hit:0};
+function quotaCheck(e){const c=e&&e.code;if(c==='quota_exceeded'||c==='resource-exhausted'){if(!QUOTA.hit)showQuotaBanner();QUOTA.hit=Date.now();return true}return false}
+function showQuotaBanner(){if(document.getElementById('quotaBan'))return;const d=document.createElement('div');d.id='quotaBan';d.className='quotaban';d.setAttribute('role','status');
+  d.innerHTML=`<span style="font-size:20px">🐾</span><div><b>La comunidad está muy activa hoy</b><br><span class="small">Vuelve en unas horas para ver el muro y publicar. Tu progreso queda guardado en tu teléfono y se subirá solo.</span></div><button aria-label="Cerrar aviso">✕</button>`;
+  d.querySelector('button').onclick=()=>d.remove();document.body.appendChild(d)}
+setInterval(()=>{if(QUOTA.hit&&Date.now()-QUOTA.hit>15*60e3&&MODE==='firebase'&&S){QUOTA.hit=0;const b=document.getElementById('quotaBan');if(b)b.remove();save(true)}},5*60e3);
+/* --- fotos livianas y separadas del post --- */
+const PH_BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const hasPhoto=p=>!!(p&&(p.photo||p.hasPh));
+function phAttr(p){return p.photo?`src="${p.photo}"`:`src="${PHC.get(p.id)||PH_BLANK}"${PHC.get(p.id)?'':` data-pimg="${p.id}"`}`}
+function lightPhoto(url,max){return new Promise(res=>{if(!url){res(null);return}const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);const x=c.getContext('2d');x.drawImage(im,0,0,c.width,c.height);
+  let u=c.toDataURL('image/webp',.62);if(!u.startsWith('data:image/webp'))u=c.toDataURL('image/jpeg',.62);res(u)};im.onerror=()=>res(null);im.src=url})}
+function getPhoto(id){if(PHC.has(id))return Promise.resolve(PHC.get(id));if(!PHP.has(id))PHP.set(id,DB.doc('postimg/'+id).get().then(s=>{const u=(s.exists&&s.data().photo)||'';PHC.set(id,u);return u}).catch(e=>{quotaCheck(e);PHP.delete(id);return ''}));return PHP.get(id)}
+let PHIO=null;
+async function loadPhoto(el){const id=el.dataset.pimg;if(!id)return;el.removeAttribute('data-pimg');const u=await getPhoto(id);if(u)el.src=u;else el.closest('.media')&&el.closest('.media').classList.add('nophoto')}
+function hydratePhotos(root){const els=(root||document).querySelectorAll?(root||document).querySelectorAll('img[data-pimg]'):[];if(!els.length)return;
+  if(!PHIO&&'IntersectionObserver' in window)PHIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){PHIO.unobserve(e.target);loadPhoto(e.target)}}),{rootMargin:'400px'});
+  els.forEach(el=>PHIO?PHIO.observe(el):loadPhoto(el))}
+try{new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1){if(n.matches&&n.matches('img[data-pimg]'))hydratePhotos(n.parentNode);else if(n.querySelector&&n.querySelector('img[data-pimg]'))hydratePhotos(n)}}).observe(document.documentElement,{childList:true,subtree:true})}catch(e){}
+/* --- publicar: máximo 5 al día, foto aparte --- */
+const POST_MAX=5;
+function canPost(){const k=dkey();if(!S.postLog||S.postLog.d!==k)S.postLog={d:k,n:0};if(S.postLog.n>=POST_MAX){toast(`Llegaste al máximo de ${POST_MAX} publicaciones por hoy. ¡Mañana puedes publicar más!`,'bubble','#FFC93C');return false}return true}
+async function publishPost(body,photo){if(!canPost()){const e=new Error('limit');e.code='limit';throw e}
+  if(photo)photo=await lightPhoto(photo,body.photoPix?160:480)||photo;delete body.photoPix;if(photo)body.hasPh=1;
+  const ref=await W8('posts/new',()=>DB.collection('posts').add(body));
+  if(photo){PHC.set(ref.id,photo);try{await W8('postimg/'+ref.id,()=>DB.doc('postimg/'+ref.id).set({uid:UID,ts:body.ts,photo}))}catch(e){try{await DB.doc('posts/'+ref.id).update({photo,hasPh:0})}catch(x){}}}
+  S.postLog.n++;const p={id:ref.id,...body};SH.posts.unshift(p);POSTX.set(p.id,p);return ref}
+/* --- muro por páginas --- */
+async function loadFeed(more){if(MODE!=='firebase'||!DB||FEEDX.loading)return;if(!more){FEEDX.more=true;FEEDX.last=null}if(!FEEDX.more)return;FEEDX.loading=true;FEEDX.at=Date.now();
+  try{const q=more&&FEEDX.last?DB.collection('posts').where('ts','<',FEEDX.last).orderBy('ts','desc'):DB.collection('posts').orderBy('ts','desc');
+    const s=await q.limit(FEED_PAGE).get();const arr=s.docs.map(d=>({id:d.id,...d.data()}));arr.forEach(p=>POSTX.set(p.id,p));
+    if(more){const seen=new Set(SH.posts.map(p=>p.id));SH.posts=SH.posts.concat(arr.filter(p=>!seen.has(p.id)))}else SH.posts=arr;
+    FEEDX.last=arr.length?arr[arr.length-1].ts:FEEDX.last;FEEDX.more=arr.length===FEED_PAGE;
+    await Promise.all([loadReactions(arr.map(p=>p.id)),ensureProfiles(arr.map(p=>p.uid))])}catch(e){quotaCheck(e)}
+  FEEDX.loading=false;if(tab==='feed')renderFeed();resolveNames()}
+/* --- likes y comentarios solo de los posts visibles --- */
+async function loadReactions(ids){ids=ids.filter(Boolean);const ch=[];for(let i=0;i<ids.length;i+=10)ch.push(ids.slice(i,i+10));
+  await Promise.all(ch.map(async c=>{try{const [ls,cs]=await Promise.all([DB.collection('likes').where('post','in',c).limit(300).get(),DB.collection('comments').where('post','in',c).limit(200).get()]);
+    const set=new Set(c);SH.likes=SH.likes.filter(l=>!set.has(l.post)).concat(ls.docs.map(d=>d.data()));SH.comments=SH.comments.filter(x=>!set.has(x.post)).concat(cs.docs.map(d=>({id:d.id,...d.data()})))}catch(e){quotaCheck(e)}}))}
+/* --- perfiles a pedido (con caché de 6 horas en el teléfono) --- */
+const PROF_AT={},PROF_PEND=new Set(),PROF_KEY='pp_prof_cache';
+function loadProfCache(){try{const c=JSON.parse(localStorage.getItem(PROF_KEY)||'{}');for(const id in c){if(Date.now()-c[id].at<24*3600e3){SH.profiles[id]=c[id].d;PROF_AT[id]=c[id].at}}}catch(e){}}
+function saveProfCache(){try{const ids=Object.keys(PROF_AT).sort((a,b)=>PROF_AT[b]-PROF_AT[a]).slice(0,150);const o={};ids.forEach(id=>{if(SH.profiles[id])o[id]={d:SH.profiles[id],at:PROF_AT[id]}});localStorage.setItem(PROF_KEY,JSON.stringify(o))}catch(e){}}
+async function ensureProfiles(ids){if(MODE!=='firebase'||!DB)return;const need=[...new Set(ids)].filter(id=>id&&id!==UID&&!PROF_PEND.has(id)&&(!SH.profiles[id]||Date.now()-(PROF_AT[id]||0)>6*3600e3)).slice(0,30);if(!need.length)return;
+  need.forEach(id=>PROF_PEND.add(id));await Promise.all(need.map(async id=>{try{const s=await DB.doc('profiles/'+id).get();if(s.exists){SH.profiles[id]=s.data();PROF_AT[id]=Date.now()}}catch(e){quotaCheck(e)}PROF_PEND.delete(id)}));saveProfCache();resolveNames();rerenderSoft()}
+const RKX={};
+async function loadRanking(force){if(MODE!=='firebase'||!DB)return;if(RK.scope==='amigos'){ensureProfiles(friendIds());return}const key=RK.scope+'|'+RK.metric;if(!force&&RKX[key]&&Date.now()-RKX[key]<5*60e3)return;RKX[key]=Date.now();
+  const fld={week:'weekXp',km:'totalKm',terr:'terr',level:'pet.level'}[RK.metric]||'weekXp';
+  try{const q=RK.scope==='pais'?DB.collection('profiles').where('pet.nat','==',S.pet.nat).limit(60):DB.collection('profiles').orderBy(fld,'desc').limit(25);const s=await q.get();s.docs.forEach(d=>{SH.profiles[d.id]=d.data();PROF_AT[d.id]=Date.now()});saveProfCache();if(tab==='feed'&&SOC.tab==='ranking')renderFeed()}catch(e){quotaCheck(e)}}
+async function loadTopProfiles(){if(MODE!=='firebase'||!DB)return;loadProfCache();try{const s=await DB.collection('profiles').orderBy('weekXp','desc').limit(20).get();s.docs.forEach(d=>{SH.profiles[d.id]=d.data();PROF_AT[d.id]=Date.now()});saveProfCache();resolveNames();rerenderSoft()}catch(e){quotaCheck(e)}}
+/* --- posts de un perfil --- */
+const UPX={};
+async function userPosts(id){if(MODE!=='firebase'||!DB)return SH.posts.filter(p=>p.uid===id);if(UPX[id]&&Date.now()-UPX[id].at<5*60e3)return UPX[id].list;
+  try{const s=await DB.collection('posts').where('uid','==',id).limit(24).get();const list=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.ts-a.ts);list.forEach(p=>POSTX.set(p.id,p));UPX[id]={at:Date.now(),list};return list}catch(e){quotaCheck(e);return SH.posts.filter(p=>p.uid===id)}}
+/* --- limpieza semanal: a tus posts de más de 90 días se les quita la foto --- */
+async function cleanupMine(){if(MODE!=='firebase'||!DB||!S)return;if(S.cleanAt&&Date.now()-S.cleanAt<7*864e5)return;S.cleanAt=Date.now();save();
+  try{const s=await DB.collection('posts').where('uid','==',UID).limit(40).get();const old=Date.now()-90*864e5;
+    for(const d of s.docs){const p=d.data();if(p.ts<old&&(p.photo||p.hasPh)){await DB.doc('posts/'+d.id).update({photo:'',hasPh:0}).catch(()=>{});if(p.hasPh)await DB.doc('postimg/'+d.id).delete().catch(()=>{})}}}catch(e){quotaCheck(e)}}
+/* --- respaldo del progreso en el teléfono --- */
+const BK_KEY=()=>'pp_backup_'+(UID||'x');
+function backupLocal(){try{localStorage.setItem(BK_KEY(),JSON.stringify(S))}catch(e){}}
+function readBackup(){try{return JSON.parse(localStorage.getItem(BK_KEY())||'null')}catch(e){return null}}
 /* ================= SHARED SUBSCRIPTIONS ================= */
 const SH={profiles:{},posts:[],likes:[],comments:[],cells:{},reqOwner:[],reqWalker:[],names:{}};
 const subs={};
 function subscribeShared(){
-  subs.prof=DB.collection('profiles').limit(200).onSnapshot(s=>{const o={};s.docs.forEach(d=>o[d.id]=d.data());SH.profiles=o;resolveNames();rerenderSoft()},()=>{});
-  subs.posts=DB.collection('posts').orderBy('ts','desc').limit(40).onSnapshot(s=>{SH.posts=s.docs.map(d=>({id:d.id,...d.data()}));if(tab==='feed')renderFeed();resolveNames()},()=>{});
-  subs.likes=DB.collection('likes').orderBy('ts','desc').limit(400).onSnapshot(s=>{SH.likes=s.docs.map(d=>d.data());if(tab==='feed')updateLikes()},()=>{});
-  subs.comments=DB.collection('comments').orderBy('ts','desc').limit(300).onSnapshot(s=>{SH.comments=s.docs.map(d=>({id:d.id,...d.data()}));if(tab==='feed')updateLikes()},()=>{});
+  loadTopProfiles();
+  loadFeed(false);
   subs.ro=DB.collection('requests').where('owner','==',UID).limit(30).onSnapshot(s=>{const prev=new Map(SH.reqOwner.map(r=>[r.id,r.status]));SH.reqOwner=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.ts-a.ts);
     for(const r of SH.reqOwner){const ps=prev.get(r.id);if(ps&&ps!==r.status){const m={aceptada:'Tu solicitud fue aceptada',rechazada:'El paseador no puede esta vez',en_camino:'Tu paseador va en camino',paseando:'¡Comenzó el paseo!',entregada:'Tu mascota fue entregada en casa'}[r.status];if(m){toast(m,'walker');notify(m,'walker')}}}
-    if(TRK&&TRK.id){renderTrack()}rerenderSoft()},()=>{});
+    if(TRK&&TRK.id){renderTrack()}rerenderSoft()},quotaCheck);
   subscribeFriends();
   subs.rw=DB.collection('requests').where('walker','==',UID).limit(30).onSnapshot(s=>{const prev=new Set(SH.reqWalker.map(r=>r.id));SH.reqWalker=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.ts-a.ts);
     for(const r of SH.reqWalker)if(!prev.has(r.id)&&r.status==='pendiente'&&SH._rwInit){toast('Nueva solicitud de paseo','walker','#2CE6A6');notify('Nueva solicitud de paseo para '+(r.pet&&r.pet.name||'una mascota'),'walker')}
-    SH._rwInit=true;if(JOB&&JOB.id)renderJob();rerenderSoft()},()=>{});
+    SH._rwInit=true;if(JOB&&JOB.id)renderJob();rerenderSoft()},quotaCheck);
 }
 let chunkSubs=new Map(),chunkCenter=null;
 function watchChunks(lat,lng){const m=merc(lat,lng),k=hexOf(m.x,m.y),c=chunkOf(k);if(c===chunkCenter)return;chunkCenter=c;const [cq,cr]=c.split('_').map(Number);const want=new Set();for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)want.add((cq+a)+'_'+(cr+b));
@@ -3495,9 +3562,9 @@ function postStep3(o){const r=POST.sm.rec;if(!POST.text)POST.text=r.diary||'';co
   const ta=$('#pTxt');ta.oninput=()=>{POST.text=ta.value;POST.textEdited=true};
   $('#pPub').onclick=async e=>{const b=e.currentTarget;b.disabled=true;b.textContent='Publicando…';
     const body={uid:UID,ts:Date.now(),type:'paseo',text:(POST.text||'').trim().slice(0,400),pet:{name:S.pet.name,species:'perro',fur:S.pet.fur,spot:S.pet.spot,acc:S.pet.acc,bid:S.pet.bid||'',coat:S.pet.coat|0,custom:!!S.pet.custom,level:S.pet.level},km:+(r.dist/1000).toFixed(2),time:r.time,hexes:r.hexes||0,pts:r.pts&&r.pts.length>1?privTrim(r.pts).slice(0,350):[]};
-    if(POST.photo){const sm=await shrinkUrl(POST.photo,POST.pix?160:640,.75);if(sm)body.photo=sm}
-    try{await W8('posts/new',()=>DB.collection('posts').add(body));POST.published=true;S.posted=true;if(!S.badges.includes('social')){S.badges.push('social');toast('Nueva medalla: Influencer','megafono')}save();toast('Publicado en PaseoPet','megafono');postStep3(o);hydrateIcons(o)}
-    catch(x){b.disabled=false;b.textContent='Reintentar publicar';toast('No se pudo publicar. Revisa tu conexión.','sos')}};
+    const PHOTO=POST.photo?await shrinkUrl(POST.photo,POST.pix?160:960,.85):null;if(POST.pix)body.photoPix=1;
+    try{await publishPost(body,PHOTO);POST.published=true;S.posted=true;if(!S.badges.includes('social')){S.badges.push('social');toast('Nueva medalla: Influencer','megafono')}save();toast('Publicado en PaseoPet','megafono');postStep3(o);hydrateIcons(o)}
+    catch(x){b.disabled=false;if(x&&x.code==='limit'){b.textContent='Límite diario alcanzado';return}b.textContent='Reintentar publicar';if(!quotaCheck(x))toast('No se pudo publicar. Revisa tu conexión.','sos')}};
   const fb=app=>{const steps={ig:'Abre Instagram → + → Historia → elige la imagen guardada.',wa:'Abre WhatsApp → Novedades → Estados → cámara → elige la imagen guardada.',tt:'Abre TikTok → + → Foto → elige la imagen guardada.',more:'Abre la app donde quieras compartir y elige la imagen guardada.'}[app];const box=$('#shFb');if(box)box.innerHTML=`<div class="banner small">Este navegador no abre el menú de compartir. Toca “Guardar imagen” y luego: ${steps}</div>${app==='wa'?`<a class="btn g" href="https://wa.me/?text=${encodeURIComponent(shareText(r))}" target="_blank" rel="noopener">Enviar texto por WhatsApp</a>`:''}`};
   $$('#o-sum [data-app]').forEach(b=>b.onclick=async()=>{const app=b.dataset.app;if(!POST.blob)return;const ok=await shareBlob(POST.blob,app,shareText(r));if(ok===true){if(!POST.shared.includes(app))POST.shared.push(app);b.classList.add('done')}else if(!ok)fb(app)});
   $('#shSave').onclick=async e=>{const b=e.currentTarget;const ok=await saveBlob(POST.blob,`paseopet-${r.date}.png`);if(ok){if(!POST.shared.includes('save'))POST.shared.push('save');b.classList.add('done')}else{const box=$('#shFb');if(box)box.innerHTML=`<div class="banner small">Mantén presionada la vista previa para guardarla.</div><img src="${POST.blobUrl}" alt="Historia" style="max-height:50vh;object-fit:contain;image-rendering:pixelated;-webkit-touch-callout:default;-webkit-user-select:auto">`}};
@@ -3532,13 +3599,13 @@ async function openPublish(rec,photo){if(rec&&rec.manual){toast('Los paseos manu
    sh.querySelector('#pGo').onclick=async e=>{const txt=$('#pTxt').value.trim();if(!txt&&!img&&!rec){toast('Escribe algo o agrega una foto','bubble');return}e.currentTarget.disabled=true;
     const body={uid:UID,ts:Date.now(),type:rec?'paseo':'foto',text:txt.slice(0,400),pet:{name:S.pet.name,species:S.pet.species,fur:S.pet.fur,spot:S.pet.spot,acc:S.pet.acc,bid:S.pet.bid||'',coat:S.pet.coat|0,custom:!!S.pet.custom,level:S.pet.level}};
     if(rec){body.km=+(rec.dist/1000).toFixed(2);body.time=rec.time;body.hexes=rec.hexes||0;body.pts=rec.pts&&rec.pts.length>1?privTrim(rec.pts).slice(0,350):[]}
-    if(img)body.photo=img;
-    try{await W8('posts/new',()=>DB.collection('posts').add(body));S.posted=true;if(!S.badges.includes('social')){S.badges.push('social');toast('Nueva medalla: Influencer','megafono')}save();closeSheet();$('#o-sum').hidden=true;$('#o-card').hidden=true;go('feed');toast('Publicado en Social','megafono');if(alsoStory)openStory(rec,img)}catch(x){e.currentTarget.disabled=false;toast('No se pudo publicar','sos')}}})}
+    const btn=e.currentTarget;
+    try{await publishPost(body,img);S.posted=true;if(!S.badges.includes('social')){S.badges.push('social');toast('Nueva medalla: Influencer','megafono')}save();closeSheet();$('#o-sum').hidden=true;$('#o-card').hidden=true;go('feed');toast('Publicado en Social','megafono');if(alsoStory)openStory(rec,img)}catch(x){if(btn)btn.disabled=false;if(x&&x.code==='limit')return;if(!quotaCheck(x))toast('No se pudo publicar','sos')}}})}
 function likeCount(id){return SH.likes.filter(l=>l.post===id).length}
 const iLiked=id=>SH.likes.some(l=>l.post===id&&l.uid===UID);
 const SOC={tab:'feed',filter:'todos'};
 function renderFeed_old(){const nreq=pendingIn().length;
-  const head=`<div class="row between"><div class="t1">SOCIAL</div><button class="iconbtn" id="newPost" aria-label="Nueva publicación">${ico('cam')}</button></div>
+  const head=`<div class="row between"><div class="t1">SOCIAL</div>${MODE==='firebase'?`<button class="iconbtn" id="feedRef" aria-label="Actualizar muro">${FEEDX.loading?'…':'↻'}</button>`:''}<button class="iconbtn" id="newPost" aria-label="Nueva publicación">${ico('cam')}</button></div>
   <div class="steps3 soct">${[['feed','Muro'],['amigos','Amigos'+(nreq?' ('+nreq+')':'')],['ranking','Ranking']].map(([k,n])=>`<button class="${SOC.tab===k?'on':''}" data-soc="${k}">${n}</button>`).join('')}</div>`;
   const bindHead=()=>{$('#newPost').onclick=()=>openPublish(null,null);$$('[data-soc]').forEach(b=>b.onclick=()=>{SOC.tab=b.dataset.soc;$('#s-feed').scrollTop=0;renderFeed()})};
   if(SOC.tab==='amigos'){$('#s-feed').innerHTML=head+friendsHTML();hydrateIcons($('#s-feed'));bindHead();bindFriends($('#s-feed'));return}
@@ -3558,15 +3625,16 @@ function renderFeed_old(){const nreq=pendingIn().length;
   $$('[data-like]').forEach(b=>b.onclick=()=>toggleLike(b.dataset.like));
   $$('.media').forEach(m=>{let last=0;m.addEventListener('pointerup',()=>{const n=performance.now();if(n-last<320){if(!iLiked(m.dataset.k))toggleLike(m.dataset.k);const bb=document.createElement('img');bb.className='burst spr';bb.src=iconU('paw','#FF6B2C');bb.alt='';m.appendChild(bb);setTimeout(()=>bb.remove(),700)}last=n})});
   $$('[data-cm]').forEach(b=>b.onclick=()=>openComments(b.dataset.cm));
-  $$('[data-del]').forEach(b=>b.onclick=()=>{const id=b.dataset.del;sheet(`<div class="t1">¿BORRAR?</div><div>La publicación se borrará para todos.</div><button class="btn r" id="dy">Borrar</button><button class="btn" id="dn">Cancelar</button>`,sh=>{sh.querySelector('#dn').onclick=closeSheet;sh.querySelector('#dy').onclick=async()=>{closeSheet();await W8('posts/'+id,()=>DB.doc('posts/'+id).delete()).catch(()=>{});toast('Publicación borrada','trash')}})});
-  requestAnimationFrame(()=>$$('canvas[data-mini]').forEach(cv=>{const p=SH.posts.find(x=>x.id===cv.dataset.mini);if(p)drawMini(cv,p.pts.map(ll),p.uid===UID?OR:hashCol(p.uid))}));
+  $$('[data-del]').forEach(b=>b.onclick=()=>{const id=b.dataset.del;sheet(`<div class="t1">¿BORRAR?</div><div>La publicación se borrará para todos.</div><button class="btn r" id="dy">Borrar</button><button class="btn" id="dn">Cancelar</button>`,sh=>{sh.querySelector('#dn').onclick=closeSheet;sh.querySelector('#dy').onclick=async()=>{closeSheet();await W8('posts/'+id,()=>DB.doc('posts/'+id).delete()).catch(()=>{});DB.doc('postimg/'+id).delete().catch(()=>{});SH.posts=SH.posts.filter(x=>x.id!==id);POSTX.delete(id);if(tab==='feed')renderFeed();toast('Publicación borrada','trash')}})});
+  requestAnimationFrame(()=>$$('canvas[data-mini]').forEach(cv=>{const p=postById(cv.dataset.mini);if(p)drawMini(cv,p.pts.map(ll),p.uid===UID?OR:hashCol(p.uid))}));
 }
 function updateLikes_old(){$$('[data-like]').forEach(b=>{const id=b.dataset.like,on=iLiked(id);b.classList.toggle('on',on);b.querySelector('img').src=iconU('paw',on?'#FF6B2C':'#8A93AD');b.querySelector('span').textContent=likeCount(id)});$$('[data-cm]').forEach(b=>b.querySelector('span').textContent=SH.comments.filter(x=>x.post===b.dataset.cm).length)}
-async function toggleLike(id){const ref=DB.doc('likes/'+id+'~'+UID);const p=W8(ref.path,()=>iLiked(id)?ref.delete():ref.set({post:id,uid:UID,ts:Date.now()}));p.catch(()=>{})}
+async function toggleLike(id){const ref=DB.doc('likes/'+id+'~'+UID);const was=iLiked(id);if(was)SH.likes=SH.likes.filter(l=>!(l.post===id&&l.uid===UID));else SH.likes.push({post:id,uid:UID,ts:Date.now()});updateLikes();W8(ref.path,()=>was?ref.delete():ref.set({post:id,uid:UID,ts:Date.now()})).catch(e=>quotaCheck(e))}
 function openComments(id){const list=()=>SH.comments.filter(c=>c.post===id).sort((a,b)=>a.ts-b.ts);
   const draw=sh=>{sh.querySelector('#cList').innerHTML=list().map(c=>`<div class="col" style="gap:2px"><div><b>${esc(petOf(c.uid).name)}</b> <span class="mute small">${esc(personName(c.uid))} · ${ago(c.ts)}</span></div><div>${esc(c.text)}</div></div>`).join('')||'<div class="mute">Sé el primero en comentar.</div>'};
   sheet(`<div class="t1">COMENTARIOS</div><div class="col" id="cList"></div><div class="row"><input class="inp" id="cIn" maxlength="240" placeholder="Escribe un comentario"><button class="btn sm v" id="cGo">Enviar</button></div>`,sh=>{draw(sh);
-   sh.querySelector('#cGo').onclick=async()=>{const t=$('#cIn').value.trim();if(!t)return;$('#cIn').value='';await W8('comments/new',()=>DB.collection('comments').add({post:id,uid:UID,text:t.slice(0,240),ts:Date.now()})).catch(()=>{});setTimeout(()=>draw(sh),300)}})}
+   sh.querySelector('#cGo').onclick=async()=>{const t=$('#cIn').value.trim();if(!t)return;$('#cIn').value='';const cm={post:id,uid:UID,text:t.slice(0,240),ts:Date.now()};SH.comments.push({id:'tmp'+cm.ts,...cm});draw(sh);updateLikes();await W8('comments/new',()=>DB.collection('comments').add(cm)).catch(e=>quotaCheck(e))}});
+  if(MODE==='firebase'&&DB)DB.collection('comments').where('post','==',id).limit(80).get().then(s=>{SH.comments=SH.comments.filter(c=>c.post!==id||String(c.id).startsWith('tmp')).concat(s.docs.map(d=>({id:d.id,...d.data()})));const sh=$('#sheet');if(sh&&sh.querySelector('#cList'))draw(sh)}).catch(quotaCheck)}
 
 /* ================= CARD COMPOSER ================= */
 const CARD={tpl:'arcade',fmt:'9:16',color:'#FF6B2C',img:null,pix:true,show:{dist:true,time:true,pace:true,pet:true},sticker:false,rec:null};
@@ -4654,7 +4722,7 @@ function suggHTML(){if(MODE==='local'||suggHidden)return '';const s=suggestions(
   return `<div class="col" style="gap:8px"><div class="row between"><span class="t2">Sugerencias para ti</span><button class="lbl" id="sgX">Ocultar ✕</button></div><div class="sugg">${s.map(x=>`<div class="scard"><button data-prof="${x.id}" style="display:contents">${petHTML(x.pet,72,{bob:true})}<span class="t2">${esc(x.pet.name)}</span><span class="mute small">${esc(x.name||'')} · NV ${x.pet.level||1}</span></button><button class="btn sm o" data-add="${x.id}" style="width:100%">Agregar</button></div>`).join('')}</div></div>`}
 function likersText(id){const ls=SH.likes.filter(l=>l.post===id);if(!ls.length)return '';const fids=new Set(friendIds());const named=ls.find(l=>l.uid!==UID&&fids.has(l.uid))||ls.find(l=>l.uid!==UID);const nm=named?petOf(named.uid).name:null;
   return ls.length===1?`Le gusta a <b>${esc(nm||(ls[0].uid===UID?'ti':'1 persona'))}</b>`:`Le gusta a <b>${esc(nm||'ti')}</b> y <b>${ls.length-1} más</b>`}
-function postMedia(p,pet){return p.photo?`<div class="media" data-k="${p.id}"><img class="ph2" src="${p.photo}" alt="Foto de ${esc(pet.name)}"></div>`:p.pts&&p.pts.length>1?`<div class="media" data-k="${p.id}"><canvas data-mini="${p.id}"></canvas><div class="ov2"><div class="pill"><span class="num" style="font-size:11px">${String(p.km).replace('.',',')}</span><span class="lbl">km</span></div><div class="pill"><span class="num" style="font-size:11px">${fmtTime(p.time)}</span><span class="lbl">tiempo</span></div><div class="pill"><span class="num" style="font-size:11px;color:var(--orange)">${p.hexes||0}</span><span class="lbl">territ.</span></div></div></div>`:p.type==='paseo'?`<div class="row" style="padding:0 12px 6px;gap:8px"><span class="tag o">${String(p.km).replace('.',',')} km</span><span class="tag d">${fmtTime(p.time)}</span></div>`:''}
+function postMedia(p,pet){return hasPhoto(p)?`<div class="media" data-k="${p.id}"><img class="ph2" ${phAttr(p)} alt="Foto de ${esc(pet.name)}"></div>`:p.pts&&p.pts.length>1?`<div class="media" data-k="${p.id}"><canvas data-mini="${p.id}"></canvas><div class="ov2"><div class="pill"><span class="num" style="font-size:11px">${String(p.km).replace('.',',')}</span><span class="lbl">km</span></div><div class="pill"><span class="num" style="font-size:11px">${fmtTime(p.time)}</span><span class="lbl">tiempo</span></div><div class="pill"><span class="num" style="font-size:11px;color:var(--orange)">${p.hexes||0}</span><span class="lbl">territ.</span></div></div></div>`:p.type==='paseo'?`<div class="row" style="padding:0 12px 6px;gap:8px"><span class="tag o">${String(p.km).replace('.',',')} km</span><span class="tag d">${fmtTime(p.time)}</span></div>`:''}
 function igPostHTML(p){const pet=p.pet||petOf(p.uid),n=likeCount(p.id),c=SH.comments.filter(x=>x.post===p.id).length,liked=iLiked(p.id),saved=lsSet(SAVED_KEY).has(p.id);
   return `<article class="igp" data-post="${p.id}"><header><button class="igav" data-prof="${p.uid}" aria-label="Perfil de ${esc(pet.name)}"><span><img class="spr" src="${petU(pet)}" alt=""></span></button><div class="grow" style="min-width:0"><button data-prof="${p.uid}" style="text-align:left"><b>${esc(pet.name)}</b> <span class="mute small">· NV ${pet.level||1}</span></button><div class="mute small">${esc(personName(p.uid))}${p.uid!==UID&&frState(p.uid)==='friend'?' · amigo':''}</div></div><button class="btn sm" data-more="${p.id}" aria-label="Más opciones" style="min-height:30px">⋯</button></header>
   ${postMedia(p,pet)}
@@ -4666,21 +4734,21 @@ function bindPosts(root){
   root.querySelectorAll('[data-cm]').forEach(b=>b.onclick=()=>openComments(b.dataset.cm));
   root.querySelectorAll('[data-prof]').forEach(b=>b.onclick=()=>openProfile(b.dataset.prof));
   root.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const s=lsSet(SAVED_KEY),id=b.dataset.save;if(s.has(id))s.delete(id);else{s.add(id);toast('Guardado en tus favoritos','bookmark')}lsPut(SAVED_KEY,s);b.innerHTML=ico(s.has(id)?'bookmarkF':'bookmark',s.has(id)?'#FFC93C':'#F4F6FB')});
-  root.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>{const p=SH.posts.find(x=>x.id===b.dataset.sh);if(!p)return;const pet=p.pet||petOf(p.uid);const t=`${pet.name} en PaseoPet${p.km?': '+String(p.km).replace('.',',')+' km':''} 🐾`;try{if(navigator.share){navigator.share({title:'PaseoPet',text:t,url:/^https?:/.test(location.href)?location.origin+location.pathname:undefined}).catch(()=>{});return}}catch(e){}try{navigator.clipboard.writeText(t).then(()=>toast('Texto copiado','share'))}catch(e){}});
+  root.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>{const p=postById(b.dataset.sh);if(!p)return;const pet=p.pet||petOf(p.uid);const t=`${pet.name} en PaseoPet${p.km?': '+String(p.km).replace('.',',')+' km':''} 🐾`;try{if(navigator.share){navigator.share({title:'PaseoPet',text:t,url:/^https?:/.test(location.href)?location.origin+location.pathname:undefined}).catch(()=>{});return}}catch(e){}try{navigator.clipboard.writeText(t).then(()=>toast('Texto copiado','share'))}catch(e){}});
   root.querySelectorAll('[data-more]').forEach(b=>b.onclick=()=>postMenu(b.dataset.more));
-  requestAnimationFrame(()=>root.querySelectorAll('canvas[data-mini]').forEach(cv=>{const p=SH.posts.find(x=>x.id===cv.dataset.mini);if(p&&p.pts)drawMini(cv,p.pts.map(ll),p.uid===UID?OR:hashCol(p.uid))}))}
-function postMenu(id){const p=SH.posts.find(x=>x.id===id);if(!p)return;const mine=p.uid===UID,st=frState(p.uid);
+  requestAnimationFrame(()=>root.querySelectorAll('canvas[data-mini]').forEach(cv=>{const p=postById(cv.dataset.mini);if(p&&p.pts)drawMini(cv,p.pts.map(ll),p.uid===UID?OR:hashCol(p.uid))}))}
+function postMenu(id){const p=postById(id);if(!p)return;const mine=p.uid===UID,st=frState(p.uid);
   sheet(`<div class="t1">OPCIONES</div><button class="btn" id="pmProf">Ver perfil de ${esc((p.pet||petOf(p.uid)).name)}</button>${!mine&&st==='none'&&MODE!=='local'?'<button class="btn o" id="pmAdd">Agregar amigo</button>':''}${p.text?'<button class="btn" id="pmCopy">Copiar texto</button>':''}${mine?'<button class="btn r" id="pmDel">Borrar publicación</button>':''}<button class="btn" id="pmX">Cancelar</button>`,sh=>{
    sh.querySelector('#pmX').onclick=closeSheet;sh.querySelector('#pmProf').onclick=()=>{closeSheet();openProfile(p.uid)};
    const a=sh.querySelector('#pmAdd');if(a)a.onclick=()=>{closeSheet();sendFriend(p.uid)};const c=sh.querySelector('#pmCopy');if(c)c.onclick=()=>{try{navigator.clipboard.writeText(p.text).then(()=>toast('Texto copiado','bubble'))}catch(e){}closeSheet()};
-   let arm=false;const d=sh.querySelector('#pmDel');if(d)d.onclick=async()=>{if(!arm){arm=true;d.textContent='Toca otra vez para borrar';return}closeSheet();await W8('posts/'+id,()=>DB.doc('posts/'+id).delete()).catch(()=>{});toast('Publicación borrada','trash')}})}
+   let arm=false;const d=sh.querySelector('#pmDel');if(d)d.onclick=async()=>{if(!arm){arm=true;d.textContent='Toca otra vez para borrar';return}closeSheet();await W8('posts/'+id,()=>DB.doc('posts/'+id).delete()).catch(()=>{});DB.doc('postimg/'+id).delete().catch(()=>{});SH.posts=SH.posts.filter(x=>x.id!==id);POSTX.delete(id);if(tab==='feed')renderFeed();toast('Publicación borrada','trash')}})}
 function exploreHTML(){const ps=SH.posts;if(!ps.length)return `<div class="box empty">${ico('pin')}<div class="t2">Nada que explorar aún</div><div class="mute small">Cuando la comunidad publique, verás sus paseos y fotos aquí.</div></div>`;
-  return `<div class="mute small">Paseos y fotos de toda la comunidad.</div><div class="xgrid">${ps.map(p=>`<button data-xp="${p.id}" aria-label="Ver publicación">${p.photo?`<img src="${p.photo}" alt="">`:`<canvas data-mini="${p.id}"></canvas>`}${p.km?`<span class="xk">${String(p.km).replace('.',',')} km</span>`:''}</button>`).join('')}</div>`}
-function openPost(id){const p=SH.posts.find(x=>x.id===id);if(!p)return;sheet(igPostHTML(p)+'<button class="btn" id="opx">Cerrar</button>',sh=>{hydrateIcons(sh);bindPosts(sh);sh.querySelector('#opx').onclick=closeSheet})}
+  return `<div class="mute small">Paseos y fotos de toda la comunidad.</div><div class="xgrid">${ps.map(p=>`<button data-xp="${p.id}" aria-label="Ver publicación">${hasPhoto(p)?`<img ${phAttr(p)} alt="">`:`<canvas data-mini="${p.id}"></canvas>`}${p.km?`<span class="xk">${String(p.km).replace('.',',')} km</span>`:''}</button>`).join('')}</div>`}
+function openPost(id){const p=postById(id);if(!p)return;sheet(igPostHTML(p)+'<button class="btn" id="opx">Cerrar</button>',sh=>{hydrateIcons(sh);bindPosts(sh);sh.querySelector('#opx').onclick=closeSheet})}
 function podiumHTML(rows){if(rows.length<2)return '';const t=rows.slice(0,3),ord=[t[1],t[0],t[2]].filter(Boolean),H={0:84,1:62,2:46},C={0:'#FFC93C',1:'#C9D3E8',2:'#D9894A'};
   return `<div class="box" style="background:linear-gradient(180deg,rgba(124,92,255,.25),var(--card))"><div class="podium">${ord.map(r=>{const i=rows.indexOf(r);return `<button data-prof="${r.id}">${petHTML(r.pet,i===0?72:56,{bob:true})}<span class="pdn">${esc(r.pet.name)}</span><span class="lbl" style="color:#C9BDFF">${String(r.v).replace('.',',')}</span><span class="pd" style="height:${H[i]}px;background:${C[i]};box-shadow:inset -4px -4px 0 rgba(0,0,0,.25)">${i+1}</span></button>`}).join('')}</div></div>`}
 function renderFeed(){const nreq=pendingIn().length;const root=$('#s-feed');
-  const head=`<div class="hdr"><div class="t1" style="flex:1">SOCIAL</div><button class="iconbtn" id="myProf" aria-label="Mi perfil"><img class="spr" src="${petU(S.pet)}" alt="" style="width:30px;height:30px"></button><button class="iconbtn" id="newPost" aria-label="Nueva publicación">${ico('cam')}</button></div>
+  const head=`<div class="hdr"><div class="t1" style="flex:1">SOCIAL</div><button class="iconbtn" id="myProf" aria-label="Mi perfil"><img class="spr" src="${petU(S.pet)}" alt="" style="width:30px;height:30px"></button>${MODE==='firebase'?`<button class="iconbtn" id="feedRef" aria-label="Actualizar muro">${FEEDX.loading?'…':'↻'}</button>`:''}<button class="iconbtn" id="newPost" aria-label="Nueva publicación">${ico('cam')}</button></div>
   <div class="steps3 soct">${[['feed','Muro'],['explore','Explorar'],['amigos','Amigos'+(nreq?' ('+nreq+')':'')],['ranking','Ranking']].map(([k,n])=>`<button class="${SOC.tab===k?'on':''}" data-soc="${k}">${n}</button>`).join('')}</div>`;
   let body='';
   if(SOC.tab==='amigos')body=friendsHTML()+suggHTML();
@@ -4689,9 +4757,10 @@ function renderFeed(){const nreq=pendingIn().length;const root=$('#s-feed');
   else{const fids=new Set(friendIds());const posts=SOC.filter==='amigos'?SH.posts.filter(p=>p.uid===UID||fids.has(p.uid)):SH.posts;
     body=`${MODE==='local'?`<div class="banner small">Estás sin cuenta: solo ves tus publicaciones.${fbConfigured()?' Entra con Google en Ajustes para ver la comunidad.':''}</div>`:''}${storiesHTML()}${suggHTML()}
     <div class="chips">${[['todos','Para ti'],['amigos','Amigos']].map(([k,n])=>`<button class="chip ${SOC.filter===k?'on':''}" data-sf="${k}">${n}</button>`).join('')}</div>
-    ${posts.length?posts.map(igPostHTML).join(''):`<div class="box empty">${ico('bubble')}<div class="t2">${SOC.filter==='amigos'?'Tus amigos aún no publican':'Aún no hay publicaciones'}</div><div class="mute small">Publica tu próximo paseo o una foto de tu perro.</div><button class="btn sm o" id="emptyPost">Publicar ahora</button></div>`}`}
+    ${posts.length?posts.map(igPostHTML).join('')+(MODE==='firebase'&&FEEDX.more?`<button class="btn feedmore" id="feedMore">${FEEDX.loading?'Cargando…':'Ver más publicaciones'}</button>`:''):FEEDX.loading?'<div class="box empty"><div class="t2">Cargando el muro…</div></div>':`<div class="box empty">${ico('bubble')}<div class="t2">${SOC.filter==='amigos'?'Tus amigos aún no publican':'Aún no hay publicaciones'}</div><div class="mute small">Publica tu próximo paseo o una foto de tu perro.</div><button class="btn sm o" id="emptyPost">Publicar ahora</button></div>`}`}
   root.innerHTML=head+body;hydrateIcons(root);
-  $('#newPost').onclick=()=>openPublish(null,null);$('#myProf').onclick=()=>openProfile(UID);
+  $('#newPost').onclick=()=>openPublish(null,null);$('#myProf').onclick=()=>openProfile(UID);const fr=$('#feedRef');if(fr)fr.onclick=()=>{RKX[RK.scope+'|'+RK.metric]=0;loadFeed(false);if(SOC.tab==='ranking')loadRanking(true)};const fm=$('#feedMore');if(fm)fm.onclick=()=>loadFeed(true);
+  if(MODE==='firebase'&&!FEEDX.loading&&Date.now()-FEEDX.at>3*60e3)setTimeout(()=>loadFeed(false),0);if(SOC.tab==='ranking')setTimeout(()=>loadRanking(false),0);if(SOC.tab==='amigos')setTimeout(()=>ensureProfiles(friendIds()),0);
   $$('[data-soc]').forEach(b=>b.onclick=()=>{SOC.tab=b.dataset.soc;root.scrollTop=0;renderFeed()});
   $$('[data-sf]').forEach(b=>b.onclick=()=>{SOC.filter=b.dataset.sf;renderFeed()});
   const ep=$('#emptyPost');if(ep)ep.onclick=()=>openPublish(null,null);
@@ -4710,14 +4779,14 @@ function showStory(){const g=SV.groups[SV.gi];if(!g){closeStories();return}const
   const seen=lsSet(SEEN_KEY);seen.add(p.id);lsPut(SEEN_KEY,seen);const pet=p.pet||petOf(p.uid);
   SV.ov.innerHTML=`<div class="bars">${g.posts.map((_,i)=>`<i><b style="transform:scaleX(${i<SV.pi?1:0})"></b></i>`).join('')}</div>
    <div class="sh"><img class="spr" src="${petU(pet)}" alt=""><div class="grow"><b>${esc(pet.name)}</b> <span class="mute small">${ago(p.ts)}</span></div><button class="btn sm" id="svx" aria-label="Cerrar">✕</button></div>
-   <div class="sc">${p.photo?`<img class="ph" src="${p.photo}" alt="">`:`<canvas id="svc"></canvas>`}<div class="tapL" id="svL"></div><div class="tapR" id="svR"></div>${p.text||p.km?`<div class="cap">${p.km?`<span class="tag o">${String(p.km).replace('.',',')} km · ${fmtTime(p.time)}</span><br>`:''}${esc(p.text||'')}</div>`:''}</div>`;
-  if(!p.photo){const cv=$('#svc');requestAnimationFrame(()=>{if(cv&&p.pts&&p.pts.length>1){const r=cv.getBoundingClientRect();drawWorld(cv,fitCamLL(p.pts.map(ll),r.width,r.height,40),{trail:p.pts.map(ll),noTiles:true,trailColor:p.uid===UID?OR:hashCol(p.uid)})}})}
+   <div class="sc">${hasPhoto(p)?`<img class="ph" ${phAttr(p)} alt="">`:`<canvas id="svc"></canvas>`}<div class="tapL" id="svL"></div><div class="tapR" id="svR"></div>${p.text||p.km?`<div class="cap">${p.km?`<span class="tag o">${String(p.km).replace('.',',')} km · ${fmtTime(p.time)}</span><br>`:''}${esc(p.text||'')}</div>`:''}</div>`;
+  if(!hasPhoto(p)){const cv=$('#svc');requestAnimationFrame(()=>{if(cv&&p.pts&&p.pts.length>1){const r=cv.getBoundingClientRect();drawWorld(cv,fitCamLL(p.pts.map(ll),r.width,r.height,40),{trail:p.pts.map(ll),noTiles:true,trailColor:p.uid===UID?OR:hashCol(p.uid)})}})}
   $('#svx').onclick=closeStories;$('#svL').onclick=()=>{if(SV.pi>0)SV.pi--;else if(SV.gi>0){SV.gi--;SV.pi=0}showStory()};$('#svR').onclick=()=>{SV.pi++;showStory()};
   cancelAnimationFrame(SV.raf);SV.t0=performance.now();const bar=SV.ov.querySelectorAll('.bars b')[SV.pi];
   const tick=()=>{if(!SV)return;const k=Math.min(1,(performance.now()-SV.t0)/5000);if(bar)bar.style.transform=`scaleX(${k})`;if(k>=1){SV.pi++;showStory();return}SV.raf=requestAnimationFrame(tick)};SV.raf=requestAnimationFrame(tick)}
 /* ---- perfil estilo Instagram ---- */
 async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se encontró este perfil','sos');return}const pet=id===UID?S.pet:(pr.pet||{name:'Mascota'}),e=evoOf(pet.level||1),au=auraById(pet.aura),st=frState(id);
-  const posts=SH.posts.filter(p=>p.uid===id);const wk=pr.weekKey===weekKey()?pr.weekXp||0:0;const br=breedById(pet.bid)||{n:pet.breed||'Perro'};
+  const posts=await userPosts(id);const wk=pr.weekKey===weekKey()?pr.weekXp||0:0;const br=breedById(pet.bid)||{n:pet.breed||'Perro'};
   const badges=id===UID?BADGES.filter(b=>S.badges.includes(b.id)):[];
   sheet(`<div class="pf-head"><div class="pc-stage ${biomeById(pet.biome).cls}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2};width:96px;height:96px"><div class="aura ${au.cls||''}"></div>${petHTML(pet,72,{bob:true})}</div>
    <div class="col" style="gap:6px;min-width:0"><div class="row" style="gap:6px;flex-wrap:wrap"><div class="t1" style="word-break:break-word">${esc(pet.name)}</div>${natTag(pet)}${pet.title?`<span class="tag ceo">👑 ${esc(pet.title)}</span>`:''}<span class="sex-tag ${pet.sex==='hembra'?'hembra':'macho'}">${ico(pet.sex==='hembra'?'hembra':'macho')}<span>${pet.sex==='hembra'?'Hembra':'Macho'}</span></span></div><div class="pf-counts"><div><b>${posts.length}</b><span>publ.</span></div><div><b>${pet.level||1}</b><span>nivel</span></div><div><b>${(+pr.totalKm||0).toFixed(0)}</b><span>km</span></div></div></div></div>
@@ -4729,7 +4798,7 @@ async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se
     st==='received'?`<button class="btn g" id="pfAcc">Aceptar solicitud</button>`:
     MODE==='local'?'':`<button class="btn o" id="pfAdd">${ico('amigo','#1A0A02')}Agregar amigo</button>`}
   <span class="t2">Publicaciones</span>
-  ${posts.length?`<div class="xgrid">${posts.map(p=>`<button data-xp="${p.id}">${p.photo?`<img src="${p.photo}" alt="">`:`<canvas data-mini="${p.id}"></canvas>`}${p.km?`<span class="xk">${String(p.km).replace('.',',')} km</span>`:''}</button>`).join('')}</div>`:'<div class="mute small">Aún no tiene publicaciones recientes.</div>'}
+  ${posts.length?`<div class="xgrid">${posts.map(p=>`<button data-xp="${p.id}">${hasPhoto(p)?`<img ${phAttr(p)} alt="">`:`<canvas data-mini="${p.id}"></canvas>`}${p.km?`<span class="xk">${String(p.km).replace('.',',')} km</span>`:''}</button>`).join('')}</div>`:'<div class="mute small">Aún no tiene publicaciones recientes.</div>'}
   <button class="btn" id="pfClose">Cerrar</button>`,sh=>{hydrateIcons(sh);sh.querySelector('#pfClose').onclick=closeSheet;
    const ed=sh.querySelector('#pfEdit');if(ed)ed.onclick=()=>{closeSheet();go('pack');setTimeout(editPet,100)};const sc=sh.querySelector('#pfShare');if(sc)sc.onclick=shareMyCode;
    const a=sh.querySelector('#pfAdd');if(a)a.onclick=async()=>{await sendFriend(id);closeSheet()};
@@ -4737,7 +4806,7 @@ async function openProfile(id){const pr=await profileOf(id);if(!pr){toast('No se
    const c=sh.querySelector('#pfCancel');if(c)c.onclick=async()=>{await removeFriend(id);closeSheet();toast('Solicitud cancelada','amigo')};
    let arm=false;const d=sh.querySelector('#pfDel');if(d)d.onclick=async()=>{if(!arm){arm=true;d.textContent='¿Seguro?';return}await removeFriend(id);closeSheet();toast('Amigo eliminado','amigo')};
    sh.querySelectorAll('[data-xp]').forEach(x=>x.onclick=()=>openPost(x.dataset.xp));
-   requestAnimationFrame(()=>sh.querySelectorAll('canvas[data-mini]').forEach(cv=>{const p=SH.posts.find(x=>x.id===cv.dataset.mini);if(p&&p.pts)drawMini(cv,p.pts.map(ll),hashCol(p.uid))}))})}
+   requestAnimationFrame(()=>sh.querySelectorAll('canvas[data-mini]').forEach(cv=>{const p=postById(cv.dataset.mini);if(p&&p.pts)drawMini(cv,p.pts.map(ll),hashCol(p.uid))}))})}
 
 function openBadges(){sheet(`<div class="t1">MEDALLAS Y LOGROS</div><div class="mute small">${S.badges.length} de ${BADGES.length} desbloqueadas. Toca una para ver cómo conseguirla.</div>${medalsGridHTML()}<button class="btn" id="bdClose">Cerrar</button>`,sh=>{bindMedals(sh);sh.querySelector('#bdClose').onclick=closeSheet})}
 
@@ -5974,7 +6043,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);startupQueue([()=>{if(S.pact)return false;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);startupQueue([()=>{if(S.pact)return false;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
@@ -5987,6 +6056,9 @@ async function boot(){
   DB=r.db;UID=r.uid;MODE='firebase';
   $('#ob').innerHTML=`<div class="splash" style="padding-top:18vh"><img class="login-brand" src="${APP_LOGO}" alt="PaseoPet"><div class="t2 blinktxt">CARGANDO TU MANADA…</div></div>`;
   let snap=null;try{snap=await withTimeout(DB.doc(mainPath()).get(),10000)}catch(e){}
+  const bk=readBackup();
+  if(!snap&&bk&&bk.onboarded){snap={exists:true,data:()=>bk};setTimeout(showQuotaBanner,2500)}
+  else if(snap&&snap.exists&&bk&&bk.savedAt&&(bk.savedAt-(snap.data().savedAt||0))>10000){const b2=bk;snap={exists:true,data:()=>b2};setTimeout(()=>save(true),4000)}
   if(!snap){$('#ob').innerHTML=`<div class="splash" style="padding-top:14vh"><img class="login-brand" src="${APP_LOGO}" alt="PaseoPet"><div class="t2">SIN CONEXIÓN</div><div class="mute small">No pudimos cargar tu manada desde la nube. Revisa tu internet.</div><button class="btn o" id="rl">Reintentar</button></div>`;$('#rl').onclick=()=>location.reload();return}
   if(!snap.exists&&await migrateLocalToCloud()){snap=await DB.doc(mainPath()).get();setTimeout(()=>toast('Trajimos tus datos de este teléfono a tu cuenta de Gmail','star','#2CE6A6'),1500)}
   S=snap&&snap.exists?Object.assign(newState(),snap.data()):newState();S.pet=Object.assign(newState().pet,S.pet);S.walker=Object.assign(newState().walker,S.walker);S.pet.species='perro';S.pet.sex=S.pet.sex||'macho';S.pet.skin=S.pet.skin||'natural';S.pet.aura=S.pet.aura||'default';if(!S.storeGift){S.coins=(S.coins||0)+25;S.storeGift=1;S.econV2=1}if(!S.pet.bid){S.pet.bid=guessBreed(S.pet.breed);S.pet.coat=0;S.pet.custom=!!S.pet.fur&&S.pet.bid==='quiltro'&&S.pet.fur!=='#C98A4B'}if(!S.mapV2){S.mapStyle='nitido';S.mapV2=1}ensureDogs();
