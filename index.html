@@ -1009,6 +1009,10 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .pact-it>span{font-size:22px;line-height:1;flex:none}.pact-it>div{display:flex;flex-direction:column;gap:2px}
 .pact-ban{text-align:center;box-shadow:inset 0 0 0 2px #FF8FB8}
 @media (prefers-reduced-motion:reduce){.pact-heart{animation:none}}
+.petbox{overflow:hidden}
+.petbox img.pstrip{position:absolute;left:0;top:0;width:1600%;height:100%;max-width:none;image-rendering:pixelated;animation:pstrip 4s steps(16) infinite}
+@keyframes pstrip{to{transform:translateX(-100%)}}
+@media (prefers-reduced-motion:reduce){.petbox img.pstrip{animation:none}}
 </style>
 
 <div class="app" id="app">
@@ -2264,124 +2268,138 @@ function dogGrid(L,acc,ev,frame,skin){
     if(skin==='arcoiris'&&(k==='b'||k==='E'||k==='d')){S2[y][x]='rb'+(((x+y+(frame*2))%12)>>1);continue}
     if(empty(x+1,y)||empty(x,y+1)&&empty(x+1,y+1))S2[y][x]=k+'s';else if(empty(x-1,y)&&empty(x,y-1)||empty(x,y-1)&&k!=='d')S2[y][x]=k+'h'}
   return S2}
-/* ================= PERROS ESTILO CHIBI (32x32, sentados de perfil) ================= */
+/* ================= PERROS CHIBI DE FRENTE (32x32) con animaciones =================
+   Cuadros: 0 quieto · 1 pestañeo · 2 y 3 caminar · 4 jadeo con lengua · 5 cola y oreja */
 const DOG_N=32;
-function dogGrid2(L,acc,ev,frame,skin){const N=DOG_N;
+const DOG_IDLE=[0,0,0,0,5,0,0,0,1,0,0,4,4,4,0,5];
+function dogGrid3(L,acc,ev,frame,skin){const N=DOG_N,C=16;
   const G=Array.from({length:N},()=>Array(N).fill(null));const br=L.br,pat=L.pat;
   const set=(x,y,k)=>{x=Math.round(x);y=Math.round(y);if(x>=0&&x<N&&y>=0&&y<N)G[y][x]=k};
   const get=(x,y)=>x>=0&&x<N&&y>=0&&y<N?G[y][x]:null;
-  const ell=(cx,cy,rx,ry,k,cond)=>{for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry;if(dx*dx+dy*dy<=1&&(!cond||cond(x,y,dx*dx+dy*dy)))set(x,y,k)}};
+  const mir=(x,y,k)=>{set(x,y,k);set(N-1-x,y,k)};
+  const ell=(cx,cy,rx,ry,k,cond)=>{for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++){const dx=(x+.5-cx)/rx,dy=(y+.5-cy)/ry,d=dx*dx+dy*dy;if(d<=1&&(!cond||cond(x,y,d)))set(x,y,k)}};
+  const ellM=(cx,cy,rx,ry,k,cond)=>{ell(cx,cy,rx,ry,k,cond);ell(N-cx,cy,rx,ry,k,cond?((x,y,d)=>cond(N-1-x,y,d)):undefined)};
   const rect=(x0,y0,w,h,k)=>{for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++)set(x,y,k)};
-  const pts=(arr,k)=>arr.forEach(([x,y])=>set(x,y,k));
-  const tri=(tx,ty,bx0,bx1,by,k)=>{for(let y=ty;y<=by;y++){const t=(y-ty)/((by-ty)||1);const xa=Math.round(tx+(bx0-tx)*t),xb=Math.round(tx+(bx1-tx)*t);for(let x=Math.min(xa,xb);x<=Math.max(xa,xb);x++)set(x,y,k)}};
-  const fluffy=(d2,x,y)=>!(d2>.86&&(x*7+y*3)%3===0);
+  const rectM=(x0,y0,w,h,k)=>{rect(x0,y0,w,h,k);rect(N-x0-w,y0,w,h,k)};
+  const pts=(a,k)=>a.forEach(([x,y])=>set(x,y,k));const ptsM=(a,k)=>a.forEach(([x,y])=>mir(x,y,k));
+  const tri=(tx,ty,bx0,bx1,by,k,m=true)=>{for(let y=ty;y<=by;y++){const t=(y-ty)/((by-ty)||1);const xa=Math.round(tx+(bx0-tx)*t),xb=Math.round(tx+(bx1-tx)*t);for(let x=Math.min(xa,xb);x<=Math.max(xa,xb);x++)m?mir(x,y,k):set(x,y,k)}};
+  const fluffy=(d,x,y)=>!(d>.86&&(x*7+y*3)%3===0);
   const earK={solid:'E',chest:'E',tri:'E',blaze:'E',mask:'d',gsd:'d',husky:'b',blacktan:'b',urajiro:'b',beard:'E',spots:'d',patch:'d',yorkie:'b'}[pat]||'E';
-  const blink=frame===1,wag=frame===1?1:0;
+  const blink=frame===1,walk=frame===2||frame===3,pant=frame===4,twitch=frame===5;const wag=frame===5||frame===3?1:0;
   const whiteChest=['chest','tri','blaze','husky','urajiro','beard'].includes(pat)||br.chestW;
   const whitePaw=['chest','tri','blaze','husky','urajiro','spots','patch','beard','blacktan','yorkie'].includes(pat);
-  /* --- detrás del cuerpo: alas, capa, cola --- */
-  if(acc==='alas'){const wy=wag?-1:0;ell(24,14+wy,5,3.4,'w');ell(26.5,17+wy,3.6,2.4,'w');pts([[21,12+wy],[23,11+wy],[26,11+wy],[28,13+wy]],'y')}
-  if(acc==='capa'){for(let y=16;y<30;y++){const x0=16+Math.round((y-16)*.35),x1=Math.min(30,22+Math.round((y-16)*.6));for(let x=x0;x<=x1;x++)set(x,y,(x+y)%3?'v':'V')}}
-  const tail=br.tail;const tw=wag;
-  if(tail==='up'){pts([[23,21],[24,20],[24,21],[25,19],[25,20],[26,18],[26,19],[26+tw,17],[27+tw,16],[26+tw,16],[27+tw,15],[27+tw,14]],'b');if(['tri','chest','blaze'].includes(pat))pts([[27+tw,14],[27+tw,15]],'w')}
-  else if(tail==='curl'){ell(25.4+tw*.4,17.4,2.9,2.6,'b');ell(25.4+tw*.4,17.6,1.1,.9,null);pts([[23,20],[24,20]],'b')}
-  else if(tail==='down'){pts([[25,24],[26,24],[26,25],[27,25],[27,26],[28,26],[27,27],[28,27],[28,28],[28+tw,29],[29+tw,29]],'b');if(['tri','chest','blaze'].includes(pat))set(29+tw,29,'w')}
-  else if(tail==='pom'){pts([[23,22],[24,21],[25,20]],'b');ell(26.4+tw*.5,18.4,2.3,2.3,'b',(x,y,d)=>fluffy(d,x,y))}
-  else{pts([[24,23],[25,23],[24,24]],'b')}
-  /* --- cuerpo sentado --- */
-  const bodyK=pat==='yorkie'?'d':'b';
-  ell(18.6,22.4,5.8,6.6,bodyK,br.fluff===2?(x,y,d)=>fluffy(d,x,y):null);
-  ell(21.6,26,4.8,4.3,bodyK);
-  if(pat==='tri'||pat==='gsd')ell(20.4,18.8,4.6,3.2,'d',(x,y)=>get(x,y)==='b'&&y<23);
-  if(pat==='spots')pts([[18,18],[22,20],[24,24],[20,25],[25,21],[17,23],[21,28]],'d');
-  if(pat==='patch')ell(20.6,20.4,3.2,2.8,'d');
-  // patas traseras y delanteras
-  rect(16,29,5,2,whitePaw?'w':bodyK);rect(17,28,3,1,bodyK);
-  rect(14,23,3,7,pat==='yorkie'?'b':bodyK==='d'?'d':'B');rect(14,30,3,1,whitePaw?'W':'B');
-  rect(10,23,4,7,pat==='yorkie'?'b':'b');rect(9,30,5,1,whitePaw?'w':'b');set(10,29,whitePaw?'w':'b');
-  if(pat==='blacktan'){rect(10,27,4,3,'w');rect(14,28,3,2,'W')}
-  if(pat==='husky'||pat==='urajiro')rect(10,25,4,5,'w');
+  const bodyK=pat==='yorkie'?'d':'b',pawK=whitePaw?'w':bodyK;
+  /* --- detrás: alas, capa y cola --- */
+  if(acc==='alas'){const wy=frame%2?-1:0;ellM(4.5,18+wy,4,3.2,'w');ellM(3.4,21.5+wy,3,2.2,'w');ptsM([[2,16+wy],[4,15+wy],[6,16+wy]],'y')}
+  if(acc==='capa'){for(let y=18;y<31;y++){const w=Math.min(11,4+Math.round((y-18)*.6));for(let x=C-w;x<C+w;x++)set(x,y,(x+y)%3?'v':'V')}}
+  const tail=br.tail,tx=wag?-1:0;
+  if(tail==='up'){pts([[24,24],[25,23],[25,22],[26,21],[26,20],[27+tx,19],[27+tx,18],[28+tx,17],[28+tx,16]],'b');pts([[25,24],[26,23],[26,22],[27,21],[27+tx,20]],'b');if(['tri','chest','blaze'].includes(pat))pts([[28+tx,16],[28+tx,17]],'w')}
+  else if(tail==='curl'){ell(23.8+tx*.5,19.4,2.6,2.2,'b',(x,y,d)=>fluffy(d,x,y));pts([[25+tx,17],[26+tx,18]],'b')}
+  else if(tail==='down'){pts([[24,26],[25,26],[25,27],[26,27],[26,28],[27,28],[27+tx,29],[28+tx,29]],'b')}
+  else if(tail==='pom'){pts([[24,24],[25,23]],'b');ell(26.4+tx,21,2.4,2.4,'b',(x,y,d)=>fluffy(d,x,y))}
+  /* --- cuerpo sentado de frente --- */
+  ell(C,24.6,7.4,5.8,bodyK,br.fluff===2?(x,y,d)=>fluffy(d,x,y):null);
+  if(pat==='tri'||pat==='gsd')ellM(9.6,23.4,2.4,2.8,'d',(x,y)=>get(x,y)===bodyK);
+  if(pat==='spots')pts([[11,22],[20,23],[9,26],[22,27],[18,21]],'d');
+  if(pat==='patch')ell(20.5,23.5,2.8,2.4,'d');
+  // muslos traseros a los lados
+  ellM(9.2,27.4,3.2,3,bodyK);
+  if(pat==='husky'||pat==='urajiro')ellM(9.6,28.4,2.2,1.8,'w');
+  // patas delanteras (caminando: una se levanta)
+  const lift=frame===2?[1,0]:frame===3?[0,1]:[0,0];
+  [[11,lift[0]],[18,lift[1]]].forEach(([x0,up])=>{rect(x0,23,3,7-up,bodyK);rect(x0,29-up,3,1,pawK);set(x0+1,29-up,pawK==='w'?'W':'B');if(pat==='blacktan')rect(x0,26-up,3,3,'w');if(pat==='husky')rect(x0,24,3,5-up,'w')});
+  // patas traseras
+  const hl=frame===2?[0,1]:frame===3?[1,0]:[0,0];
+  rect(6,30-hl[0],4,1,pawK);rect(22,30-hl[1],4,1,pawK);
   // pecho
-  ell(14.3,20.6,4.4,5.4,pat==='yorkie'?'b':'b');
-  if(whiteChest)ell(13.4,21.2,3.1,4.6,pat==='yorkie'?'b':'w');
-  if(pat==='blacktan')ell(13,19.4,1.6,1.2,'w');
-  // melena
-  if(br.fluff){const r=br.fluff===2?1:0;ell(14.5,17.6,6+r,3.8+r,whiteChest&&pat!=='husky'?'w':'b',(x,y,d)=>fluffy(d,x,y))}
-  /* --- orejas detrás de la cabeza --- */
-  const ears=br.ears;
-  if(ears==='pointy'){if(br.small){tri(14,2,11,17,7,earK);tri(14,4,13,16,7,'p')}else{tri(15,0,11,18,7,earK);tri(15,2,13,17,7,pat==='husky'||pat==='urajiro'?'w':'p')}}
-  if(ears==='big'){tri(16,0,11,19,8,earK);tri(16,2,13,18,8,'p')}
-  if(ears==='bat'){ell(15,4.4,3,4.4,earK);ell(15.2,5,1.6,2.8,'p')}
+  if(whiteChest)ell(C,23.4,3.6,4.6,pat==='yorkie'?'b':'w',(x,y)=>get(x,y)===bodyK||y<22);
+  if(pat==='blacktan')ell(C,21.8,2,1.4,'w');
+  if(br.fluff)ell(C,20.4,8+(br.fluff===2?1.4:0),3.4,whiteChest&&pat!=='husky'?'w':bodyK,(x,y,d)=>fluffy(d,x,y));
+  /* --- orejas detrás --- */
+  const ears=br.ears,tw=twitch?1:0;
+  if(ears==='pointy'){if(br.small){tri(9-tw,1+tw,7,13,8,earK);tri(9-tw,3+tw,8,12,8,'p')}else{tri(8-tw,0+tw,5,13,8,earK);tri(8-tw,2+tw,7,12,8,pat==='husky'||pat==='urajiro'?'w':'p')}}
+  if(ears==='big'){tri(5-tw,0,3,13,9,earK);tri(5-tw,2,5,12,9,'p')}
+  if(ears==='bat'){ellM(8.6-tw*.4,5,3.6,4.8,earK);ellM(8.9,5.6,1.8,3,'p')}
   /* --- cabeza --- */
-  ell(11,10.8,7.2,6.6,'b',br.fluff===2?(x,y,d)=>fluffy(d,x,y)||y>12:null);
-  if(br.top==='pom')ell(10.5,4.2,4.2,3,'b',(x,y,d)=>fluffy(d,x,y));
-  // hocico
-  const mz=br.muz;const mzo=mz==='short'?{x:5.6,y:13.2,rx:2.6,ry:2.3}:mz==='long'?{x:3.9,y:13.6,rx:3.9,ry:2.4}:{x:4.6,y:13.4,rx:3.3,ry:2.5};
-  const muzK=pat==='mask'||pat==='gsd'?'d':pat==='solid'||pat==='spots'||pat==='patch'?'m':pat==='yorkie'?'m':'w';
-  ell(mzo.x,mzo.y,mzo.rx,mzo.ry,'b');
+  ell(C,11.6,10,8.4,'b',br.fluff===2?(x,y,d)=>fluffy(d,x,y)||(y>9&&y<16):null);
+  ellM(6.6,14,2.4,2.6,'b',(x,y,d)=>br.fluff?fluffy(d,x,y):true);
+  if(br.top==='pom')ell(C,3.4,5,3,'b',(x,y,d)=>fluffy(d,x,y));
+  pts([[15,3],[17,3]],'b');
   // patrones de la cabeza
-  if(pat==='husky'){ell(9.4,14.2,4.6,3,'w',(x,y)=>get(x,y)==='b'&&y>=12);pts([[8,8],[9,8]],'w')}
-  if(pat==='urajiro'){ell(9,14.6,4,2.4,'w',(x,y)=>get(x,y)==='b'&&y>=13);pts([[8,8]],'w')}
-  if(pat==='blacktan'){pts([[8,8],[9,8]],'w');ell(10,15,2.4,1.4,'w',(x,y)=>get(x,y)==='b')}
-  if(pat==='blaze'||br.blaze||pat==='tri')ell(5.6,8.8,1.4,3.4,'w',(x,y)=>get(x,y)==='b');
-  if(pat==='patch')ell(10.4,9,3.2,3.2,'d',(x,y)=>get(x,y)==='b');
-  if(pat==='spots')pts([[12,6],[15,9],[13,14],[7,6]],'d');
-  if(pat==='yorkie')ell(13,6,5,2.6,'b');
-  if(pat==='gsd')ell(12,6,4,2,'d',(x,y)=>get(x,y)==='b');
-  ell(mzo.x,mzo.y,mzo.rx,mzo.ry,muzK);
-  if(pat==='mask'){ell(8.6,10.6,2.2,1.8,'d')}
-  if(pat==='beard'){ell(mzo.x+.6,mzo.y+2.6,mzo.rx,2.2,'w',(x,y,d)=>fluffy(d,x,y));pts([[7,8],[8,8],[9,8],[10,8]],'w')}
+  const mz=br.muz;const mzo=mz==='short'?{y:15.6,rx:4,ry:2.8}:mz==='long'?{y:16.4,rx:4,ry:3.8}:{y:16,rx:4.4,ry:3.2};
+  const muzK=pat==='mask'||pat==='gsd'?'d':pat==='solid'||pat==='spots'||pat==='patch'?'m':pat==='yorkie'?'m':'w';
+  if(pat==='gsd')ell(C,6.4,6.4,3,'d',(x,y)=>get(x,y)==='b');
+  if(pat==='yorkie')ell(C,6,7,3,'d',(x,y)=>get(x,y)==='b');
+  if(pat==='husky'){ell(C,16,8.4,4.4,'w',(x,y)=>get(x,y)==='b'&&y>=13);rect(15,6,2,8,'w');ptsM([[11,9],[12,9]],'w')}
+  if(pat==='urajiro'){ell(C,16.4,8,3.6,'w',(x,y)=>get(x,y)==='b'&&y>=14);ptsM([[11,9],[12,9]],'w')}
+  if(pat==='blacktan'){ptsM([[11,9],[12,9]],'w');ellM(9.4,16.4,2,1.6,'w',(x,y)=>get(x,y)==='b')}
+  if(pat==='blaze'||br.blaze||pat==='tri')ell(C,8,1.4,5,'w',(x,y)=>get(x,y)==='b');
+  if(pat==='patch')ell(11.6,11,3.4,3.6,'d',(x,y)=>get(x,y)==='b');
+  if(pat==='spots')pts([[21,6],[9,9],[23,12],[11,5]],'d');
+  // hocico
+  ell(C,mzo.y,mzo.rx,mzo.ry,muzK);
+  if(pat==='mask'){ellM(11.6,12,2.6,2.2,'d');ell(C,mzo.y,mzo.rx,mzo.ry,'d')}
+  if(pat==='beard'){ell(C,mzo.y+2.6,mzo.rx+.6,2.4,'w',(x,y,d)=>fluffy(d,x,y));ptsM([[10,9],[11,9],[12,9],[11,8]],'w')}
   /* --- orejas delante --- */
-  if(ears==='fold'){pts([[14,3],[15,3],[16,3],[13,4],[14,4],[15,4],[16,4],[17,4],[12,5],[13,5],[14,5],[15,5],[16,5],[17,5],[11,6],[12,6],[13,6],[14,6],[11,7],[12,7]],earK);pts([[11,7],[12,7],[11,6]],earK==='E'?'Ed':'d')}
-  if(ears==='floppy'){ell(15.6,11.4,2.7,4.9,earK,br.fluffEar?(x,y,d)=>fluffy(d,x,y):null)}
-  if(ears==='long'){ell(15.6,14,2.9,6.6,earK,br.fluffEar?(x,y,d)=>fluffy(d,x,y)||y<14:null)}
-  if(ears==='curly'){ell(15.6,13,3.4,5.6,'b',(x,y,d)=>fluffy(d,x,y))}
-  if(br.top==='bow')pts([[15,3],[16,3],[18,3],[19,3],[17,4],[15,4],[19,4]],'j'),set(17,3,'J');
+  if(ears==='fold'){const f=tw;ptsM([[8,4],[9,4],[10,4],[7,5],[8,5],[9,5],[10,5],[11,5],[6,6],[7,6],[8,6],[9,6],[10,6],[6,7],[7,7],[8,7],[6,8+f],[7,8+f]],earK);ptsM([[6,8+f],[7,8+f],[6,7]],earK==='E'?'Ed':'d')}
+  if(ears==='floppy')ellM(6+tw*.4,12.4,3,5.6,earK,br.fluffEar?(x,y,d)=>fluffy(d,x,y):null);
+  if(ears==='long')ellM(5.8+tw*.4,14.6,3.2,7.4,earK,br.fluffEar?(x,y,d)=>fluffy(d,x,y)||y<15:null);
+  if(ears==='curly')ellM(5.8,13.6,3.6,6.4,'b',(x,y,d)=>fluffy(d,x,y));
+  if(br.top==='bow'){pts([[21,3],[22,3],[24,3],[25,3],[21,4],[25,4],[22,5],[24,5]],'j');set(23,4,'J');set(22,4,'j');set(24,4,'j')}
   /* --- marcas de skin --- */
-  if(skin==='cyber')pts([[12,7],[14,13],[19,19],[23,25],[11,26],[20,22]],'cy');
-  if(skin==='magma')pts([[13,8],[15,14],[20,20],[23,26],[11,27],[18,24]],'lv');
-  if(skin==='celestial'||skin==='oro')[[12,6],[15,12],[19,18],[23,24],[11,26],[21,22]].forEach(([x,y],i)=>{if(get(x,y))set(x,y,(i+frame)%2?'h':'y')});
-  /* --- ojo, nariz, boca, mejilla --- */
+  if(skin==='cyber')pts([[10,8],[22,8],[9,24],[23,24],[12,27],[20,27],[15,6]],'cy');
+  if(skin==='magma')pts([[10,7],[22,9],[10,24],[22,25],[13,27],[18,22],[16,6]],'lv');
+  if(skin==='celestial'||skin==='oro')[[10,7],[22,8],[9,24],[23,25],[16,5],[12,27]].forEach(([x,y],i)=>{if(get(x,y))set(x,y,(i+frame)%2?'h':'y')});
+  /* --- ojos --- */
   const lum=h=>{const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255};
-  const darkFace=lum(L.b)<.3&&!['husky','blaze','urajiro','patch'].includes(pat);
-  const big=br.eyeBig;
-  if(blink){pts([[7,11],[8,11],[9,11]],'e')}
-  else{rect(big?7:8,big?9:10,big?3:2,big?3:2,'e');set(big?7:8,big?9:10,'h');if(big)set(9,11,'h');if(br.eye||skin&&skin!=='natural')set(big?8:9,11,'i');
-    if(darkFace){pts([[7,9],[8,9],[9,9],[10,10],[10,11],[7,12],[8,12],[9,12]],'q')}}
-  const nx=Math.round(mzo.x-mzo.rx)+(mz==='long'?0:1),ny=Math.round(mzo.y-mzo.ry)+1;
-  rect(nx,ny,2,2,'n');set(nx,ny,'N');
-  pts([[nx+1,ny+3],[nx+2,ny+3],[nx+3,ny+3]],'n');if(mz!=='short')set(nx+4,ny+2,'n');
-  pts([[11,14],[12,14]],'k');
-  /* --- gema de evolución en la frente --- */
-  if(ev>=1)pts([[8,6],[9,6]],'G');
-  if(ev>=4)pts([[8,5],[9,5],[8,7],[9,7]],'Gd'),pts([[8,6],[9,6]],'G');
-  if(ev>=8)pts([[7,6],[10,6]],'Gd');
-  if(ev>=11)set(8,5,'h');
+  const darkFace=lum(L.b)<.3&&!['husky','blaze','urajiro','patch'].includes(pat);const big=br.eyeBig;
+  if(blink){ptsM([[10,13],[11,13],[12,13],[13,12]],'e')}
+  else{const ex=big?9:10,ey=big?10:11,es=big?4:3;rectM(ex,ey,es,es,'e');mir(ex,ey,'h');if(big)mir(ex+1,ey,'h');ptsM([[ex,ey-1],[ex+1,ey-1],[ex+2,ey-1]],null);
+    if(br.eye||skin&&skin!=='natural')ptsM([[ex,ey+es-1],[ex+1,ey+es-1]],'i');
+    if(darkFace)ptsM([[ex,ey+es],[ex+1,ey+es],[ex+es,ey+1]],'q')}
+  /* --- nariz, boca, lengua, mejillas --- */
+  const ny=Math.round(mzo.y-mzo.ry)+1;
+  rect(14,ny,4,2,'n');rect(15,ny+2,2,1,'n');pts([[14,ny],[15,ny]],'N');
+  if(pant){rect(14,ny+3,4,2,'n');rect(14,ny+5,4,2,'t');rect(15,ny+7,2,1,'t');set(16,ny+5,'T');set(16,ny+6,'T')}
+  else{set(16,ny+3,'n');pts([[15,ny+4],[14,ny+4],[17,ny+4],[18,ny+4]],'n');set(13,ny+3,'n');set(19,ny+3,'n')}
+  ptsM([[9,16],[10,16],[9,17]],'k');
+  ptsM([[12,ny+2],[13,ny+3]],'ms');
+  /* --- gema de evolución --- */
+  if(ev>=1)pts([[15,7],[16,7]],'G');
+  if(ev>=4){pts([[15,6],[16,6],[15,8],[16,8]],'Gd');pts([[15,7],[16,7]],'G')}
+  if(ev>=8)pts([[14,7],[17,7]],'Gd');
+  if(ev>=11)set(15,6,'h');
   /* --- accesorios --- */
-  if(acc==='bandana'){rect(9,17,9,1,'r');rect(10,18,7,1,'r');rect(11,19,5,1,'r');rect(12,20,3,1,'R');set(13,21,'R');set(11,18,'h');set(15,18,'h')}
-  if(acc==='collar_rgb'){const cs=['j','r','y','g','cy','v'];for(let x=9;x<18;x++)set(x,17,cs[(x+frame)%6]);set(12,18,'y');set(12,19,'h')}
-  if(acc==='pajarita'){pts([[9,17],[9,18],[10,18]],'j');pts([[11,18]],'J');pts([[12,17],[12,18],[13,18]],'j')}
-  if(acc==='arnes'){rect(17,16,2,11,'v');rect(13,20,12,2,'v');set(18,20,'y');set(17,21,'y');rect(17,26,2,1,'V')}
-  if(acc==='gorro'){pts([[9,0]],'y');pts([[9,1],[10,1]],'v');pts([[8,2],[9,2],[10,2]],'g');pts([[8,3],[9,3],[10,3],[11,3]],'v');pts([[7,4],[8,4],[9,4],[10,4],[11,4]],'g');set(9,3,'h')}
-  if(acc==='corona'){pts([[6,1],[9,0],[12,1]],'y');rect(6,2,7,1,'y');rect(6,3,7,1,'Y');set(9,2,'j');set(7,2,'g');set(11,2,'g')}
-  if(acc==='halo'){rect(6,0,9,1,'y');set(5,1,'y');set(15,1,'y');rect(6,2,9,1,'Y');set(8,0,'h')}
-  if(acc==='lentes'){rect(6,9,5,1,'g');rect(6,12,5,1,'g');set(6,10,'g');set(6,11,'g');set(10,10,'g');set(10,11,'g');rect(7,10,3,2,'e');set(7,10,'h');rect(11,10,5,1,'g')}
-  if(acc==='visor'){rect(3,9,13,1,'v');rect(3,10,13,2,'cy');rect(4,10,4,1,'h');rect(3,12,13,1,'V')}
-  if(acc==='flor'){set(13,5,'y');pts([[12,5],[14,5],[13,4],[13,6]],'j');pts([[12,4],[14,6]],'k')}
-  if(acc==='audifonos'){pts([[7,4],[8,3],[9,3],[10,2],[11,2],[12,2],[13,3],[14,3],[15,4]],'v');rect(13,8,3,5,'V');set(14,9,'v')}
+  if(acc==='bandana'){rect(9,20,14,1,'r');rect(10,21,12,1,'r');rect(12,22,8,1,'r');rect(14,23,4,1,'R');rect(15,24,2,1,'R');pts([[11,21],[19,21]],'h')}
+  if(acc==='collar_rgb'){const cs=['j','r','y','g','cy','v'];for(let x=9;x<23;x++)set(x,20,cs[(x+frame)%6]);pts([[15,21],[16,21]],'y');set(15,22,'h')}
+  if(acc==='pajarita'){pts([[12,20],[13,20],[12,21],[13,21],[14,21]],'j');rect(15,20,2,2,'J');pts([[18,20],[19,20],[17,21],[18,21],[19,21]],'j')}
+  if(acc==='arnes'){rect(9,21,14,1,'v');rect(10,25,12,1,'v');rect(15,21,2,5,'V');pts([[15,23],[16,23]],'y')}
+  if(acc==='gorro'){set(16,0,'y');set(15,0,'y');rect(15,1,2,1,'v');rect(14,2,4,1,'g');rect(14,3,4,1,'v');rect(13,4,6,1,'g');set(14,3,'h')}
+  if(acc==='corona'){pts([[11,1],[16,0],[15,0],[20,1]],'y');rect(11,2,10,1,'y');rect(11,3,10,1,'Y');pts([[15,2],[16,2]],'j');pts([[13,2],[18,2]],'g')}
+  if(acc==='halo'){rect(11,0,10,1,'y');pts([[10,1],[21,1]],'y');rect(11,2,10,1,'Y');pts([[13,0],[14,0]],'h')}
+  if(acc==='lentes'){for(const x0 of [8,18]){rect(x0,10,6,1,'g');rect(x0,15,6,1,'g');rect(x0,11,1,4,'g');rect(x0+5,11,1,4,'g');rect(x0+1,11,4,4,'e');set(x0+1,11,'h');set(x0+2,11,'h')}rect(14,11,4,1,'g')}
+  if(acc==='visor'){rect(6,10,20,1,'v');rect(6,11,20,3,'cy');rect(8,11,5,1,'h');rect(19,11,5,1,'j');rect(7,14,18,1,'V')}
+  if(acc==='flor'){set(23,4,'y');pts([[22,4],[24,4],[23,3],[23,5]],'j');pts([[22,3],[24,5]],'k')}
+  if(acc==='audifonos'){rect(10,1,12,1,'v');pts([[9,2],[22,2],[8,3],[23,3],[7,4],[24,4]],'v');rect(4,9,3,6,'V');rect(25,9,3,6,'V');set(5,10,'v');set(26,10,'v')}
+  /* --- caminar: el cuerpo sube un poco --- */
+  if(frame===2){for(let y=0;y<21;y++)G[y]=G[y+1].slice()}
   /* --- contorno --- */
   const O=G.map(r=>r.slice());
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){if(G[y][x])continue;if([[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>get(x+a,y+b)))O[y][x]='o'}
-  /* --- luz y sombra suaves --- */
+  /* --- luz y sombra --- */
   const S2=O.map(r=>r.slice());const empty=(x,y)=>{const v=x>=0&&x<N&&y>=0&&y<N?O[y][x]:null;return !v||v==='o'};
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){const k=O[y][x];if(!['b','w','d','E','m'].includes(k))continue;
     if(skin==='arcoiris'&&(k==='b'||k==='E'||k==='d')){S2[y][x]='rb'+(((x+y+(frame*2))%12)>>1);continue}
     if(empty(x+1,y)||empty(x,y+1)&&empty(x+1,y+1))S2[y][x]=k+'s';else if(empty(x-1,y)&&empty(x,y-1)||empty(x,y-1)&&k!=='d')S2[y][x]=k+'h'}
-  // sombra bajo la cabeza, entre patas y en el muslo para dar volumen
-  for(let x=9;x<19;x++){for(let y=15;y<22;y++){const k=S2[y][x],up=S2[y-1]&&S2[y-1][x];if(['b','w','d'].includes(k)&&up&&!['b','w','d','bs','ws','ds'].includes(up)&&up!=='o'){S2[y][x]=k+'s';break}}}
-  for(let y=23;y<30;y++){if(['b','w','B'].includes(S2[y][13]))S2[y][13]=S2[y][13]==='B'?'B':S2[y][13]+'s'}
-  for(let y=22;y<29;y++){for(let x=16;x<22;x++){const k=S2[y][x];const d=((x+.5-21.6)/4.8)**2+((y+.5-26)/4.3)**2;if(d>.72&&d<1&&x<21.6&&['b','d'].includes(k)){S2[y][x]=k+'s';break}}}
+  // sombra bajo la cabeza sobre el cuerpo y separación de patas
+  for(let x=8;x<24;x++){for(let y=18;y<25;y++){const k=S2[y][x],up=S2[y-1]&&S2[y-1][x];if(['b','w','d'].includes(k)&&up&&!['b','w','d','bs','ws','ds','bh','wh','dh'].includes(up)&&up!=='o'){S2[y][x]=k+'s';break}}}
+  for(const x of [14,17])for(let y=24;y<29;y++){const k=S2[y][x];if(['b','w','d'].includes(k))S2[y][x]=k+'s'}
+  // brillo en lo alto de la cabeza
+  for(let x=12;x<20;x++){const y=x%3===0?5:4;if(['b','d'].includes(S2[y]&&S2[y][x]))S2[y][x]=S2[y][x]+'h'}
   return S2}
+/* tira de animación (16 cuadros) para tarjetas y perfiles */
+const stripC=new Map();
+function petStripU(p){const {k}=dogKey(p,0);if(stripC.has(k))return stripC.get(k);const c=document.createElement('canvas');c.width=DOG_N*DOG_IDLE.length;c.height=DOG_N;const x=c.getContext('2d');DOG_IDLE.forEach((f,i)=>x.drawImage(petC(p,f),i*DOG_N,0));const u=c.toDataURL();stripC.set(k,u);return u}
 
 function dogPalette(L,ev,skin,frame){
   let b=L.b,w=L.w,d=L.d,eye=L.br.eye||'#5CC8FF',out='#1A1020';
@@ -2401,7 +2419,7 @@ function dogPalette(L,ev,skin,frame){
 
 function dogKey(p,frame){p=p||{};const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;const sk=p.skin||'natural';const L=dogLook(p);return{L,ev,sk,k:[L.br.id,L.b,L.w,L.d,L.pat,p.acc||'',sk,ev,frame].join('|')}}
 function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return sprC.get(k);
-  const g=dogGrid2(L,(p&&p.acc)||'',ev,frame,sk),P=dogPalette(L,ev,sk,frame);if(sk==='natural'||!sk)P.o='#3E2630';const c=document.createElement('canvas');c.width=DOG_N;c.height=DOG_N;c._dog=1;const x=c.getContext('2d');
+  const g=dogGrid3(L,(p&&p.acc)||'',ev,frame,sk),P=dogPalette(L,ev,sk,frame);if(sk==='natural'||!sk)P.o='#3E2630';const c=document.createElement('canvas');c.width=DOG_N;c.height=DOG_N;c._dog=1;const x=c.getContext('2d');
   g.forEach((r,y)=>r.forEach((kk,i)=>{if(kk){x.fillStyle=P[kk]||'#FF00FF';x.fillRect(i,y,1,1)}}));sprC.set(k,c);return c}
 /* ================= PERROS EN ALTA DEFINICIÓN (48x48 con volumen, pelaje y luz) ================= */
 const hdC=new Map();
@@ -2440,7 +2458,7 @@ function petHDold(p,frame=0){const {k}=dogKey(p,frame);const key='hd|'+k;if(hdC.
 function petU(p,frame=0){const {k}=dogKey(p,frame);if(!urlC.has('u'+k))urlC.set('u'+k,petHD(p,frame).toDataURL());return urlC.get('u'+k)}
 function breedGrid(sel,attr){return `<input class="inp brsearch" type="search" placeholder="Buscar entre ${BREEDS.length} razas…" oninput="brFilter(this)" aria-label="Buscar raza"><div class="breeds">${BREEDS.map(b=>`<button class="brk ${sel===b.id?'on':''}" data-k="${b.id} ${b.k||''}" data-${attr}="${b.id}"><img class="spr" src="${petU({bid:b.id,coat:0,level:1})}" alt=""><span>${b.n}</span></button>`).join('')}</div>`}
 function coatRow(p,attr){const br=breedById(p.bid)||breedById(guessBreed(p.breed));return `<div class="cos">${br.coats.map((c,i)=>`<button data-${attr}="${i}" class="${!p.custom&&(p.coat|0)===i?'on':''}" aria-label="${esc(c[0])}" title="${esc(c[0])}"><img class="spr" src="${petU({...p,bid:br.id,coat:i,custom:false})}" alt=""></button>`).join('')}</div>`}
-function petHTML(p,size,o={}){return `<div class="petbox ${o.bob?'bob':''}" style="width:${size}px;height:${size}px;${o.style||''}"><img class="spr" src="${petU(p,0)}" alt="${esc(p&&p.name||'Mascota')}"><img class="spr f1" src="${petU(p,1)}" alt=""></div>`}
+function petHTML(p,size,o={}){return `<div class="petbox ${o.bob?'bob':''}" style="width:${size}px;height:${size}px;${o.style||''}"><img class="pstrip" src="${petStripU(p)}" alt="${esc(p&&p.name||'Mascota')}" style="animation-delay:-${(((p&&p.name||'').length*.37)%4).toFixed(2)}s"></div>`}
 function hydrateIcons(root){(root||document).querySelectorAll('img[data-ico]').forEach(im=>{const navBtn=im.closest('.nav button');const col=im.dataset.x||(navBtn&&!navBtn.classList.contains('go')&&!navBtn.classList.contains('on')?'#9AA4C4':null);im.src=iconU(im.dataset.ico,col)})}
 
 /* ================= DATA LAYER ================= */
@@ -2842,8 +2860,8 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
     const mp=L.mePet||S.pet,au=mp&&mp.aura||'default';
     if(au==='rgb'){const cols=['#FF0055','#FF9B1A','#FFE600','#2CE6A6','#3C9DFF','#9C84FF'];for(let i=0;i<6;i++){ctx.strokeStyle=cols[(i+ph)%6];ctx.lineWidth=lw(1.5);ctx.beginPath();ctx.arc(cx,cy-10*u,(10+i*2)*u,0,7);ctx.stroke()}}
     else{const ac=({esmeralda:'#2CE6A6',llamarada:'#FF6B2C',relampago:'#3C9DFF',vacio:'#9C84FF',divina:'#FFC93C'})[au]||'#FF6B2C';ctx.strokeStyle=ac;ctx.lineWidth=lw(1.5);ctx.strokeRect(cx-rr,cy-rr,rr*2,rr*2)}
-    if(L.crewPets)L.crewPets.forEach((cp,i)=>{const ox=(i%2?1:-1)*(15+Math.floor(i/2)*11)*u,bb=(Math.floor(now/400+i)%2)*u;spr(petC(cp,0),cx+ox,cy+5*u-bb)});
-    if(L.angel)angelDraw(ctx,L,cx,cy,u,now,spr);spr(petC(mp,Math.floor(now/500)%6===0?1:0),cx,cy);cv._me={x:cx,y:cy-10*u}}
+    if(L.crewPets)L.crewPets.forEach((cp,i)=>{const ox=(i%2?1:-1)*(15+Math.floor(i/2)*11)*u,bb=(Math.floor(now/400+i)%2)*u;spr(petC(cp,WK&&!WK.paused?2+(Math.floor(now/220)+i)%2:0),cx+ox,cy+5*u-bb)});
+    if(L.angel)angelDraw(ctx,L,cx,cy,u,now,spr);spr(petC(mp,WK&&!WK.paused?(Math.floor(now/2600)%7===0&&Math.floor(now/180)%14<1?1:2+Math.floor(now/220)%2):DOG_IDLE[Math.floor(now/250)%16]),cx,cy);cv._me={x:cx,y:cy-10*u}}
 }
 function fitCamLL(pts,w,h,pad){let a=1e18,b=-1e18,c=1e18,d=-1e18;for(const p of pts){const m=merc(p.lat,p.lng);a=Math.min(a,m.x);b=Math.max(b,m.x);c=Math.min(c,m.y);d=Math.max(d,m.y)}const mpp=Math.max((b-a)/Math.max(10,w-2*pad),(d-c)/Math.max(10,h-2*pad),.6);return{x:(a+b)/2,y:(c+d)/2,mpp}}
 function drawMini(cv,pts,col){if(!pts||pts.length<2){const r=cv.getBoundingClientRect();cv.width=Math.ceil(r.width/PX);cv.height=Math.ceil(r.height/PX);const x=cv.getContext('2d');x.fillStyle='#121A2E';x.fillRect(0,0,cv.width,cv.height);return}const r=cv.getBoundingClientRect();drawWorld(cv,fitCamLL(pts,r.width,r.height,24),{trail:pts,trailColor:col,noTiles:true})}
@@ -4712,7 +4730,7 @@ function cvHolidayGround(x,W,H,gy,s,h){const R=(a,b,w,hh,c)=>{x.fillStyle=c;x.fi
   if(h.id==='halloween'){for(let k=0;k<4;k++){const px=((k*50+20-s*22)%(W+40)+W+40)%(W+40)-20;R(px,gy-5,7,5,'#FF7A1A');R(px+1,gy-6,5,1,'#FF7A1A');R(px+3,gy-8,1,2,'#3E8A4A');R(px+1,gy-4,1,1,'#2A1408');R(px+5,gy-4,1,1,'#2A1408');R(px+2,gy-2,3,1,'#2A1408');x.globalAlpha=.3;R(px-2,gy-7,11,8,'#FFC93C');x.globalAlpha=1}}
   if(h.id==='pascua'){const cs=['#FF8FB8','#7EE7FF','#FFE066','#C9A6FF','#2CE6A6'];for(let k=0;k<7;k++){const px=((k*28+10-s*22)%(W+20)+W+20)%(W+20)-10;const c=cs[k%cs.length];R(px,gy-4,4,4,c);R(px+1,gy-5,2,1,c);R(px,gy-3,4,1,'#FFFFFF')}}
   if(h.id==='navidad'){for(let k=0;k<3;k++){const px=((k*62+40-s*22)%(W+30)+W+30)%(W+30)-15;R(px,gy-5,6,5,['#D52B1E','#2CE6A6','#3C9DFF'][k]);R(px+2,gy-5,2,5,'#FFC93C');R(px,gy-3,6,1,'#FFC93C');R(px+1,gy-6,1,1,'#FFC93C');R(px+4,gy-6,1,1,'#FFC93C')}}}
-function cvHat(x,dx,dy,h,i){const R=(a,b,w,hh,c)=>{x.fillStyle=c;x.fillRect(a,b,w,hh)};const cx=dx+9,ty=dy+4;
+function cvHat(x,dx,dy,h,i){const R=(a,b,w,hh,c)=>{x.fillStyle=c;x.fillRect(a,b,w,hh)};const cx=dx+16,ty=dy+4;
   if(h.hat==='santa'){R(cx-4,ty,8,2,'#FFFFFF');R(cx-3,ty-2,6,2,'#D52B1E');R(cx-1,ty-4,4,2,'#D52B1E');R(cx+3,ty-5,2,2,'#FFFFFF')}
   else if(h.hat==='party'){const c=['#FF5CC8','#FFC93C','#2CE6A6','#7EE7FF','#9A6BFF'][i%5];R(cx-3,ty,6,1,c);R(cx-2,ty-1,4,1,c);R(cx-2,ty-2,4,1,'#FFFFFF');R(cx-1,ty-3,2,1,c);R(cx-1,ty-4,2,1,c);R(cx,ty-6,1,2,'#FFF6B0')}
   else if(h.hat==='witch'){R(cx-5,ty,10,1,'#2A1440');R(cx-3,ty-1,6,1,'#2A1440');R(cx-3,ty-2,6,1,'#FF7A1A');R(cx-2,ty-4,4,2,'#2A1440');R(cx-1,ty-6,2,2,'#2A1440');R(cx+1,ty-7,1,1,'#2A1440')}
@@ -4829,7 +4847,7 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
     /* objetos flotantes */
     floaters.forEach(f=>{const fx=((f.x*W-s*14)%(W+20)+W+20)%(W+20)-10,fy=Math.round(f.y*gy+Math.sin(s*2+f.p)*3);const c=iconC(f.id);x.globalAlpha=.9;x.drawImage(c,Math.round(fx),fy);x.globalAlpha=1;if(Math.sin(s*3+f.p)>.8){x.fillStyle='#FFFFFF';x.fillRect(Math.round(fx)+9,fy-1,1,1)}});
     /* perros (con charcos que salpican cuando llueve) */
-    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(CV.hol&&CV.hol.hat?{...d,acc:''}:d,Math.floor(s*1.3+i*.7)%5===0?1:0);const dx=Math.round(sp*(i+.5)-16+Math.sin(s*1.2+i)*4),dy=gy-31+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+8,gy,18,2);x.drawImage(c,dx,dy);if(CV.hol&&CV.hol.hat)cvHat(x,dx,dy,CV.hol,i);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
+    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(CV.hol&&CV.hol.hat?{...d,acc:''}:d,Math.floor(s*1.3+i*.7)%7===0?1:2+(Math.floor(s*6+i)%2));const dx=Math.round(sp*(i+.5)-16+Math.sin(s*1.2+i)*4),dy=gy-31+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+8,gy,18,2);x.drawImage(c,dx,dy);if(CV.hol&&CV.hol.hat)cvHat(x,dx,dy,CV.hol,i);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
     /* partículas de estación: hojas (otoño), pétalos (primavera), luciérnagas (noches de verano) */
     if(CV.season==='otono'||CV.season==='primavera'){for(const l of cvLeaf){const ly=((l.y+s*l.v*.12)%1)*H*.9,lx=((l.x*W+Math.sin(s*1.4+l.p)*10-s*8)%W+W)%W;x.fillStyle=CV.season==='otono'?['#E8892C','#C23B22','#F2B134'][(l.p*3|0)%3]:['#FF8FB8','#FFD6E8','#FFFFFF'][(l.p*3|0)%3];const fl=Math.sin(s*5+l.p)>0;x.fillRect(Math.round(lx),Math.round(ly),fl?2:1,fl?1:2)}}
     if(CV.season==='verano'&&CV.phase!=='dia'&&!wet){for(let k=0;k<14;k++){const px=(hash2(k,7)*W+Math.sin(s*.8+k)*8+W)%W,py=gy-10-hash2(k,8)*gy*.35+Math.sin(s*1.3+k)*4;if(Math.sin(s*3+k*1.7)>.1){x.fillStyle='#E6FF7A';x.fillRect(Math.round(px),Math.round(py),1,1);x.globalAlpha=.3;x.fillRect(Math.round(px)-1,Math.round(py)-1,3,3);x.globalAlpha=1}}}
