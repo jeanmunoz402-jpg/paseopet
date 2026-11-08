@@ -2092,6 +2092,42 @@ function iconC(name,x){
 }
 function iconU(name,x){const k='u'+name+'|'+(x||'');if(!urlC.has(k))urlC.set(k,iconC(name,x).toDataURL());return urlC.get(k)}
 function ico(name,x,alt=''){return `<img class="spr" src="${iconU(name,x)}" alt="${esc(alt)}">`}
+/* ================= DOGCOIN: la moneda del juego (gira y brilla) ================= */
+const DC_N=20,DC_FR=16;
+function dcFace(glint){const N=DC_N,c=document.createElement('canvas');c.width=N;c.height=N;const x=c.getContext('2d');const R=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(a,b,w,h)};
+  const cx=9.5,cy=9.5;
+  for(let y=0;y<N;y++)for(let i=0;i<N;i++){const d=Math.hypot(i-cx,y-cy);let col=null;
+    if(d<=9.4)col='#B4503A';if(d<=8.5)col=(i+y<17)?'#FFE27A':'#EE9A44';if(d<=7.4)col='#FFD04E';if(d<=6.2)col=(i+y<17)?'#F6B444':'#FFC94A';if(d<=5.4)col='#FFD45A';
+    if(col)R(i,y,1,1,col)}
+  /* huella */
+  const paw='#FFF3B8',pawO='#E39A3A';
+  const toes=[[5,7],[8,5],[11,5],[14,7]],pad=[[7,10,6],[6,11,8],[6,12,8],[7,13,6],[8,14,4]];
+  for(const [a,b] of toes){R(a-1,b,4,3,pawO);R(a,b-1,2,5,pawO)}for(const [a,b,w] of pad){R(a-1,b,w+2,1,pawO)}R(7,9,6,1,pawO);R(8,15,4,1,pawO);
+  for(const [a,b] of toes){R(a,b,2,3,paw)}for(const [a,b,w] of pad)R(a,b,w,1,paw);
+  R(8,5,1,1,'#FFFFFF');R(11,5,1,1,'#FFFFFF');R(7,10,2,1,'#FFFFFF');
+  /* reflejos del borde */
+  R(4,3,3,1,'#FFF6C8');R(3,4,1,2,'#FFF6C8');R(14,15,2,1,'#FFF2A0');
+  /* destello que cruza la cara */
+  if(glint!=null){for(let y=0;y<N;y++){const gx=Math.round(glint+(y-cx)*.6);for(const o of [0,1]){const i=gx+o;if(Math.hypot(i-cx,y-cy)<=8)R(i,y,1,1,o?'rgba(255,255,255,.55)':'#FFFFFF')}}}
+  return c}
+function dcStrip(){const N=DC_N,c=document.createElement('canvas');c.width=N*DC_FR;c.height=N;const x=c.getContext('2d');x.imageSmoothingEnabled=false;const face=dcFace(null);
+  /* 8 cuadros girando: se angosta, muestra el canto y vuelve */
+  const widths=[1,.78,.44,.14,.14,.44,.78,1];
+  widths.forEach((w,i)=>{const fw=Math.max(2,Math.round(N*w)),ox=i*N+Math.round((N-fw)/2);
+    if(w<.9){const t=document.createElement('canvas');t.width=fw;t.height=N;const tx=t.getContext('2d');tx.imageSmoothingEnabled=false;tx.drawImage(face,0,0,N,N,0,0,fw,N);tx.globalCompositeOperation='source-atop';tx.fillStyle='#C8643C';tx.fillRect(0,0,fw,N);
+      const sh=w<.3?2:1,dir=i<4?1:-1;for(let k=sh;k>0;k--)x.drawImage(t,ox+dir*k,0);x.fillStyle='#EE9A44';}
+    x.drawImage(face,0,0,N,N,ox,0,fw,N)});
+  /* 8 cuadros quietos con destello y chispa */
+  for(let k=0;k<8;k++){const i=8+k,ox=i*N;const g=k<5?-6+k*5:null;x.drawImage(dcFace(g),ox,0);
+    if(k===5||k===6){const s=k===5?1:2;x.fillStyle='#FFFFFF';x.fillRect(ox+15,3-s+1,1,s*2-1);x.fillRect(ox+15-s+1,3,s*2-1,1)}}
+  return c.toDataURL()}
+function installDogcoin(){try{const u=dcStrip();let st=document.getElementById('dcStyle');if(!st){st=document.createElement('style');st.id='dcStyle';document.head.appendChild(st)}
+  st.textContent=`.dc{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;margin:0 .08em;background:url(${u}) 0 0/1600% 100% no-repeat;image-rendering:pixelated;animation:dcspin 2.4s steps(16,jump-none) infinite;flex:none}
+  .dc.big{width:28px;height:28px}.coinbtn .dc{width:18px;height:18px;margin:0}
+  @keyframes dcspin{to{background-position:100% 0}}
+  @media (prefers-reduced-motion:reduce){.dc{animation:none}}`}catch(e){}}
+installDogcoin();
+const DC='<i class="dc" aria-hidden="true"></i>';
 /* ================= DOG BREEDS (24x24 pixel art, procedural) ================= */
 // coat: [nombre, base, claro, oscuro, patrón opcional]
 const BREEDS=[
@@ -2732,7 +2768,7 @@ const AURAS=[
  {id:'hielo',n:'Aura Escarcha Andina',r:'rara',tier:'medio',price:560,c:'#7EE7FF',c2:'#0E2A4A',cls:'aura-hielo',d:'Cristales de hielo giratorios y copos de nieve que caen como en la cordillera.'},
  {id:'sakura',n:'Aura Pétalos de Sakura',r:'rara',tier:'medio',price:640,c:'#FF8FB8',c2:'#4A0E2A',cls:'aura-sakura',d:'Corona floral rosada con pétalos que flotan alrededor de tu perro.'},
  {id:'sombra',n:'Aura Sombra Lunar',r:'epica',tier:'medio',price:1650,c:'#8A6BFF',c2:'#0A0618',cls:'aura-sombra',d:'Humo violeta, ondas oscuras y un brillo de luna nueva.'},
- {id:'oro',n:'Aura Tesoro Dorado',r:'epica',tier:'largo',price:2200,c:'#FFC93C',c2:'#4A3408',cls:'aura-oro',d:'Lluvia de monedas, rayos de oro y destellos de tesoro.'},
+ {id:'oro',n:'Aura Tesoro Dorado',r:'epica',tier:'largo',price:2200,c:'#FFC93C',c2:'#4A3408',cls:'aura-oro',d:'Lluvia de DogCoins, rayos de oro y destellos de tesoro.'},
  {id:'galaxia',n:'Aura Galaxia Espiral',r:'legendaria',tier:'largo',price:3600,c:'#FF5CC8',c2:'#0E1A4A',cls:'aura-galaxia',d:'Una galaxia completa gira alrededor: brazos de estrellas, nebulosa y ondas.'},
  {id:'fenix',n:'Aura Renacer del Fénix',r:'legendaria',tier:'largo',price:4200,c:'#FF6B2C',c2:'#4A0A10',cls:'aura-fenix',d:'Alas de fuego que laten, brasas que se abren hacia los lados y rayos solares.'},
  {id:'rgb',n:'Aura Arcoíris RGB Legendaria',r:'rgb',tier:'largo',price:5500,c:'#FF0055',c2:'#3B0A45',cls:'aura-rgb',d:'¡El trofeo supremo! Vórtice prismático 360° RGB, rayos cristalinos, ondas y chispas multicolor.'}
@@ -3021,7 +3057,7 @@ function renderHome(){
   const wxNow=nowWx(),wxOk=wxNow?evalHour(wxNow).lvl===0:false;
   const walkedToday=S.today.min>=10,chestDone=S.dailyChest===dkey();
   $('#s-home').innerHTML=`
-  <div class="hdr"><div class="logo"><img class="hdr-brand" src="${APP_LOGO}" alt="PaseoPet"><span>PASEO<b>PET</b></span></div><button class="coinbtn" id="homeCoins" aria-label="Tienda de PaseoPet">${ico16('mCoin')}<span>${S.coins||0}</span></button><button class="iconbtn donate" id="donBtn" aria-label="Apoyar PaseoPet">${ico('heartx')}</button><button class="iconbtn" id="bell" aria-label="Avisos">${ico('bell')}${unread?'<span class="dot"></span>':''}</button><button class="iconbtn" id="setBtn" aria-label="Ajustes">${ico('gear')}</button></div>
+  <div class="hdr"><div class="logo"><img class="hdr-brand" src="${APP_LOGO}" alt="PaseoPet"><span>PASEO<b>PET</b></span></div><button class="coinbtn" id="homeCoins" aria-label="Tienda de PaseoPet">${DC}<span>${S.coins||0}</span></button><button class="iconbtn donate" id="donBtn" aria-label="Apoyar PaseoPet">${ico('heartx')}</button><button class="iconbtn" id="bell" aria-label="Avisos">${ico('bell')}${unread?'<span class="dot"></span>':''}</button><button class="iconbtn" id="setBtn" aria-label="Ajustes">${ico('gear')}</button></div>
   ${gpsFramedBlocked()?`<div class="box" style="box-shadow:inset 0 0 0 3px var(--gold)"><div class="t2" style="color:var(--gold)">GPS BLOQUEADO</div><div class="small">Estás viendo PaseoPet dentro de otra página (como Wix), que bloquea el GPS.</div>${embedInfo().url?`<a class="btn o" href="${esc(embedInfo().url)}" target="_blank" rel="noopener">Abrir en pantalla completa</a>`:''}</div>`:''}
   ${wxCardHTML('wxHome')}
   ${p.last!==dkey()&&hr>=19&&p.streak>0?`<div class="banner">${ico('fire').replace('<img','<img style="width:20px;height:20px;display:inline;vertical-align:middle"')} Tu racha de ${p.streak} días está en riesgo. Sal un rato antes de medianoche.</div>`:''}
@@ -3047,15 +3083,15 @@ function renderHome(){
         <span class="proc-num">${chestDone?'3 · CANJEADO':'PASO 3'}</span>
         ${ico('moneda')}
         <span class="proc-title">COFRE Y TIENDA</span>
-        <span class="proc-sub">${chestDone?'Cofre abierto':`${S.coins||0} monedas`}</span>
+        <span class="proc-sub">${chestDone?'Cofre abierto':`${S.coins||0} DogCoins`}</span>
       </button>
     </div>
     <button class="btn o big" id="goWalk" style="width:100%">${ico('play','#1A0A02')}¡INICIAR PROCESO DE PASEO!</button>
   </div>
-  <button class="box row" id="homeStoreBan" style="text-align:left;background:linear-gradient(90deg,#2D1E66,#3B1C5E);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)">${ico16('mChest')}<div class="grow col" style="gap:2px"><div class="t2" style="color:var(--gold)">TIENDA DE PASEO · ${S.coins||0} MONEDAS</div><div class="mute small">Canjea tus paseos por Skins para perros y Auras hasta Arcoíris RGB.</div></div><span class="rtag rgb">VER ►</span></button>
+  <button class="box row" id="homeStoreBan" style="text-align:left;background:linear-gradient(90deg,#2D1E66,#3B1C5E);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)">${ico16('mChest')}<div class="grow col" style="gap:2px"><div class="t2" style="color:var(--gold)">TIENDA DE PASEO · ${S.coins||0} DOGCOINS</div><div class="mute small">Canjea tus paseos por Skins para perros y Auras hasta Arcoíris RGB.</div></div><span class="rtag rgb">VER ►</span></button>
   ${remindBannerHTML()}<div class="box"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div></div>
   <div class="box"><div class="row between"><span class="t2">Misiones de hoy</span><span class="lbl">Nivel ${(S.mis.t||0)+1}</span></div>
-   ${MIS.map(m=>{const v=Math.min(m.goal,m.id==='km'?+(+S.mis.p[m.id]||0).toFixed(1):Math.floor(S.mis.p[m.id]||0)),d=S.mis.done[m.id];return `<div class="mission">${`<span class="mic">${ico16(d?'mStar':{min:'mBoot',hex:'mFlag',item:'mChest'}[m.id]||'mStar')}</span>`}<div class="col" style="gap:5px"><div>${m.t}</div>${segBar(v/m.goal,d?'g sm':'o sm')}</div><span class="lbl" style="color:${d?'var(--mint)':'#C9BDFF'};text-align:right">${d?'OK':v+'/'+m.goal}<br>+${m.xp} XP · <b style="color:var(--gold)">+${m.coins||15}🪙</b></span></div>`}).join('')}</div>
+   ${MIS.map(m=>{const v=Math.min(m.goal,m.id==='km'?+(+S.mis.p[m.id]||0).toFixed(1):Math.floor(S.mis.p[m.id]||0)),d=S.mis.done[m.id];return `<div class="mission">${`<span class="mic">${ico16(d?'mStar':{min:'mBoot',hex:'mFlag',item:'mChest'}[m.id]||'mStar')}</span>`}<div class="col" style="gap:5px"><div>${m.t}</div>${segBar(v/m.goal,d?'g sm':'o sm')}</div><span class="lbl" style="color:${d?'var(--mint)':'#C9BDFF'};text-align:right">${d?'OK':v+'/'+m.goal}<br>+${m.xp} XP · <b style="color:var(--gold)">+${m.coins||15}<i class="dc" aria-hidden="true"></i></b></span></div>`}).join('')}</div>
   ${chainsBoxHTML()}
   ${(()=>{
     const wc=S.wkCon||{km:0,hex:0,items:0,claimed:false};
@@ -3063,13 +3099,13 @@ function renderHome(){
     const fac=factionById(p.faction);
     return `<div class="box vio" style="gap:8px">
       <div class="row between"><div class="row" style="gap:6px">${ico16('mChest')}<span class="t2" style="color:var(--gold)">CONTRATO SEMANAL</span></div><span class="tag ${wc.claimed?'g':allDone?'o':'y'}">${wc.claimed?'CANJEADO ✓':allDone?'¡LISTO!':'COFRE ÉPICO'}</span></div>
-      <div class="mute small">Completa los 3 encargos de la semana para abrir el <b>Cofre Épico Semanal</b> (+35 🪙, +250 XP y 1 Objeto Épico/Legendario):</div>
+      <div class="mute small">Completa los 3 encargos de la semana para abrir el <b>Cofre Épico Semanal</b> (+35 <i class="dc" aria-hidden="true"></i>, +250 XP y 1 Objeto Épico/Legendario):</div>
       <div class="g3">
         <div class="mini"><span class="num" style="color:${kDone?'var(--mint)':'var(--fg)'}">${Math.min(10,wc.km).toFixed(1).replace('.',',')}/10</span><span class="lbl">Km sem.</span></div>
         <div class="mini"><span class="num" style="color:${hDone?'var(--mint)':'var(--fg)'}">${Math.min(8,wc.hex)}/8</span><span class="lbl">Territorios</span></div>
         <div class="mini"><span class="num" style="color:${iDone?'var(--mint)':'var(--fg)'}">${Math.min(5,wc.items)}/5</span><span class="lbl">Objetos</span></div>
       </div>
-      ${allDone&&!wc.claimed?`<button class="btn o" id="claimWkCon">${ico16('mChest')}Abrir Cofre Épico Semanal (+35🪙 + 250 XP)</button>`:''}
+      ${allDone&&!wc.claimed?`<button class="btn o" id="claimWkCon">${ico16('mChest')}Abrir Cofre Épico Semanal (+35<i class="dc" aria-hidden="true"></i> + 250 XP)</button>`:''}
       <div class="row between" style="border-top:2px solid rgba(255,255,255,.08);padding-top:6px">
         <span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${fac.n}</span>
         <button class="btn sm" id="facBtn" style="min-height:28px;padding:4px 8px">Cambiar Manada</button>
@@ -3094,7 +3130,7 @@ function renderHome(){
     S.inv[k]=(S.inv[k]||0)+1;
     const d=itemById(k);
     save(true);pushProfile();coinSfx();boom(100);
-    toast(`¡Cofre Épico Semanal: +35🪙, +250 XP y ${d.fullName}!`,base.id,RAR[r].c);
+    toast(`¡Cofre Épico Semanal: +35<i class="dc" aria-hidden="true"></i>, +250 XP y ${d.fullName}!`,base.id,RAR[r].c);
     renderHome();
   };
   if($('#facBtn'))$('#facBtn').onclick=openFactionModal;
@@ -3153,10 +3189,10 @@ function renderPre(){
   const gpsTxt=preGpsTxt();
   const gpsReady=preCanStart();
   const modeRewards={
-    libre:['+20 XP/km','+15 XP/territorio','+1🪙 c/250m + botín'],
-    meta:[`Meta ${PLAN.km} km`,`+${PLAN.km*20} XP base`,`+${Math.max(4,PLAN.km*4)}🪙 estimadas`],
-    conquista:['5 hexágonos objetivo','+40 XP Bono Conquista','+3🪙 por conquista'],
-    ruta:['Guía en mapa','Supera tu tiempo','+XP y monedas normales']
+    libre:['+20 XP/km','+15 XP/territorio','+1<i class="dc" aria-hidden="true"></i> c/250m + botín'],
+    meta:[`Meta ${PLAN.km} km`,`+${PLAN.km*20} XP base`,`+${Math.max(4,PLAN.km*4)}<i class="dc" aria-hidden="true"></i> estimadas`],
+    conquista:['5 hexágonos objetivo','+40 XP Bono Conquista','+3<i class="dc" aria-hidden="true"></i> por conquista'],
+    ruta:['Guía en mapa','Supera tu tiempo','+XP y DogCoins normales']
   }[PLAN.mode]||[];
   $('#s-walk').innerHTML=`
   <div class="row between"><div class="t1">PREPARAR PASEO</div><span class="tag ${gpsReady?'g':'y'}">PROCESO EN 3 PASOS</span></div>
@@ -3203,7 +3239,7 @@ function updatePreGps(){if(tab!=='walk')return;const c=$('#gpsChip'),b=$('#start
 function countdown(cb){const el=$('#countdown'),n=$('#countNum');el.hidden=false;let i=3;const step=()=>{if(i===0){n.textContent='GO!';n.style.animation='none';void n.offsetWidth;n.style.animation='';setTimeout(()=>{el.hidden=true;cb()},500);return}n.textContent=i;n.style.animation='none';void n.offsetWidth;n.style.animation='';try{navigator.vibrate&&navigator.vibrate(30)}catch(e){}i--;setTimeout(step,650)};step()}
 function openManual(){const today=dkey(),yest=dkey(daysAgo(1));S.manualLog=(S.manualLog||[]).filter(d=>d>=dkey(daysAgo(14)));const canSave=S.streakSaveWk!==weekKey();
   sheet(`<div class="t1">PASEO MANUAL</div><div class="mute small">Para cuando saliste sin teléfono o falló el GPS. Es un salvavidas, no una forma de ganar:</div>
-  <div class="box dark small" style="gap:5px"><div>• 1 paseo manual por día, solo de hoy o de ayer</div><div>• Máximo 60 minutos y 4 km (ritmo de caminata)</div><div>• Da 25% de la XP y no da monedas</div><div>• No suma a la liga, las misiones ni las medallas</div><div style="color:${canSave?'var(--mint)':'var(--gold)'}">• ${canSave?'Si es de hoy, salva tu racha (1 vez por semana)':'Ya usaste el salvavidas de racha de esta semana'}</div></div>
+  <div class="box dark small" style="gap:5px"><div>• 1 paseo manual por día, solo de hoy o de ayer</div><div>• Máximo 60 minutos y 4 km (ritmo de caminata)</div><div>• Da 25% de la XP y no da DogCoins</div><div>• No suma a la liga, las misiones ni las medallas</div><div style="color:${canSave?'var(--mint)':'var(--gold)'}">• ${canSave?'Si es de hoy, salva tu racha (1 vez por semana)':'Ya usaste el salvavidas de racha de esta semana'}</div></div>
   <div class="g2"><div class="field"><label for="mMin">Minutos</label><input class="inp" id="mMin" type="number" min="1" max="60" inputmode="numeric" value="30"></div><div class="field"><label for="mKm">Kilómetros</label><input class="inp" id="mKm" type="number" min="0" max="4" step="0.1" inputmode="decimal" value="2"></div></div>
   <div class="field"><label for="mDate">Fecha</label><input class="inp" id="mDate" type="date" value="${today}" min="${yest}" max="${today}"></div>
   <button class="btn o" id="mSave">Guardar paseo manual</button><button class="btn" id="mCancel">Cancelar</button>`,sh=>{sh.querySelector('#mCancel').onclick=closeSheet;sh.querySelector('#mSave').onclick=()=>{const min=+$('#mMin').value,km=+$('#mKm').value,date=$('#mDate').value||today;
@@ -3353,7 +3389,7 @@ async function finalize(w){
   W8(walksCol().path+'/'+id,()=>walksCol().doc(id).set(rec)).catch(()=>{});
   const prevAvg=S.totals.walks>1?(S.totals.km*1000-w.dist)/(S.totals.walks-1):w.dist;
   showSummary({rec,old,gained,lv,mult,hm,coins,coinBreak:w.manual?[]:cw.parts,parkRes,firstToday,misDone,newB,terr,photos:w.photos||[],pct:Math.round((w.dist/Math.max(1,prevAvg)-1)*100)});
-  if(w.manual)setTimeout(()=>toast(`Paseo manual guardado: +${gained} XP${mSave?' · ¡racha salvada!':''}. No suma monedas, liga ni medallas`,'boot','#FFC93C'),1200);
+  if(w.manual)setTimeout(()=>toast(`Paseo manual guardado: +${gained} XP${mSave?' · ¡racha salvada!':''}. No suma DogCoins, liga ni medallas`,'boot','#FFC93C'),1200);
   render();
 }
 function diaryFallback(sm){const r=sm.rec,km=fmtKm(r.dist),c=t=>r.events.filter(e=>e.t===t).length,o=[];const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -3394,15 +3430,15 @@ function renderPost(anim){const o=$('#o-sum');o.scrollTop=0;const st=POST.step;
   const x=$('#pX');if(x)x.onclick=()=>{POST.step=4;renderPost()};hydrateIcons(o)}
 function goStep(n){POST.step=n;renderPost()}
 function postStep1(o,anim){const sm=POST.sm,p=S.pet,r=sm.rec;
-  const rewards=[...r.items.map(g=>{const d=itemById(g);return{i:g,n:d.n,c:RAR[d.r].c,s:RAR[d.r].n}}),...(sm.terr.taken?[{i:'flag',n:`${sm.terr.taken} territorios`,c:OR,s:'Conquista'}]:[]),...(sm.terr.weakened.length?[{i:'flag',n:`${sm.terr.weakened.length} debilitados`,c:'#8A93AD',s:'Ataque'}]:[]),...sm.newB.map(b=>({i:b.i,n:b.n,c:RAR[b.r].c,s:'Medalla'})),...sm.misDone.map(m=>({i:'star',n:m.t,c:'#2CE6A6',s:'Misión'})),...(sm.coins?[{i:'moneda',n:`+${sm.coins} monedas`,c:'#FFC93C',s:'Tienda'}]:[]),...(sm.parkRes||[]).filter(x=>x.newLead).map(x=>({i:'corona',n:x.n,c:'#FFC93C',s:'Líder del parque'})),...(sm.parkRes||[]).filter(x=>x.tierUp).map(x=>({i:'pin',n:`${x.n}: ${x.tierUp}`,c:'#4FD18B',s:`Expedición ${x.visits}`}))];
+  const rewards=[...r.items.map(g=>{const d=itemById(g);return{i:g,n:d.n,c:RAR[d.r].c,s:RAR[d.r].n}}),...(sm.terr.taken?[{i:'flag',n:`${sm.terr.taken} territorios`,c:OR,s:'Conquista'}]:[]),...(sm.terr.weakened.length?[{i:'flag',n:`${sm.terr.weakened.length} debilitados`,c:'#8A93AD',s:'Ataque'}]:[]),...sm.newB.map(b=>({i:b.i,n:b.n,c:RAR[b.r].c,s:'Medalla'})),...sm.misDone.map(m=>({i:'star',n:m.t,c:'#2CE6A6',s:'Misión'})),...(sm.coins?[{i:'moneda',n:`+${sm.coins} DogCoins`,c:'#FFC93C',s:'Tienda'}]:[]),...(sm.parkRes||[]).filter(x=>x.newLead).map(x=>({i:'corona',n:x.n,c:'#FFC93C',s:'Líder del parque'})),...(sm.parkRes||[]).filter(x=>x.tierUp).map(x=>({i:'pin',n:`${x.n}: ${x.tierUp}`,c:'#4FD18B',s:`Expedición ${x.visits}`}))];
   const sp=r.splits.length?r.splits:[r.moving||r.time];const mx=Math.max(...sp),mn=Math.min(...sp);
   o.innerHTML=`${postHead()}
   <div class="col" style="align-items:center;text-align:center;gap:10px">${petHTML(p,96,{bob:true})}<div class="t1">¡GRAN PASEO, ${esc(p.name.toUpperCase())}!</div>${sm.pct>5&&S.totals.walks>1?`<span class="tag g">+${sm.pct}% vs tu promedio</span>`:''}</div>
   <div class="g3" style="text-align:center"><div class="mini"><span class="num" id="cntKm">${anim?'0,00':fmtKm(r.dist)}</span><span class="lbl">Km</span></div><div class="mini"><span class="num">${fmtTime(r.time)}</span><span class="lbl">Tiempo</span></div><div class="mini"><span class="num">${fmtPace(r.moving||r.time,r.dist)}</span><span class="lbl">Ritmo</span></div></div>
   <div class="box vio"><div class="row between"><span class="tag" id="sumLvl">NV ${anim?sm.old.level:p.level}</span><span class="num" style="font-size:18px;color:#C9BDFF" id="sumXp">+${anim?0:sm.gained} XP</span></div><div class="seg"><i id="sumBar" style="width:${(anim?sm.old.xp/need(sm.old.level):p.xp/need(p.level))*100}%"></i></div><div class="row between mute small"><span>Racha ${p.streak}${sm.mult>1?' · x'+sm.mult:''}${sm.hm&&sm.hm!==1?` · ritmo x${String(sm.hm).replace('.',',')}`:''}</span><span>${sm.firstToday?'+25 primer paseo del día':''}</span></div><div class="lvup" id="lvup" ${anim||!sm.lv?'hidden':''}>${sm.lv?`¡SUBISTE A NIVEL ${p.level}!`:''}</div></div>
-  <div class="box" style="box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)"><div class="row between"><div class="row" style="gap:8px">${ico16('mCoin')}<span class="t2" style="color:var(--gold)">MONEDAS DE PASEO</span></div><span class="num" style="font-size:18px;color:var(--gold)">+${sm.coins||0}</span></div>
+  <div class="box" style="box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)"><div class="row between"><div class="row" style="gap:8px">${DC}<span class="t2" style="color:var(--gold)">DOGCOINS</span></div><span class="num" style="font-size:18px;color:var(--gold)">+${sm.coins||0}</span></div>
    ${(sm.coinBreak||[]).length?`<div class="col small" style="gap:3px">${sm.coinBreak.map(([lbl,val])=>`<div class="row between"><span class="mute">${esc(lbl)}</span><b style="color:var(--gold)">${String(val).startsWith('+')?val:'+'+val}</b></div>`).join('')}</div>`:''}
-   <div class="mute small">Saldo actual: <b style="color:var(--gold)">${S.coins||0} monedas</b> · canjéalas en la Tienda por Skins y Auras RGB.</div></div>
+   <div class="mute small">Saldo actual: <b style="color:var(--gold)">${S.coins||0} DogCoins</b> · canjéalas en la Tienda por Skins y Auras RGB.</div></div>
   ${rewards.length?`<div><div class="lbl" style="margin-bottom:8px">Recompensas</div><div class="g3">${rewards.map((x,i)=>`<div class="rcard" style="--c:${x.c};animation-delay:${anim?.5+i*.15:0}s">${ico(x.i)}<span>${esc(x.n)}</span><span class="lbl" style="color:${x.c}">${x.s}</span></div>`).join('')}</div></div>`:''}
   ${r.pts.length>1?`<div class="box"><div class="row between"><span class="t2">Recorrido</span><button class="btn sm" id="replay">Repetición</button></div><canvas class="mapthumb" id="sumCv" style="height:230px"></canvas></div>`:''}
   ${sp.length>1?`<div class="box"><span class="t2">Ritmo cada 500 m</span><div style="display:flex;align-items:flex-end;gap:5px;height:110px">${sp.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0"><span class="lbl" style="font-size:10px;color:var(--fg)">${fmtTime(v)}</span><div style="width:100%;height:${24+((v-mn)/((mx-mn)||1))*50}px;background:${v===mn?'var(--mint)':'var(--orange)'};box-shadow:inset -3px -3px 0 rgba(0,0,0,.3)"></div><span class="lbl" style="font-size:10px">${((i+1)*.5).toFixed(1).replace('.',',')}</span></div>`).join('')}</div><div class="mute small">En verde tu tramo más rápido.</div></div>`:''}
@@ -3596,7 +3632,7 @@ function renderPack(){rollDay();const p=S.pet;
   $('#s-pack').innerHTML=`<div class="hdr"><div class="t1" style="flex:1">MI MANADA</div><span class="tag ${MODE==='local'?'d':'g'}">${MODE==='local'?'Sin cuenta':MODE==='firebase'?'Cuenta Google':'Compartido'}</span><button class="iconbtn" id="setBtn2" aria-label="Ajustes">${ico('gear')}</button></div>
   ${dogsBoxHTML()}${angelsBoxHTML()}
   ${petCardHTML({edit:true})}
-  <div class="box"><div class="row between"><span class="t2">Estilo</span><button class="coinbtn" id="pkStoreBtn" style="height:32px">${ico16('mCoin')}<span>${S.coins||0} · Ir a Tienda ►</span></button></div><div class="cos">${COS.map(c=>{const ok=c.price?owned(c.id):!c.ok||c.ok(S);return `<button data-acc="${c.id}" class="${p.acc===c.id?'on':''} ${ok?'':'lock'}" aria-label="${c.n}${ok?'':c.price?' cuesta '+c.price+' monedas':' bloqueado: '+c.req}"><img class="spr" src="${petU({...p,acc:c.id})}" alt="">${ok?'':c.price?`<span class="cprice">${c.price}</span>`:`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}).join('')}</div><div class="mute small">En la <b>Tienda</b> puedes canjear tus monedas de paseo por <b>Skins para tu perro</b> y <b>Auras hasta Arcoíris RGB</b>.</div>
+  <div class="box"><div class="row between"><span class="t2">Estilo</span><button class="coinbtn" id="pkStoreBtn" style="height:32px">${DC}<span>${S.coins||0} · Ir a Tienda ►</span></button></div><div class="cos">${COS.map(c=>{const ok=c.price?owned(c.id):!c.ok||c.ok(S);return `<button data-acc="${c.id}" class="${p.acc===c.id?'on':''} ${ok?'':'lock'}" aria-label="${c.n}${ok?'':c.price?' cuesta '+c.price+' DogCoins':' bloqueado: '+c.req}"><img class="spr" src="${petU({...p,acc:c.id})}" alt="">${ok?'':c.price?`<span class="cprice">${c.price}</span>`:`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}).join('')}</div><div class="mute small">En la <b>Tienda</b> puedes canjear tus DogCoins por <b>Skins para tu perro</b> y <b>Auras hasta Arcoíris RGB</b>.</div>
    <div class="field"><label>Color</label>${coatRow(p,'pcoat')}</div>
    <div class="toggle"><span>Colores propios</span><button class="sw ${p.custom?'on':''}" id="pkCustom" aria-label="Colores propios"></button></div>
    ${p.custom?`<div class="field"><label>Pelaje</label><div class="swatches">${FURS.map(c=>`<button data-fur="${c}" class="${p.fur===c?'on':''}" style="background:${c}" aria-label="Pelaje"></button>`).join('')}</div></div><div class="field"><label>Manchas y orejas</label><div class="swatches">${SPOTS.map(c=>`<button data-spot="${c}" class="${p.spot===c?'on':''}" style="background:${c}" aria-label="Manchas"></button>`).join('')}</div></div>`:''}</div>
@@ -3823,7 +3859,7 @@ function renderWeather(){const el=$('#s-weather');const n=nowWx();const loc=WX.l
   el.innerHTML=head+`
   <div class="box row wxcard wx-hero wxk-${wxKind(n)}" style="gap:16px;min-height:132px;box-shadow:inset 0 0 0 3px ${L.c},inset 0 -6px 0 3px rgba(0,0,0,.22),0 8px 0 rgba(0,0,0,.38)">${wxBgHTML()}<img class="spr wxbig wxi" src="${wxIcon24U(n.code,n.day)}" alt="" style="width:78px;height:78px;filter:drop-shadow(0 5px 0 rgba(0,0,0,.45))"><div class="col grow" style="gap:5px;min-width:0;z-index:1"><div class="row between"><span class="tag ${L.tag}">${L.n}</span><span class="lbl" style="color:#E8ECF8">${n.day?'DÍA':'NOCHE'}</span></div><div class="row" style="gap:10px;align-items:baseline"><span class="num" style="font-size:34px;text-shadow:0 3px 0 rgba(0,0,0,.45)">${r0(n.temp)}°C</span><b style="font-size:16px">${esc(WCODE[n.code]||'')}</b></div><div class="small" style="color:#E8ECF8">Sensación <b>${r0(n.feels)}°C</b> · Mín ${r0(d.temperature_2m_min[0])}° / Máx ${r0(d.temperature_2m_max[0])}°</div></div></div>
   <div class="box" style="box-shadow:inset 0 0 0 3px ${L.c},inset 0 -6px 0 3px rgba(0,0,0,.18)"><div class="row between"><span class="t2" style="color:${L.c}">${L.t.toUpperCase()}</span><span class="lbl">Evaluado para ${esc(S.pet.name)}</span></div>
-   ${ev.R.length?ev.R.map(x=>`<div class="reason">${ico(x.i)}<span style="color:${LVL[x.lvl].c}">${x.txt}</span></div>`).join(''):`<div class="small">Temperatura agradable, sin lluvia ni viento fuerte. ¡Excelente momento para salir y ganar Monedas de Paseo!</div>`}
+   ${ev.R.length?ev.R.map(x=>`<div class="reason">${ico(x.i)}<span style="color:${LVL[x.lvl].c}">${x.txt}</span></div>`).join(''):`<div class="small">Temperatura agradable, sin lluvia ni viento fuerte. ¡Excelente momento para salir y ganar DogCoins!</div>`}
    <div class="wx-pave"><div class="row between"><span class="lbl" style="color:var(--fg)">🐾 Termómetro de Patitas (Asfalto)</span><span class="num" style="font-size:13px;color:${pavCol}">${r0(pav)}°C</span></div><div class="wx-pave-bar"><i class="wx-pave-dot" style="left:${pavPct}%"></i></div><div class="row between mute" style="font-size:11px"><span>Frío 10°C</span><span>Templado 30°C</span><span>Quema +52°C</span></div><div class="small" style="color:${pavCol}">${pavMsg}</div></div></div>
   <div class="wx-grid6">
    <div class="wx-stat">${ico16('mPav')}<div class="col"><span class="num" style="color:${pavCol}">${r0(pav)}°C</span><span class="lbl">Asfalto est.</span></div></div>
@@ -4077,7 +4113,7 @@ function openFactionModal(){
 function openEvo(){const p=S.pet,e=evoOf(p.level),canPrest=p.level>=50&&(p.prestige||0)<5;sheet(`<div class="t1">EVOLUCIONES Y PRESTIGIO</div><div class="mute small">${esc(p.name)} evoluciona al subir de nivel. Cada forma trae más brillo, un aura más fuerte y una gema en la frente.</div>
   <div class="box vio" style="gap:6px">
     <div class="row between"><span class="t2" style="color:var(--gold)">ASCENSIÓN DE PRESTIGIO</span><span class="tag y">PRESTIGIO ${p.prestige||0}/5</span></div>
-    <div class="mute small">Al llegar a <b>Nivel 50 (Leyenda)</b> puedes Ascender: reinicias a Nivel 1 conservando todas tus Skins, Auras, Monedas y Colección, y ganas permanentemente <b>+15% XP, +5m de Anillo GPS y +2 Puntos de Talento</b>.</div>
+    <div class="mute small">Al llegar a <b>Nivel 50 (Leyenda)</b> puedes Ascender: reinicias a Nivel 1 conservando todas tus Skins, Auras, DogCoins y Colección, y ganas permanentemente <b>+15% XP, +5m de Anillo GPS y +2 Puntos de Talento</b>.</div>
     ${canPrest?`<button class="btn o" id="doPrestige">★ Ascender a Prestigio ${(p.prestige||0)+1} ★</button>`:`<div class="small" style="color:#C9BDFF">Actual: +${(p.prestige||0)*15}% XP · +${(p.prestige||0)*5}m Anillo GPS (Requiere Nivel 50)</div>`}
   </div>
   ${EVO.map((x,j)=>`<div class="box row ${j===e.i?'hot':''}" style="${j>e.i?'opacity:.5':''}"><img class="spr" src="${petU({...p,evo:j})}" alt="" style="width:56px;height:56px;${j>e.i?'filter:brightness(0)':''}"><div class="grow col" style="gap:4px"><b style="color:${x.c}">${evoTag(j,x.n)}</b><span class="mute small">Desde nivel ${x.lv}</span></div>${j<e.i?'<span class="tag g">OK</span>':j===e.i?'<span class="tag o">ACTUAL</span>':`<span class="tag d">NV ${x.lv}</span>`}</div>`).join('')}
@@ -4513,7 +4549,7 @@ function openItem(id){
       return `<div class="row between" style="padding:7px 9px;background:var(--bg2);border-left:4px solid ${r.c};box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)">
         <div class="col" style="gap:2px">
           <div class="row" style="gap:6px"><b style="color:${r.c};font-size:12px">Nv.${r.lv} · ${r.n}</b><span class="tag" style="background:${r.c}25;color:${r.c};font-size:7px;padding:2px 5px">${r.pct}% aparición</span></div>
-          <span class="mute" style="font-size:10px">+${xp} XP · +${r.coins} 🪙 Moneda${r.coins===1?'':'s'}</span>
+          <span class="mute" style="font-size:10px">+${xp} XP · +${r.coins} <i class="dc" aria-hidden="true"></i> DogCoin${r.coins===1?'':'s'}</span>
         </div>
         <span class="tag ${have?'g':'d'}">${have?'x'+have:'0'}</span>
       </div>`;
@@ -4921,7 +4957,7 @@ function mediaTick(){if(!WK||!BGA||Date.now()-msT<5000)return;msT=Date.now();try
 setInterval(()=>{if(!WK||WK.paused)return;mediaTick();
   if(WK.lastFixTs&&Date.now()-WK.lastFixTs>75000&&!WK.lostWarned){WK.lostWarned=true;bigAlert('Sin señal de GPS','Hace más de un minuto que no llega tu ubicación. Revisa que la Ubicación siga activa.','gps','info')}},3000);
 
-/* ================= BIENESTAR: OLFATEO · RITMO · PARQUES · MONEDAS ================= */
+/* ================= BIENESTAR: OLFATEO · RITMO · PARQUES · DOGCOINS ================= */
 const VIB={item:[80,40,80],km:[400,150,400],sniff:[60,50,60,50,60,50,220],fast:[120,60,120,60,120,60,120],water:[250,120,250],leader:[100,50,100,50,400]};
 function vib(k){try{navigator.vibrate&&navigator.vibrate(VIB[k]||k)}catch(e){}}
 function waterSfx(){if(S&&S.sound===false)return;const ac=audioCtx();if(!ac)return;const t0=ac.currentTime+.03;
@@ -5049,7 +5085,7 @@ function setEco(on){S.eco=!!on;save();const o=$('#o-live');o.classList.toggle('e
 /* ---- calorías ---- */
 function kcalHuman(dist,moving){const h=moving/3600;if(h<=0)return 0;const kmh=dist/1000/h;const met=kmh<3.2?2.8:kmh<4.8?3.5:kmh<5.6?4.3:5;return Math.round(met*(+S.humanKg||70)*h)}
 function kcalDog(dist){return Math.round((+S.pet.kg||10)*dist/1000*1.1)}
-/* ---- tienda y monedas de paseo ---- */
+/* ---- tienda y DogCoins ---- */
 let STORE_TAB='auras',STORE_TIER='all',STORE_PREV=null;
 function owned(id){return id==='trail:clasico'||id===''||id==='natural'||id==='default'||id==='noche'||id==='skin:natural'||id==='aura:default'||id==='biome:noche'||(S.owned||[]).includes(id)}
 function rTagHTML(r){
@@ -5071,24 +5107,24 @@ function coinProgHTML(price){
   return `<div class="cprog"><div class="row between" style="font-size:10px"><span style="color:var(--gold);font-weight:700">${have}/${price}</span><span class="mute">${rem>0?`~${walks} paseo${walks===1?'':'s'}`:'¡Listo!'}</span></div><div class="cprog-bar"><i style="width:${pct}%"></i></div></div>`;
 }
 function openCoinGuide(){
-  sheet(`<div class="row" style="gap:10px;align-items:center">${ico16('mCoin')}<div class="t1" style="color:var(--gold)">ECONOMIA DE PASEO</div></div>
-  <div class="mute small">Las <b>Monedas de Paseo</b> premian la constancia real con ${esc(S.pet.name)}. Un buen paseo de 30 min otorga entre <b>12 y 20 monedas</b>:</div>
+  sheet(`<div class="row" style="gap:10px;align-items:center">${DC}<div class="t1" style="color:var(--gold)">ECONOMIA DE PASEO</div></div>
+  <div class="mute small">Las <b>DogCoins</b> premian la constancia real con ${esc(S.pet.name)}. Un buen paseo de 30 min otorga entre <b>12 y 20 DogCoins</b>:</div>
   <div class="box dark" style="gap:7px">
-    <div class="row between small"><span>🐾 <b>Cada 250 m caminados (1 km = +4)</b></span><b style="color:var(--gold)">+1 moneda</b></div>
-    <div class="row between small"><span>⏱️ <b>Cada 10 min en movimiento</b></span><b style="color:var(--gold)">+1 moneda</b></div>
-    <div class="row between small"><span>🏴 <b>Cada 2 territorios conquistados</b></span><b style="color:var(--gold)">+1 moneda</b></div>
-    <div class="row between small"><span>👃 <b>Parada de olfateo (75 s, máx 3)</b></span><b style="color:var(--gold)">+1 moneda</b></div>
-    <div class="row between small"><span>💚 <b>Paseo feliz (≥85% y +10 min)</b></span><b style="color:var(--gold)">+3 monedas</b></div>
+    <div class="row between small"><span>🐾 <b>Cada 250 m caminados (1 km = +4)</b></span><b style="color:var(--gold)">+1 DogCoin</b></div>
+    <div class="row between small"><span>⏱️ <b>Cada 10 min en movimiento</b></span><b style="color:var(--gold)">+1 DogCoin</b></div>
+    <div class="row between small"><span>🏴 <b>Cada 2 territorios conquistados</b></span><b style="color:var(--gold)">+1 DogCoin</b></div>
+    <div class="row between small"><span>👃 <b>Parada de olfateo (75 s, máx 3)</b></span><b style="color:var(--gold)">+1 DogCoin</b></div>
+    <div class="row between small"><span>💚 <b>Paseo feliz (≥85% y +10 min)</b></span><b style="color:var(--gold)">+3 DogCoins</b></div>
     <div class="row between small"><span>🎁 <b>Objetos Nv.1 a Nv.5 en el mapa</b></span><b style="color:var(--gold)">+1 a +18</b></div>
-    <div class="row between small"><span>⭐ <b>Hito Dorado del Barrio</b></span><b style="color:var(--gold)">+10 monedas</b></div>
-    <div class="row between small"><span>📦 <b>Cofre Diario (20 min de paseo hoy)</b></span><b style="color:var(--gold)">+8 monedas</b></div>
+    <div class="row between small"><span>⭐ <b>Hito Dorado del Barrio</b></span><b style="color:var(--gold)">+10 DogCoins</b></div>
+    <div class="row between small"><span>📦 <b>Cofre Diario (20 min de paseo hoy)</b></span><b style="color:var(--gold)">+8 DogCoins</b></div>
     <div class="row between small"><span>🔥 <b>Bono racha (7 días / 30 días)</b></span><b style="color:var(--mint)">x1,15 / x1,30</b></div>
   </div>
   <div class="box" style="gap:6px">
     <span class="t2">Metas de progresión</span>
-    <div class="small"><span class="tier-tag corto">CORTO PLAZO</span> <b>Común y Potenciadores (55–220 🪙)</b>: 2 a 7 días de paseo.</div>
-    <div class="small"><span class="tier-tag medio">MEDIO PLAZO</span> <b>Rara, Épica y Biomas (320–1.750 🪙)</b>: 2 a 6 semanas de constancia.</div>
-    <div class="small"><span class="tier-tag largo">LARGO PLAZO</span> <b>Legendaria y Arcoíris RGB (2.600–6.500 🪙)</b>: trofeos supremos para paseadores dedicados.</div>
+    <div class="small"><span class="tier-tag corto">CORTO PLAZO</span> <b>Común y Potenciadores (55–220 <i class="dc" aria-hidden="true"></i>)</b>: 2 a 7 días de paseo.</div>
+    <div class="small"><span class="tier-tag medio">MEDIO PLAZO</span> <b>Rara, Épica y Biomas (320–1.750 <i class="dc" aria-hidden="true"></i>)</b>: 2 a 6 semanas de constancia.</div>
+    <div class="small"><span class="tier-tag largo">LARGO PLAZO</span> <b>Legendaria y Arcoíris RGB (2.600–6.500 <i class="dc" aria-hidden="true"></i>)</b>: trofeos supremos para paseadores dedicados.</div>
   </div>
   <button class="btn o big" id="cgWalk">${ico('paw','#1A0A02')}Salir a pasear ahora</button>
   <button class="btn" id="cgClose">Entendido</button>`,sh=>{
@@ -5119,10 +5155,10 @@ function buyStoreItem(kind,item){
     <div class="t1">${esc(item.n.toUpperCase())}</div>
     ${kind==='trail'?`<canvas class="trailprev" data-trail="${item.id}" style="height:80px"></canvas>`:''}
     ${item.d?`<div class="small mute">${esc(item.d)}</div>`:''}
-    <div class="row" style="gap:6px">${ico16('mCoin')}<b style="color:var(--gold);font-size:16px">${item.price} Monedas de Paseo</b><span class="mute small">(tienes ${have})</span></div>
+    <div class="row" style="gap:6px">${DC}<b style="color:var(--gold);font-size:16px">${item.price} DogCoins</b><span class="mute small">(tienes ${have})</span></div>
     ${coinProgHTML(item.price)}
   </div>
-  ${have>=item.price?`<button class="btn g big" id="stBuyOk">★ Comprar y ${kind==='boost'?'activar':'equipar'} ahora</button>`:`<div class="banner small">Te faltan <b>${rem} Monedas de Paseo</b> (~${walks} paseos de 30 min con ${esc(S.pet.name)}). ¡Cada paseo real suma!</div><button class="btn o" id="stGoWalk">${ico('paw','#1A0A02')}Ir a pasear para ganar monedas</button>`}
+  ${have>=item.price?`<button class="btn g big" id="stBuyOk">★ Comprar y ${kind==='boost'?'activar':'equipar'} ahora</button>`:`<div class="banner small">Te faltan <b>${rem} DogCoins</b> (~${walks} paseos de 30 min con ${esc(S.pet.name)}). ¡Cada paseo real suma!</div><button class="btn o" id="stGoWalk">${ico('paw','#1A0A02')}Ir a pasear para ganar DogCoins</button>`}
   <button class="btn" id="stBuyNo">Volver a la tienda</button>`,sh=>{
     hydrateIcons(sh);
     sh.querySelector('#stBuyNo').onclick=closeSheet;
@@ -5183,7 +5219,7 @@ function renderStore(){
           <button class="btn sm" data-prev-aura="${a.id}" style="flex:1">${isPrev?'Viendo':'Probar'}</button>
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-aura="${a.id}" style="flex:1.3">${isEq?'Equipado ✓':'Equipar'}</button>`
-            : `<button class="btn sm o" data-buy-aura="${a.id}" style="flex:1.4;gap:4px">${ico16('mCoin')}<span>${a.price}</span></button>`}
+            : `<button class="btn sm o" data-buy-aura="${a.id}" style="flex:1.4;gap:4px">${DC}<span>${a.price}</span></button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -5206,7 +5242,7 @@ function renderStore(){
           <button class="btn sm" data-prev-skin="${s.id}" style="flex:1">${isPrev?'Viendo':'Probar'}</button>
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-skin="${s.id}" style="flex:1.3">${isEq?'Equipado ✓':'Equipar'}</button>`
-            : `<button class="btn sm o" data-buy-skin="${s.id}" style="flex:1.4;gap:4px">${ico16('mCoin')}<span>${s.price}</span></button>`}
+            : `<button class="btn sm o" data-buy-skin="${s.id}" style="flex:1.4;gap:4px">${DC}<span>${s.price}</span></button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -5222,7 +5258,7 @@ function renderStore(){
         <div class="row" style="gap:6px;width:100%;margin-top:auto">
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-trail="${t.id}" style="flex:1">${isEq?'Equipado ✓':'Equipar'}</button>`
-            : `<button class="btn sm o" data-buy-trail="${t.id}" style="flex:1;gap:4px">${ico16('mCoin')}<span>${t.price}</span></button>`}
+            : `<button class="btn sm o" data-buy-trail="${t.id}" style="flex:1;gap:4px">${DC}<span>${t.price}</span></button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -5242,7 +5278,7 @@ function renderStore(){
           <button class="btn sm" data-prev-biome="${b.id}" style="flex:1">${isPrev?'Viendo':'Probar'}</button>
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-biome="${b.id}" style="flex:1.3">${isEq?'Activo ✓':'Usar'}</button>`
-            : `<button class="btn sm o" data-buy-biome="${b.id}" style="flex:1.4;gap:4px">${ico16('mCoin')}<span>${b.price}</span></button>`}
+            : `<button class="btn sm o" data-buy-biome="${b.id}" style="flex:1.4;gap:4px">${DC}<span>${b.price}</span></button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -5255,7 +5291,7 @@ function renderStore(){
         <div class="t2">${esc(b.n)}</div>
         <div class="mute" style="font-size:11px;line-height:1.25;min-height:32px">${esc(b.d)}</div>
         ${coinProgHTML(b.price)}
-        <button class="btn sm o" data-buy-boost="${b.id}" style="width:100%;margin-top:auto;gap:5px">${ico16('mCoin')}<span>Comprar (${b.price})</span></button>
+        <button class="btn sm o" data-buy-boost="${b.id}" style="width:100%;margin-top:auto;gap:5px">${DC}<span>Comprar (${b.price})</span></button>
       </div>`;
     }).join('')}</div>`;
   }else{
@@ -5274,7 +5310,7 @@ function renderStore(){
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-acc="${c.id}" style="flex:1.3">${isEq?'Puesto ✓':'Usar'}</button>`
             : c.price
-              ? `<button class="btn sm o" data-buy-acc="${c.id}" style="flex:1.4;gap:4px">${ico16('mCoin')}<span>${c.price}</span></button>`
+              ? `<button class="btn sm o" data-buy-acc="${c.id}" style="flex:1.4;gap:4px">${DC}<span>${c.price}</span></button>`
               : `<button class="btn sm" disabled style="flex:1.3">Bloq.</button>`}
         </div>
       </div>`;
@@ -5284,7 +5320,7 @@ function renderStore(){
   el.innerHTML=`
   <div class="hdr">
     <div class="col" style="gap:2px"><div class="t1">TIENDA PASEOPET</div><span class="mute small">Auras, skins, rastros, escenarios y potenciadores</span></div>
-    <button class="coinbtn" id="stCoinBtn" title="Economía de Monedas de Paseo">${ico16('mCoin')}<span>${S.coins||0}</span></button>
+    <button class="coinbtn" id="stCoinBtn" title="Economía de DogCoins">${DC}<span>${S.coins||0}</span></button>
   </div>
   <div class="store-stage ${au.id==='rgb'||sk.id==='arcoiris'?'aura-card-rgb':''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2}">
     <div class="row between" style="width:100%;z-index:2">
@@ -5305,8 +5341,8 @@ function renderStore(){
     </div>
   </div>
   <div class="box row between" style="background:linear-gradient(135deg,#241A3E,#151D34);box-shadow:inset 0 0 0 3px var(--gold),0 6px 0 rgba(0,0,0,.35)">
-    <div class="row" style="gap:10px;min-width:0">${ico16('mCoin')}<div class="col" style="gap:2px;min-width:0"><b>Cofre Diario del Paseador</b><span class="mute small">${chestClaimed?'¡Ya reclamaste tus +8 monedas de hoy!':chestReady?'¡Caminaste 20+ min hoy! Reclama tu cofre':`Pasea 20 min hoy (${Math.min(20,Math.floor(S.today.min))}/20 min) para abrirlo`}</span></div></div>
-    <button class="btn sm ${chestReady?'o':''}" id="stChest" style="gap:5px" ${chestReady?'':'disabled'}>${chestClaimed?'Listo ✓':`${ico16('mCoin')}<span>+8</span>`}</button>
+    <div class="row" style="gap:10px;min-width:0">${DC}<div class="col" style="gap:2px;min-width:0"><b>Cofre Diario del Paseador</b><span class="mute small">${chestClaimed?'¡Ya reclamaste tus +8 DogCoins de hoy!':chestReady?'¡Caminaste 20+ min hoy! Reclama tu cofre':`Pasea 20 min hoy (${Math.min(20,Math.floor(S.today.min))}/20 min) para abrirlo`}</span></div></div>
+    <button class="btn sm ${chestReady?'o':''}" id="stChest" style="gap:5px" ${chestReady?'':'disabled'}>${chestClaimed?'Listo ✓':`${DC}<span>+8</span>`}</button>
   </div>
   <div class="chips">
     ${[['auras','✨ Auras RGB'],['skins','🐕 Skins'],['trails','🐾 Rastros'],['biomes','🏞️ Escenarios'],['boosts','⚡ Potenciadores'],['acc','🎀 Accesorios']].map(([k,n])=>`<button class="chip ${STORE_TAB===k?'on':''}" data-sttab="${k}">${n}</button>`).join('')}
@@ -5320,7 +5356,7 @@ function renderStore(){
   $('#stCoinBtn').onclick=openCoinGuide;
   const hc=$('#stHowCoins');if(hc)hc.onclick=openCoinGuide;
   const rp=$('#stResetPrev');if(rp)rp.onclick=()=>{STORE_PREV=null;renderStore()};
-  const ch=$('#stChest');if(ch&&chestReady)ch.onclick=()=>{S.dailyChest=dkey();S.coins=(S.coins||0)+8;save();coinSfx();boom(65);toast('¡Cofre Diario reclamado: +8 Monedas de Paseo!','star','#FFC93C');renderStore()};
+  const ch=$('#stChest');if(ch&&chestReady)ch.onclick=()=>{S.dailyChest=dkey();S.coins=(S.coins||0)+8;save();coinSfx();boom(65);toast('¡Cofre Diario reclamado: +8 DogCoins!','star','#FFC93C');renderStore()};
   el.querySelectorAll('[data-sttab]').forEach(b=>b.onclick=()=>{STORE_TAB=b.dataset.sttab;renderStore()});
   el.querySelectorAll('[data-sttier]').forEach(b=>b.onclick=()=>{STORE_TIER=b.dataset.sttier;renderStore()});
 
@@ -5815,14 +5851,14 @@ const chainReward=k=>({coins:5+k*8,xp:60+k*70});
 function chainState(c){const k=((S.chains||{})[c.id])|0,goal=c.tiers[k],v=+c.v()||0;return{k,goal,v,done:k>=c.tiers.length,ready:goal!=null&&v>=goal}}
 function chainRowHTML(c){const s=chainState(c),r=chainReward(s.k),fmt=x=>c.id==='km'?(+x).toFixed(1).replace('.',','):Math.floor(x);
   return `<div class="chainrow ${s.ready?'ready':''} ${s.done?'done':''}"><span class="mic">${ico(c.i)}</span><div class="col" style="gap:4px;min-width:0"><div class="row between"><b>${esc(c.n)}</b><span class="lbl">Etapa ${Math.min(s.k+1,c.tiers.length)}/${c.tiers.length}</span></div>
-   ${s.done?`<div class="mute small">¡Camino completado!</div>`:`${segBar(Math.min(1,s.v/s.goal),s.ready?'g sm':'o sm')}<div class="mute small">${fmt(Math.min(s.v,s.goal))}/${s.goal} ${esc(c.u)} · +${r.coins} monedas · +${r.xp} XP</div>`}</div>
+   ${s.done?`<div class="mute small">¡Camino completado!</div>`:`${segBar(Math.min(1,s.v/s.goal),s.ready?'g sm':'o sm')}<div class="mute small">${fmt(Math.min(s.v,s.goal))}/${s.goal} ${esc(c.u)} · +${r.coins} DogCoins · +${r.xp} XP</div>`}</div>
    ${s.ready?`<button class="btn sm g" data-chain="${c.id}">Reclamar</button>`:s.done?'<span class="tag g">✓</span>':''}</div>`}
 function chainsBoxHTML(){const list=CHAINS.slice().sort((a,b)=>{const A=chainState(a),B=chainState(b);return(B.ready-A.ready)||(A.done-B.done)||((B.v/(B.goal||1))-(A.v/(A.goal||1)))});
   const ready=CHAINS.filter(c=>chainState(c).ready).length;
   return `<div class="box"><div class="row between"><span class="t2">Misiones por etapas</span>${ready?`<span class="tag g">${ready} por reclamar</span>`:`<span class="lbl">${CHAINS.reduce((a,c)=>a+chainState(c).k,0)} etapas</span>`}</div>${list.slice(0,4).map(chainRowHTML).join('')}<button class="btn sm" id="chainAll">Ver las ${CHAINS.length} misiones</button></div>`}
 function openChains(){sheet(`<div class="t1">MISIONES POR ETAPAS</div><div class="mute small">Cada misión tiene varias etapas. Al completar una, reclama tu premio y se desbloquea la siguiente, más difícil y con mejor recompensa.</div>${CHAINS.map(chainRowHTML).join('')}<button class="btn" id="chX">Cerrar</button>`,sh=>{hydrateIcons(sh);sh.querySelector('#chX').onclick=closeSheet})}
 function claimChain(id){const c=CHAINS.find(x=>x.id===id);if(!c)return;const s=chainState(c);if(!s.ready)return;const r=chainReward(s.k);S.chains=S.chains||{};S.chains[id]=s.k+1;S.coins=(S.coins||0)+r.coins;addXp(r.xp);save();pushProfile();coinSfx();boom(70);
-  toast(`${esc(c.n)} · etapa ${s.k+1} completada: +${r.coins} monedas y +${r.xp} XP`,c.i,'#4FD18B');const shOpen=!$('#sheetWrap').hidden;if(shOpen)openChains();render()}
+  toast(`${esc(c.n)} · etapa ${s.k+1} completada: +${r.coins} DogCoins y +${r.xp} XP`,c.i,'#4FD18B');const shOpen=!$('#sheetWrap').hidden;if(shOpen)openChains();render()}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-chain],#chainAll');if(!t||!S)return;if(t.id==='chainAll')openChains();else claimChain(t.dataset.chain)});
 /* ---- medallas nuevas (incluye secretas) ---- */
 const totKm=s=>s.totals.km,maxLv=s=>Math.max(1,...(s.dogs||[s.pet]).map(d=>d.level||1));
@@ -5873,7 +5909,7 @@ BADGES.push(
  {id:'rain',n:'Bajo la lluvia',i:'rain',r:'rara',d:'Pasea mientras llueve',t:s=>((s.stat&&s.stat.rain)||0)>=1},
  {id:'sunday',n:'Paseo de domingo',i:'sun',r:'comun',d:'Pasea un domingo',t:(s,w)=>w&&new Date(w.date+'T12:00').getDay()===0},
  {id:'triple',n:'Triple paseo',i:'paw',r:'rara',d:'3 paseos en un mismo día',t:(s,w)=>w&&(s.days[w.date]||0)>=3},
- {id:'rich',n:'Ahorrador',i:'moneda',r:'epica',d:'Junta 1.000 monedas',t:s=>(s.coins||0)>=1000},
+ {id:'rich',n:'Ahorrador',i:'moneda',r:'epica',d:'Junta 1.000 DogCoins',t:s=>(s.coins||0)>=1000},
  {id:'x_calcetin',n:'¿Y el otro?',i:'calcetin',r:'epica',secret:1,d:'Encontraste el calcetín perdido',t:s=>!!(s.found||{}).calcetin},
  {id:'x_trebol',n:'Suertudo',i:'trebol',r:'legendaria',secret:1,d:'Encontraste el trébol de 4 hojas',t:s=>!!(s.found||{}).trebol},
  {id:'x_medianoche',n:'Hora bruja',i:'moon',r:'epica',secret:1,d:'Pasea justo a medianoche',t:(s,w)=>w&&w.hour===0},
