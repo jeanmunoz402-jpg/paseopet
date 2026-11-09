@@ -1005,7 +1005,7 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .pact-dog{position:relative;filter:drop-shadow(0 0 14px rgba(255,143,184,.45))}
 .pact-heart{position:absolute;right:-8px;top:-4px;font-size:22px;color:#FF5C8A;animation:pactBeat 1.1s ease-in-out infinite}
 @keyframes pactBeat{50%{transform:scale(1.25)}}
-.pact-list{gap:8px}.pact-it{display:flex;gap:10px;align-items:flex-start;padding:10px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.1)}
+.pact-list{gap:8px}.tipbox{gap:12px}.tip-head{display:flex;align-items:flex-end;gap:10px}.tip-dog{flex:none;width:84px;height:84px;display:grid;place-items:center}.tip-bub{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start;padding-bottom:6px}.tip-cat{display:inline-flex;align-items:center;gap:6px;background:var(--tc);color:#2A1B2E;border:3px solid #2A1B2E;padding:4px 10px;font-family:var(--pix);font-size:11px;box-shadow:3px 3px 0 rgba(0,0,0,.35)}.tip-card{background:#FFF8E7;color:#2A1B2E;border:4px solid #2A1B2E;box-shadow:inset 0 -6px 0 rgba(0,0,0,.08),0 0 0 3px var(--tc);padding:14px 14px 18px;display:flex;flex-direction:column;gap:8px}.tip-t{font-family:var(--pix);font-size:13px;line-height:1.5;text-wrap:balance}.tip-x{font-size:19px;line-height:1.3}.tip-note{text-align:center}.tip-off{display:flex;align-items:center;justify-content:center;gap:8px;opacity:.8;padding:4px;cursor:pointer}.tip-off input{width:18px;height:18px}.pact-it{display:flex;gap:10px;align-items:flex-start;padding:10px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.1)}
 .pact-it>span{font-size:22px;line-height:1;flex:none}.pact-it>div{display:flex;flex-direction:column;gap:2px}
 .pact-ban{text-align:center;box-shadow:inset 0 0 0 2px #FF8FB8}
 @media (prefers-reduced-motion:reduce){.pact-heart{animation:none}}
@@ -5747,6 +5747,111 @@ function honorPact(after){const p=S.pet,nm=esc(p.name||'tu perro');const again=!
     const fin=()=>{closeSheet();after&&setTimeout(after,400)};
     sh.querySelector('#pcOk').onclick=()=>{if(!again){S.pact={at:Date.now()};save();vib([20,40,20]);setTimeout(()=>toast(`¡Trato hecho! ${nm} te lo agradece 🐾`,'paw','#FF8FB8'),300)}fin()};
     const l=sh.querySelector('#pcLater');if(l)l.onclick=fin})}
+/* ================= CONSEJOS DE CUIDADO: uno al azar al entrar ================= */
+const TIP_CATS={salud:['Salud','🩺','#FF8FB8'],paseo:['Paseo','🦮','#7BD88F'],comida:['Alimentación','🍖','#FFC93C'],seguridad:['Seguridad','🛡️','#FF7A59'],clima:['Clima','☀️','#6EC6FF'],higiene:['Higiene','🛁','#9AE6E0'],mente:['Mente y juego','🧠','#C9A0FF'],convivencia:['Convivencia','🏡','#F6B444'],cachorro:['Cachorros','🍼','#FFB3C7'],senior:['Perros mayores','🤍','#C8D0E0']};
+const CARE_TIPS=[
+['salud','Control una vez al año','Aunque se vea sano, una visita anual al veterinario permite detectar problemas a tiempo. Los perros mayores se benefician de ir cada seis meses.'],
+['salud','Vacunas al día','Las vacunas lo protegen de enfermedades graves como parvovirus y distemper. Tu veterinario define el calendario y los refuerzos según su edad.'],
+['salud','Antirrábica y microchip','En Chile la vacuna antirrábica y el microchip con inscripción en el Registro Nacional de Mascotas son obligatorios. Revisa que los tenga al día.'],
+['salud','Desparasitación interna','Los parásitos intestinales no siempre se ven. Pregunta a tu veterinario cada cuánto desparasitarlo según su edad y estilo de vida.'],
+['salud','Pulgas y garrapatas','Usa un antiparasitario externo recomendado por tu veterinario durante todo el año, no solo en verano. Las garrapatas transmiten enfermedades serias.'],
+['salud','Revisa después del paseo','Al volver, pasa la mano por orejas, cuello, axilas y entre los dedos. Así encuentras garrapatas, espigas o heridas antes de que se compliquen.'],
+['salud','Cuida su peso','Deberías poder sentir sus costillas sin apretar y ver su cintura desde arriba. El sobrepeso acorta la vida y daña las articulaciones.'],
+['salud','Señales de dolor','Un perro con dolor puede cojear, lamerse una zona, esconderse, jadear en reposo o dejar de comer. Si notas un cambio así, consulta al veterinario.'],
+['salud','Nunca le des tus remedios','El paracetamol, el ibuprofeno y otros medicamentos de personas pueden ser tóxicos para los perros. Solo dale lo que indique su veterinario.'],
+['salud','Vómitos o diarrea que no paran','Si vomita o tiene diarrea varias veces, hay sangre o está decaído, llévalo al veterinario. En cachorros es urgente: se deshidratan rápido.'],
+['salud','Esterilizar es cuidar','La esterilización evita camadas no deseadas y reduce el riesgo de varias enfermedades. Conversa con tu veterinario sobre el mejor momento.'],
+['salud','Dientes limpios','El sarro causa dolor, mal aliento e infecciones. Cepillarle los dientes con pasta para perros varias veces por semana marca la diferencia.'],
+['salud','Ten a mano un teléfono de urgencia','Guarda en tu teléfono el número de una clínica veterinaria que atienda de noche. En una urgencia, cada minuto cuenta.'],
+['paseo','Todos los días, aunque sea corto','El paseo diario no es un lujo. Le da ejercicio, estímulos y tiempo contigo. Un paseo corto es mucho mejor que ninguno.'],
+['paseo','Déjalo olfatear','Oler es su forma de leer el mundo. Dale tiempo para olfatear sin apurarlo: lo relaja y lo cansa mentalmente tanto como caminar.'],
+['paseo','Arnés cómodo','Un arnés bien ajustado reparte la presión y cuida su cuello. Deberían caber dos dedos entre el arnés y su cuerpo.'],
+['paseo','Siempre con correa en la calle','Hasta el perro más obediente puede asustarse y correr. La correa lo protege de autos, peleas y pérdidas.'],
+['paseo','Lleva bolsas','Recoger sus heces mantiene limpias las calles y evita el contagio de parásitos a otros perros y a las personas.'],
+['paseo','Agua en paseos largos','Si van a caminar más de media hora o hace calor, lleva agua y un bebedero plegable. Ofrécele pequeños sorbos en las pausas.'],
+['paseo','Ejercicio según su edad y raza','Un border collie joven y un bulldog mayor no necesitan lo mismo. Ajusta la distancia y el ritmo a tu perro, no al revés.'],
+['paseo','Calienta y enfría','Parte caminando suave unos minutos y termina igual. Sus músculos y articulaciones lo agradecen, sobre todo si después corre o juega.'],
+['paseo','Cambia de ruta','Calles y olores nuevos son un regalo para su cabeza. Variar el recorrido de vez en cuando hace el paseo más interesante para los dos.'],
+['paseo','Espera después de comer','Evita el ejercicio intenso justo antes y después de comer, sobre todo en perros grandes de pecho profundo. Reduce el riesgo de torsión gástrica.'],
+['paseo','Lee su lenguaje','Si se sienta, se queda atrás o jadea mucho, necesita una pausa. Respetar sus señales hace que confíe más en ti.'],
+['paseo','De noche, que los vean','Si pasean con poca luz, usa un collar o arnés reflectante o una luz pequeña. Ayuda a que autos y ciclistas los vean a tiempo.'],
+['comida','Chocolate, nunca','El chocolate es tóxico para los perros, y mientras más amargo, peor. Si comió chocolate, llama a tu veterinario de inmediato.'],
+['comida','Uvas y pasas, prohibidas','Las uvas y las pasas pueden causar daño grave en los riñones, incluso en poca cantidad. No se las des nunca.'],
+['comida','Cebolla y ajo dañan su sangre','La cebolla, el ajo, el cebollín y el puerro, crudos o cocidos, pueden destruir sus glóbulos rojos. Ojo con las sobras de comida.'],
+['comida','Cuidado con el xilitol','Este endulzante está en chicles, dulces sin azúcar y algunas mantequillas de maní. Es muy tóxico para los perros: revisa las etiquetas.'],
+['comida','Huesos cocidos, no','Los huesos cocidos se astillan y pueden perforar o tapar su intestino. Mejor un mordedor seguro recomendado para su tamaño.'],
+['comida','Agua fresca siempre','Debe tener agua limpia disponible todo el día. Lava el bebedero a diario y cámbiale el agua aunque parezca limpia.'],
+['comida','Mide la porción','Usa una taza medidora y sigue la cantidad indicada para su peso ideal. Servir a ojo es la forma más común de sobrealimentarlo.'],
+['comida','Los premios también cuentan','Los premios no deberían pasar del 10% de sus calorías del día. Si hubo muchos premios, sirve un poco menos de comida.'],
+['comida','Cambia de alimento de a poco','Mezcla el alimento nuevo con el antiguo durante unos siete días, subiendo la proporción. Así evitas vómitos y diarrea.'],
+['comida','Horarios fijos','Darle de comer a las mismas horas ordena su digestión y facilita saber cuándo necesitará salir.'],
+['comida','Otros alimentos peligrosos','Tampoco le des alcohol, café, nueces de macadamia, masa cruda con levadura ni cuescos de fruta. Ante la duda, mejor no.'],
+['comida','Come muy rápido','Si devora la comida, prueba un plato antivoracidad o reparte la ración en una alfombra olfativa. Come más lento y se entretiene.'],
+['seguridad','Placa con tu teléfono','Además del microchip, una placa con tu número en el collar es la forma más rápida de que te lo devuelvan si se pierde.'],
+['seguridad','Jamás solo en el auto','En un día tibio, el interior de un auto sube varios grados en minutos, incluso con la ventana abierta. Puede sufrir un golpe de calor mortal.'],
+['seguridad','Seguro en el auto','Llévalo con arnés de seguridad, en transportadora o detrás de una rejilla. Suelto puede lesionarse o distraerte al manejar.'],
+['seguridad','Fuegos artificiales','Los días de fiesta déjalo adentro, con puertas y ventanas cerradas, su placa puesta y un lugar tranquilo donde esconderse. Muchos perros se pierden esas noches.'],
+['seguridad','Plantas tóxicas','Lirios, adelfas, cicas, azaleas y varios bulbos son tóxicos. Revisa qué plantas tienes en casa y en el jardín.'],
+['seguridad','Productos de limpieza y venenos','Guarda detergentes, cloro, raticidas y anticongelante fuera de su alcance. Si sospechas que tragó algo, ve al veterinario sin esperar síntomas.'],
+['seguridad','Que no coma del suelo','En la calle puede encontrar restos de comida en mal estado o cebos. Enseñarle "deja" y vigilar lo que huele puede salvarle la vida.'],
+['seguridad','Presentaciones con calma','Antes de dejar que salude a otro perro, pregunta a su tutor. Acérquense de lado, con correas sueltas y sin obligarlos.'],
+['seguridad','Niños y perros, siempre acompañados','Nunca dejes a un niño pequeño solo con un perro, aunque sea tranquilo. Enséñales a no molestarlo cuando come o duerme.'],
+['seguridad','Balcones y rejas','Revisa que no pueda pasar entre barrotes ni saltar. Las caídas y las fugas ocurren en segundos.'],
+['clima','La prueba de la mano','Apoya el dorso de tu mano en el pavimento cinco segundos. Si a ti te quema, a sus almohadillas también. Busca sombra o pasto.'],
+['clima','En verano, temprano o tarde','Con calor, pasea antes de las 10 de la mañana o cuando baje el sol. Evita las horas de más temperatura.'],
+['clima','Señales de golpe de calor','Jadeo muy intenso, encías muy rojas, babeo, tambaleo o vómitos son una urgencia. Llévalo a la sombra, mójalo con agua fresca y ve al veterinario.'],
+['clima','Los chatos sufren más','Bulldogs, pugs, boxers y otras razas de hocico corto regulan peor el calor. Con ellos, paseos cortos y a la sombra.'],
+['clima','Frío y lluvia','Los perros pequeños, de pelo corto, cachorros y mayores sienten más el frío. Un abrigo y secarlo bien al volver ayudan mucho.'],
+['clima','Seca bien sus patas','Después de la lluvia, seca entre sus dedos. La humedad que queda ahí favorece hongos e irritaciones.'],
+['clima','Humo y mala calidad del aire','En días de humo o alerta ambiental, acorta los paseos y evita el ejercicio intenso. A ellos también les afecta respirar ese aire.'],
+['clima','Ojo con el agua estancada','No lo dejes beber de charcos o aguas estancadas. Pueden tener bacterias y parásitos que lo enferman.'],
+['higiene','Cepillado regular','Cepillarlo quita pelo muerto, evita nudos y te deja revisar su piel. Los de pelo largo lo necesitan casi todos los días.'],
+['higiene','Baño, sin exagerar','Bañarlo muy seguido reseca su piel. Para la mayoría basta cada cuatro a seis semanas, siempre con champú para perros.'],
+['higiene','Uñas cortas','Si sus uñas suenan al caminar sobre el piso, ya están largas. Las uñas largas cambian su pisada y pueden doler.'],
+['higiene','Orejas limpias y secas','Revisa sus orejas cada semana. Mal olor, enrojecimiento o que se rasque y sacuda la cabeza son motivo de consulta.'],
+['higiene','Lava su cama','Lava su cama y sus mantas cada una o dos semanas. Reduce olores, ácaros y pulgas.'],
+['higiene','Platos limpios','Lava sus platos de comida y agua todos los días. En los restos se forman bacterias que no se ven.'],
+['higiene','Almohadillas sanas','Revisa sus almohadillas: grietas, cortes o cosas enterradas duelen al caminar. Si están muy secas, existen bálsamos especiales.'],
+['mente','También necesita pensar','Juegos de olfato, juguetes rellenables y aprender trucos lo cansan tanto como correr. Diez minutos al día hacen diferencia.'],
+['mente','Premia lo que hace bien','Educar con premios, caricias y juego funciona mejor que retar. Los castigos generan miedo y dañan la confianza.'],
+['mente','Sesiones cortas','Para enseñarle algo, cinco minutos varias veces al día rinden más que media hora seguida. Termina siempre con algo que le salga bien.'],
+['mente','Esconde su comida','Reparte parte de su ración por la casa o en una toalla enrollada. Buscar su comida es un juego natural para él.'],
+['mente','Rota sus juguetes','Guarda algunos juguetes y cámbialos cada semana. Los que vuelven a aparecer parecen nuevos.'],
+['mente','Morder es necesario','Morder lo relaja y limpia sus dientes. Dale mordedores seguros para su tamaño y así cuida tus zapatos.'],
+['mente','Aprender a estar solo','Acostúmbralo de a poco a quedarse solo, con salidas cortas y sin despedidas dramáticas. Previene la ansiedad por separación.'],
+['convivencia','Un lugar propio','Necesita un rincón tranquilo donde nadie lo moleste. Si se va a su cama, déjalo descansar.'],
+['convivencia','Duermen mucho','Un perro adulto duerme entre 12 y 14 horas al día, y los cachorros y mayores todavía más. El descanso es parte de su salud.'],
+['convivencia','Rutinas que dan calma','Comer, pasear y dormir a horas parecidas le da seguridad. Los perros se sienten mejor cuando saben qué viene.'],
+['convivencia','Aprende sus señales','Bostezar, lamerse el hocico, girar la cabeza o tensarse pueden ser señales de incomodidad. Darle espacio a tiempo evita problemas.'],
+['convivencia','Todos con las mismas reglas','Si uno lo deja subir al sillón y otro lo reta, se confunde. Acuerden las reglas en casa y manténganlas.'],
+['convivencia','Tiempo de calidad','Además del paseo, necesita compañía. Unos minutos de juego, caricias o simplemente estar juntos fortalecen su vínculo.'],
+['cachorro','Antes de la calle, sus vacunas','Hasta completar sus vacunas, evita plazas y lugares con muchos perros. El parvovirus sobrevive meses en el suelo. Pregunta a tu veterinario cuándo puede salir.'],
+['cachorro','Socialización temprana','Entre las 3 y las 14 semanas aprende qué es normal. Preséntale personas, ruidos y superficies de forma positiva y segura.'],
+['cachorro','Paseos cortos','Sus huesos todavía crecen. Prefiere varios paseos cortos y juego libre antes que caminatas largas o correr sobre cemento.'],
+['cachorro','Muerde porque explora','Cuando muerda tus manos, ofrécele un juguete. No juegues con las manos y premia cuando muerde lo que corresponde.'],
+['cachorro','Paciencia con el baño','Sácalo al despertar, después de comer y después de jugar. Premia en el momento cuando lo hace afuera y no lo retes por los accidentes.'],
+['senior','Se adapta el ritmo, no se deja de pasear','Un perro mayor igual necesita salir. Prefiere paseos más cortos, más lentos y más seguidos, por terreno blando.'],
+['senior','Rigidez al levantarse','Si le cuesta pararse, subir escaleras o saltar, puede tener artrosis. Hay tratamientos que le quitan el dolor: consulta a tu veterinario.'],
+['senior','Controles más seguidos','Desde los 7 años aproximadamente (antes en razas grandes) conviene un control cada seis meses, con exámenes de sangre.'],
+['senior','Casa más cómoda','Una cama acolchada, alfombras en pisos resbalosos y rampas para subir al auto le hacen la vida más fácil.'],
+['senior','Cambios de conducta','Si se desorienta, cambia su sueño o toma mucha más agua que antes, no es solo "la edad". Vale la pena revisarlo.']
+];
+let TIP_SHOWN=false;
+function tipPick(){if(!Array.isArray(S.tipSeen))S.tipSeen=[];let pool=[];for(let i=0;i<CARE_TIPS.length;i++)if(!S.tipSeen.includes(i))pool.push(i);
+  if(!pool.length){const last=S.tipSeen[S.tipSeen.length-1];S.tipSeen=[];for(let i=0;i<CARE_TIPS.length;i++)if(i!==last)pool.push(i)}
+  const i=pool[Math.floor(Math.random()*pool.length)];S.tipSeen.push(i);save();return i}
+function careTip(idx){const i=idx==null?tipPick():idx,t=CARE_TIPS[i],c=TIP_CATS[t[0]],p=S.pet,nm=esc(p.name||'tu perro');TIP_SHOWN=true;
+  sheet(`<div class="col tipbox" style="--tc:${c[2]}">
+   <div class="tip-head"><div class="tip-dog">${petHTML(p,84,{bob:true})}</div>
+    <div class="tip-bub"><span class="tip-cat"><span aria-hidden="true">${c[1]}</span> ${c[0]}</span><div class="mute small">Consejo de cuidado para ${nm}</div></div></div>
+   <div class="tip-card"><div class="tip-t">${t[1]}</div><div class="tip-x">${t[2]}</div></div>
+   <div class="mute small tip-note">Consejo general ${S.tipSeen.length} de ${CARE_TIPS.length}. Tu veterinario conoce a ${nm} mejor que nadie: ante cualquier duda, consúltale.</div>
+   <button class="btn o big" id="tpOk">¡A jugar!</button>
+   <button class="btn" id="tpMore">Otro consejo</button>
+   <label class="tip-off small"><input type="checkbox" id="tpOff" ${S.tipsOff?'checked':''}> No mostrar consejos al entrar</label></div>`,sh=>{
+    sh.querySelector('#tpOk').onclick=()=>closeSheet();
+    sh.querySelector('#tpMore').onclick=()=>careTip();
+    sh.querySelector('#tpOff').onchange=e=>{S.tipsOff=e.target.checked;save();if(S.tipsOff)toast('Listo. Puedes volver a activarlos en Ajustes.','bubble','#FFC93C')}})}
 /* ventanas de bienvenida en fila, para que no se tapen entre sí */
 function startupQueue(steps){const wrap=()=>$('#sheetWrap');let i=0;
   const next=()=>{if(i>=steps.length)return;if(wrap()&&!wrap().hidden){setTimeout(next,700);return}const fn=steps[i++];let opened=false;try{opened=fn()}catch(e){}setTimeout(next,opened?900:50)};
@@ -5780,12 +5885,12 @@ function remindSettingsHTML(){const R=remindCfg(),perm=window.Notification?Notif
   <label class="setrow tgl"><span><b>Recordatorio del paseo diario</b><br><span class="mute small">Si aún no paseas, te aviso a esta hora.</span></span><input type="checkbox" id="rmOn" ${R.on?'checked':''}></label>
   <div class="row between" style="gap:10px"><span class="small">Hora del aviso</span><input class="inp" type="time" id="rmT" value="${esc(R.t)}" style="max-width:130px"></div>
   <label class="setrow tgl"><span><b>Aviso de racha en peligro</b><br><span class="mute small">A las 21:00, si tu racha está por perderse.</span></span><input type="checkbox" id="rmSt" ${R.streak?'checked':''}></label>
-  <label class="setrow tgl"><span><b>Avisos durante el paseo</b><br><span class="mute small">Agua, ritmo, metas y hallazgos aunque tengas la pantalla apagada.</span></span><input type="checkbox" id="rmWk" ${S.walkNotes!==false?'checked':''}></label>
+  <label class="setrow tgl"><span><b>Consejos de cuidado al entrar</b><br><span class="mute small">Un consejo al azar para cuidar a tu perro cada vez que abres el juego.</span></span><input type="checkbox" id="rmTips" ${S.tipsOff?'':'checked'}></label><button class="btn" id="rmTipNow">🩺 Ver un consejo ahora</button><label class="setrow tgl"><span><b>Avisos durante el paseo</b><br><span class="mute small">Agua, ritmo, metas y hallazgos aunque tengas la pantalla apagada.</span></span><input type="checkbox" id="rmWk" ${S.walkNotes!==false?'checked':''}></label>
   <button class="btn sm" id="rmTest">Probar un aviso</button>
   <div class="mute small">${perm!=='granted'?'Activa las notificaciones arriba para recibir avisos fuera de la app. Mientras tanto los verás dentro del juego, en la campana 🔔.':isApp()?'Los avisos llegan mientras PaseoPet sigue abierta o en segundo plano. Si cierras la app por completo, el teléfono puede no mostrar el recordatorio diario.':'Consejo: instala PaseoPet en tu pantalla de inicio para que los avisos lleguen mejor. Si cierras la pestaña, no llegan.'}</div></div>`}
 function bindRemindSettings(){const R=remindCfg();const q=id=>document.getElementById(id);if(!q('rmOn'))return;
   q('rmOn').onchange=e=>{R.on=e.target.checked;save();swSync()};q('rmT').onchange=e=>{R.t=e.target.value||'19:00';S.remSeen&&(S.remSeen.d='');save();swSync()};
-  q('rmSt').onchange=e=>{R.streak=e.target.checked;save()};q('rmWk').onchange=e=>{S.walkNotes=e.target.checked;save()};
+  q('rmSt').onchange=e=>{R.streak=e.target.checked;save()};q('rmWk').onchange=e=>{S.walkNotes=e.target.checked;save()};q('rmTips').onchange=e=>{S.tipsOff=!e.target.checked;save()};q('rmTipNow').onclick=()=>careTip();
   q('rmTest').onclick=async()=>{await askNotif();const ok=await pushNote('PaseoPet 🐾',`Así se verán los avisos de ${S.pet.name}.`,{tag:'prueba'});notify(`Aviso de prueba para ${S.pet.name}`,'bell');toast(ok?'Aviso enviado. Revisa tus notificaciones.':'Las notificaciones del sistema no están activas: el aviso quedó en la campana 🔔.','bell','#FFC93C')}}
 
 /* quiénes salen al paseo */
@@ -6043,7 +6148,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);startupQueue([()=>{if(S.pact)return false;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);startupQueue([()=>{if(S.pact)return false;TIP_SHOWN=true;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden},()=>{if(TIP_SHOWN||S.tipsOff||!S.onboarded)return false;careTip();return true}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
