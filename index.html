@@ -704,6 +704,11 @@ body{background:var(--bg)}
 .coinbtn img{width:20px;height:20px;animation:mbob 1.6s steps(2) infinite}
 .aura{overflow:visible;border-radius:50%}
 .aura::before,.aura::after{content:"";position:absolute;border-radius:50%;pointer-events:none}
+.invbox{box-shadow:inset 0 0 0 3px rgba(255,201,60,.55)}.invurl{font-family:var(--pix);font-size:11px;line-height:1.5;word-break:break-all;color:#FFE29A;background:rgba(0,0,0,.3);padding:8px;margin:4px 0}
+.invt{align-items:center}.invt .tag{font-size:12px;flex:none}.invt.ok{box-shadow:inset 0 0 0 2px rgba(44,230,166,.6)}.invbar{height:8px;background:rgba(0,0,0,.4);margin-top:5px}.invbar i{display:block;height:100%;background:var(--gold)}.invt.ok .invbar i{background:var(--mint)}
+.aura.aura-manada{opacity:1!important;inset:0;background:radial-gradient(circle,#FFF4FA 0 14%,#FF8FB8 34%,rgba(214,72,140,.68) 56%,rgba(90,30,74,.22) 70%,transparent 78%);box-shadow:0 0 22px rgba(255,143,184,.8),inset 0 0 14px #FFE29A;animation:aurap 1.2s steps(4) infinite}
+.aura.aura-manada::before{inset:-6px;background:repeating-conic-gradient(from 0deg,rgba(255,201,60,.8) 0 8deg,transparent 8deg 36deg,rgba(255,143,184,.7) 36deg 44deg,transparent 44deg 72deg);mask:radial-gradient(circle,transparent 46%,#000 50% 70%,transparent 74%);-webkit-mask:radial-gradient(circle,transparent 46%,#000 50% 70%,transparent 74%);animation:spin 8s linear infinite}
+.aura.aura-manada::after{inset:8px;box-shadow:inset 0 0 0 2px rgba(255,226,154,.9),0 0 12px #FF8FB8}
 .aura.aura-esmeralda{opacity:1!important;inset:0;background:radial-gradient(circle,#E8FFF5 0 14%,#2CE6A6 34%,rgba(16,142,98,.68) 56%,rgba(11,68,48,.22) 70%,transparent 78%);box-shadow:0 0 22px rgba(44,230,166,.75),inset 0 0 14px #B8FFDF;animation:aurap 1.4s steps(4) infinite}
 .aura.aura-esmeralda::before{inset:-4px;background:repeating-conic-gradient(from 0deg,rgba(44,230,166,.55) 0 10deg,transparent 10deg 30deg);mask:radial-gradient(circle,transparent 46%,#000 50% 68%,transparent 72%);-webkit-mask:radial-gradient(circle,transparent 46%,#000 50% 68%,transparent 72%);animation:spin 10s linear infinite}
 .aura.aura-esmeralda::after{inset:8px;box-shadow:inset 0 0 0 2px rgba(184,255,223,.85),0 0 12px #2CE6A6}
@@ -2768,6 +2773,7 @@ const SKINS=[
 ];
 const AURAS=[
  {id:'default',n:'Aura de Nivel',r:'comun',tier:'corto',price:0,c:'#8A93AD',c2:'#1B243D',cls:'',d:'El resplandor natural según la etapa de evolución de tu perro.'},
+ {id:'manada',n:'Aura Manada Unida',r:'epica',tier:'medio',price:0,inv:3,c:'#FF8FB8',c2:'#5A1E4A',cls:'aura-manada',d:'Exclusiva: solo se consigue invitando a 3 amigos que salgan a pasear.'},
  {id:'esmeralda',n:'Aura Brisa Esmeralda',r:'comun',tier:'corto',price:160,c:'#2CE6A6',c2:'#0E3B2E',cls:'aura-esmeralda',d:'Degradado botánico esmeralda con anillo rúnico y esporas brillantes.'},
  {id:'llamarada',n:'Aura Llamarada Solar',r:'rara',tier:'medio',price:480,c:'#FF6B2C',c2:'#4A1C0A',cls:'aura-llamarada',d:'Corona solar giratoria con degradado ígneo y brasas ascendentes.'},
  {id:'relampago',n:'Aura Tormenta Eléctrica',r:'rara',tier:'medio',price:720,c:'#3C9DFF',c2:'#102C4E',cls:'aura-relampago',d:'Campo de plasma cian con arcos voltaicos y destellos eléctricos.'},
@@ -3424,6 +3430,7 @@ function endWalk(){if(!WK)return;const w=WK;
 
 /* ================= FINALIZE + SUMMARY ================= */
 async function finalize(w){
+  try{invFirstWalk(w)}catch(e){}
   rollDay();const p=S.pet,old={level:p.level,xp:p.xp},today=w.date===dkey();
   if(!w.time||w.time<w.moving)w.time=Math.max(w.moving,w.time||0);
   let terr={taken:0,stolen:[],weakened:[],reinforced:0};
@@ -4368,7 +4375,7 @@ function subscribeFriends(){
     frChanged()},()=>{});
   subs.fi=DB.collection('freq').where('to','==',UID).limit(300).onSnapshot(s=>{const prev=new Set(FR.in.map(r=>r.id));FR.in=s.docs.map(d=>({id:d.id,...d.data()}));
     if(FR.init)for(const r of FR.in)if(!prev.has(r.id)&&r.status==='pending'){const n=(r.fromPet&&r.fromPet.name)||'Alguien';toast(`${esc(n)} quiere ser tu amigo`,'amigo','#2CE6A6');notify(`${n} te envió una solicitud de amistad`,'amigo')}
-    FR.init=true;frChanged()},()=>{})}
+    FR.init=true;frChanged();try{invCheck()}catch(e){}},()=>{})}
 function friendIds(){const s=new Set();FR.out.forEach(r=>{if(r.status==='accepted')s.add(r.to)});FR.in.forEach(r=>{if(r.status==='accepted')s.add(r.from)});return[...s]}
 function frState(id){if(id===UID)return 'me';const o=FR.out.find(r=>r.to===id),i=FR.in.find(r=>r.from===id);if(o&&o.status==='accepted'||i&&i.status==='accepted')return 'friend';if(o)return 'sent';if(i)return 'received';return 'none'}
 const pendingIn=()=>FR.in.filter(r=>r.status==='pending');
@@ -4404,6 +4411,48 @@ async function openProfile_old(id){const pr=await profileOf(id);if(!pr){toast('N
 function shareMyCode(){const url=`${location.origin}${location.pathname}#amigo-${myCode()}`;const text=`¡Agrega a ${S.pet.name} en PaseoPet! Mi código de amigo es ${myCode()}`;
   try{if(navigator.share&&/^https?:/.test(location.href)){navigator.share({title:'PaseoPet',text,url}).catch(()=>{});return}}catch(e){}
   const all=text+(/^https?:/.test(location.href)?' '+url:'');try{navigator.clipboard.writeText(all).then(()=>toast('Código copiado','amigo')).catch(()=>toast('Tu código: '+myCode(),'amigo'))}catch(e){toast('Tu código: '+myCode(),'amigo')}}
+/* ================= TRAE A TU MANADA: invitaciones con recompensa ================= */
+const INV_KEY='pp_inv',INV_MIN=300;
+try{const iq=new URLSearchParams(location.search).get('inv')||((/^#inv-([A-Za-z0-9]{6})$/.exec(location.hash||'')||[])[1]);if(iq&&/^[A-Za-z0-9]{6}$/.test(iq))localStorage.setItem(INV_KEY,JSON.stringify({c:iq.toUpperCase(),at:Date.now()}))}catch(e){}
+const INV_TIERS=[{n:1,dc:300,ic:'🪙',t:'300 DogCoins'},{n:3,key:'aura:manada',ic:'✨',t:'Aura Manada Unida'},{n:5,key:'trail:manada',ic:'🐾',t:'Rastro Huellas de la Manada'},{n:10,title:'Líder de Manada',dc:1000,ic:'👑',t:'Título «Líder de Manada» y 1.000 DogCoins'}];
+const invUrl=()=>`${location.origin}${location.pathname}?inv=${myCode()}`;
+const invList=()=>FR.in.filter(r=>r.inv&&r.status==='accepted');
+function invCount(){const n=invList().filter(r=>r.invOk).length;if(S&&n>(S.invMax||0)){S.invMax=n}return Math.max(n,(S&&S.invMax)||0)}
+/* quien llega invitado: se registra una sola vez y queda como amigo de quien lo invitó */
+async function invClaim(){if(MODE!=='firebase'||!DB||!S||!S.onboarded||S.invBy)return;let pend=null;try{pend=JSON.parse(localStorage.getItem(INV_KEY)||'null')}catch(e){}if(!pend)return;
+  const drop=()=>{try{localStorage.removeItem(INV_KEY)}catch(e){}};
+  if(Date.now()-pend.at>30*864e5||pend.c===myCode()||(S.totals&&S.totals.walks>0)){drop();return}
+  const r=await findByCode(pend.c);if(!r||r.err||!r.id){return}
+  if(FR.out.find(x=>x.to===r.id)||FR.in.find(x=>x.from===r.id)){drop();return}
+  const ref=DB.doc('freq/'+UID+'_'+r.id);
+  try{await W8(ref.path,()=>ref.set({from:UID,to:r.id,status:'accepted',inv:1,invOk:0,ts:Date.now(),ats:Date.now(),fromPet:myPetLite(),fromName:SH.profiles[UID]&&SH.profiles[UID].name||''}));
+    S.invBy={id:r.id,code:pend.c,at:Date.now(),name:(r.p&&r.p.pet&&r.p.pet.name)||''};save();drop();
+    setTimeout(()=>toast(`¡Llegaste con la invitación de ${esc(S.invBy.name||'un amigo')}! Haz tu primer paseo de ${INV_MIN} m y ganan los dos.`,'amigo','#2CE6A6'),2500)}catch(e){quotaCheck(e)}}
+async function invConfirm(){const b=S&&S.invBy;if(!b||!b.ok||b.sent||MODE!=='firebase'||!DB)return;
+  try{await W8('freq/'+UID+'_'+b.id,()=>DB.doc('freq/'+UID+'_'+b.id).update({invOk:1,invAt:Date.now()}));b.sent=1;save()}catch(e){quotaCheck(e)}}
+function invFirstWalk(w){const b=S.invBy;if(!b||b.ok||!w||w.manual||(w.dist||0)<INV_MIN)return;b.ok=1;S.coins=(S.coins||0)+150;save();invConfirm();
+  setTimeout(()=>toast(`¡Primer paseo cumplido! +150 DogCoins para ti y un punto de manada para ${esc(b.name||'tu amigo')}.`,'amigo','#FFC93C'),1800)}
+/* quien invita: cuenta a sus invitados con paseo y entrega los premios */
+function invCheck(){if(!S||!S.onboarded||MODE!=='firebase')return;const L=invList();
+  S.invSeen=S.invSeen||[];let ch=false;for(const r of L)if(!S.invSeen.includes(r.id)){S.invSeen.push(r.id);ch=true;if(FR.init2){const n=(r.fromPet&&r.fromPet.name)||'Un amigo';toast(`¡${esc(n)} llegó con tu invitación! Cuando haga su primer paseo sumas un punto.`,'amigo','#2CE6A6');notify(`${n} se unió con tu invitación`,'amigo')}}
+  FR.init2=true;const n=invCount();S.invGot=S.invGot||[];
+  for(const t of INV_TIERS)if(n>=t.n&&!S.invGot.includes(t.n)){S.invGot.push(t.n);ch=true;if(t.dc)S.coins=(S.coins||0)+t.dc;if(t.key&&!owned(t.key))S.owned=(S.owned||[]).concat([t.key]);if(t.title&&!S.pet.title){S.pet.title=t.title;pushProfile()}
+    toast(`🎁 Premio de manada: ${t.t}`,'star','#FFC93C');notify(`Ganaste ${t.t} por invitar amigos`,'amigo');try{boom(70);coinSfx()}catch(e){}}
+  if(ch){save();try{if(tab==='store')renderStore()}catch(e){}}}
+function shareInvite(){const url=invUrl(),text=`🐾 Te invito a PaseoPet: convierte el paseo con tu perro en una aventura. Entra con mi enlace, haz tu primer paseo y ganamos premios los dos.`;
+  try{if(navigator.share&&/^https?:/.test(location.href)){navigator.share({title:'PaseoPet',text,url}).catch(()=>{});return}}catch(e){}
+  try{navigator.clipboard.writeText(text+' '+url).then(()=>toast('Invitación copiada. ¡Pégala en WhatsApp!','amigo','#2CE6A6')).catch(()=>toast(url,'amigo'))}catch(e){toast(url,'amigo')}}
+function inviteBoxHTML(){const n=invCount(),next=INV_TIERS.find(t=>n<t.n);return `<div class="box invbox"><div class="row between"><span class="t2">🎁 Trae a tu manada</span><span class="tag y">${n} ${n===1?'invitado':'invitados'}</span></div>
+  <div class="mute small">Invita amigos con tu enlace. Cuando hagan su primer paseo, ganan los dos${next?`. Próximo premio: <b style="color:var(--gold)">${next.t}</b> (${n}/${next.n})`:'. ¡Ya ganaste todos los premios!'}</div>
+  <div class="row" style="gap:6px"><button class="btn sm o" id="invGo" style="flex:1.4">Invitar amigos</button><button class="btn sm" id="invSee" style="flex:1">Ver premios</button></div></div>`}
+function openInvite(){if(MODE==='local'){toast('Entra con tu cuenta para invitar amigos','amigo');return}const n=invCount(),L=invList();
+  sheet(`<div class="col" style="gap:10px"><div class="col" style="align-items:center;text-align:center;gap:6px"><div style="font-size:40px;line-height:1">🎁</div><div class="t1">TRAE A TU MANADA</div>
+   <div class="small">Comparte tu enlace. Cuando tu invitado haga su <b>primer paseo real de ${INV_MIN} m</b>, él gana 150 DogCoins, queda como tu amigo y tú sumas un punto de manada.</div></div>
+   <div class="box vio"><span class="lbl">Tu enlace de invitación</span><div class="invurl">${esc(invUrl().replace(/^https?:\/\//,''))}</div><button class="btn o big" id="ivShare">Compartir invitación</button></div>
+   <div class="col" style="gap:6px">${INV_TIERS.map(t=>{const ok=n>=t.n;return `<div class="pact-it invt ${ok?'ok':''}"><span>${t.ic}</span><div style="flex:1"><b>${t.n} ${t.n===1?'invitado':'invitados'}</b><span class="mute small">${t.t}</span><div class="invbar"><i style="width:${Math.min(100,n/t.n*100)}%"></i></div></div><span class="tag ${ok?'g':''}">${ok?'✓ Ganado':Math.min(n,t.n)+'/'+t.n}</span></div>`}).join('')}</div>
+   ${L.length?`<div class="box"><span class="lbl">Tus invitados</span>${L.map(r=>`<div class="row between small" style="padding:4px 0"><span>🐶 ${esc((r.fromPet&&r.fromPet.name)||'Amigo')}</span><span class="${r.invOk?'':'mute'}">${r.invOk?'✓ Ya paseó':'Falta su primer paseo'}</span></div>`).join('')}</div>`:''}
+   ${S.invBy?`<div class="mute small" style="text-align:center">Llegaste invitado por ${esc(S.invBy.name||'un amigo')}${S.invBy.ok?'':'. Te falta tu primer paseo de '+INV_MIN+' m'}.</div>`:''}
+   <button class="btn" id="ivClose">Volver al juego</button></div>`,sh=>{sh.querySelector('#ivShare').onclick=shareInvite;sh.querySelector('#ivClose').onclick=()=>closeSheet()})}
 /* ---- ranking ---- */
 const RK={scope:'amigos',metric:'week'};
 const METRICS={week:['XP semana',p=>p.weekKey===weekKey()?p.weekXp||0:0],km:['Km totales',p=>+(+p.totalKm||0).toFixed(1)],terr:['Territorios',p=>p.terr||0],level:['Nivel',p=>(p.pet&&p.pet.level)||1]};
@@ -4419,6 +4468,7 @@ function rankHTML(){const rows=rankRows(),pos=rows.findIndex(r=>r.id===UID)+1;co
 function friendsHTML(){if(MODE==='local')return `<div class="box empty">${ico('amigo')}<div class="t2">Amigos y ranking</div><div class="mute small">Para agregar amigos y competir necesitas entrar con tu cuenta.</div>${fbConfigured()?`<button class="btn big" id="frLogin" style="background:#fff;color:#1F1F1F;gap:12px">${gIcon()}Entrar con Google</button>`:''}</div>`;
   const fr=friendIds(),pin=pendingIn(),sent=FR.out.filter(r=>r.status==='pending');
   return `<div class="box vio"><span class="lbl">Tu código de amigo</span><div class="row between"><span class="num" style="font-size:22px;letter-spacing:5px;color:#C9BDFF">${myCode()}</span><button class="btn sm v" id="frShare">Compartir</button></div><div class="mute small">Compártelo para que te agreguen, o envía tu enlace por WhatsApp.</div></div>
+  ${inviteBoxHTML()}
   <div class="box"><span class="t2">Agregar amigo</span><div class="row"><input class="inp" id="frCode" maxlength="7" placeholder="Código de 6" autocapitalize="characters" autocomplete="off" style="text-transform:uppercase;letter-spacing:3px"><button class="btn sm o" id="frFind">Buscar</button></div><div id="frRes"></div></div>
   ${pin.length?`<div class="box hot"><span class="t2">Solicitudes (${pin.length})</span>${pin.map(r=>`<div class="row">${petHTML(r.fromPet||{},48)}<div class="grow col" style="gap:2px;min-width:0"><b>${esc((r.fromPet&&r.fromPet.name)||'Mascota')}</b><span class="mute small">${esc(r.fromName||personName(r.from))} · ${ago(r.ts)}</span></div><button class="btn sm g" data-facc="${r.id}">Aceptar</button><button class="btn sm" data-frej="${r.id}">✕</button></div>`).join('')}</div>`:''}
   <div class="box"><div class="row between"><span class="t2">Mis amigos</span><span class="lbl">${fr.length}</span></div>
@@ -4426,7 +4476,7 @@ function friendsHTML(){if(MODE==='local')return `<div class="box empty">${ico('a
    ${sent.length?`<div class="mute small">Solicitudes enviadas: ${sent.map(r=>esc(petOf(r.to).name)).join(', ')}</div>`:''}</div>`}
 function bindFriends(root){
   const lg=root.querySelector('#frLogin');if(lg)lg.onclick=signInAgain;
-  const sh=root.querySelector('#frShare');if(sh)sh.onclick=shareMyCode;
+  const sh=root.querySelector('#frShare');if(sh)sh.onclick=shareMyCode;const ig=root.querySelector('#invGo');if(ig)ig.onclick=shareInvite;const iv=root.querySelector('#invSee');if(iv)iv.onclick=openInvite;
   const inp=root.querySelector('#frCode'),btn=root.querySelector('#frFind');
   if(btn){const go2=async()=>{const out=root.querySelector('#frRes');out.innerHTML='<div class="mute small">Buscando…</div>';const r=await findByCode(inp.value);if(r.err){out.innerHTML=`<div class="small" style="color:var(--gold)">${esc(r.err)}</div>`;return}
       const st=frState(r.id),pet=r.p.pet||{};out.innerHTML=`<div class="row">${petHTML(pet,48)}<div class="grow col" style="gap:2px;min-width:0"><b>${esc(pet.name||'Mascota')}</b><span class="mute small">${esc(r.p.name||'')} · NV ${pet.level||1}</span></div>${st==='friend'?'<span class="tag g">AMIGOS</span>':st==='sent'?'<span class="tag d">ENVIADA</span>':`<button class="btn sm o" id="frSend">${st==='received'?'Aceptar':'Agregar'}</button>`}</div>`;
@@ -5208,7 +5258,7 @@ function openCoinGuide(){
   });
 }
 function buyCos(c){buyStoreItem('acc',c)}
-function buyStoreItem(kind,item){
+function buyStoreItem(kind,item){if(item&&item.inv&&!owned(kind+':'+item.id)){openInvite();return}
   const key=kind==='trail'?'trail:'+item.id:kind==='skin'?'skin:'+item.id:kind==='aura'?'aura:'+item.id:kind==='biome'?'biome:'+item.id:item.id;
   const have=S.coins||0,rem=Math.max(0,item.price-have),walks=Math.ceil(rem/15);
   const testPet={...S.pet};
@@ -5288,12 +5338,12 @@ function renderStore(){
         </div>
         <div class="t2">${esc(a.n)}</div>
         <div class="mute" style="font-size:11px;line-height:1.25;min-height:28px">${esc(a.d)}</div>
-        ${!isOwn?coinProgHTML(a.price):''}
+        ${!isOwn&&!a.inv?coinProgHTML(a.price):''}
         <div class="row" style="gap:6px;width:100%;margin-top:auto">
           <button class="btn sm" data-prev-aura="${a.id}" style="flex:1">${isPrev?'Viendo':'Probar'}</button>
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-aura="${a.id}" style="flex:1.3">${isEq?'Equipado ✓':'Equipar'}</button>`
-            : `<button class="btn sm o" data-buy-aura="${a.id}" style="flex:1.4;gap:4px">${DC}<span>${a.price}</span></button>`}
+            : `<button class="btn sm o" data-buy-aura="${a.id}" style="flex:1.4;gap:4px">${a.inv?`🎁 Invita ${a.inv}`:`${DC}<span>${a.price}</span>`}</button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -5328,11 +5378,11 @@ function renderStore(){
         <canvas class="trailprev" data-trail="${t.id}" aria-label="Vista previa del rastro ${esc(t.n)}"></canvas>
         <div class="t2">${esc(t.n)}</div>
         <div class="mute" style="font-size:11px;line-height:1.25;min-height:28px">${esc(t.d)}</div>
-        ${!isOwn?coinProgHTML(t.price):''}
+        ${!isOwn&&!t.inv?coinProgHTML(t.price):''}
         <div class="row" style="gap:6px;width:100%;margin-top:auto">
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-trail="${t.id}" style="flex:1">${isEq?'Equipado ✓':'Equipar'}</button>`
-            : `<button class="btn sm o" data-buy-trail="${t.id}" style="flex:1;gap:4px">${DC}<span>${t.price}</span></button>`}
+            : `<button class="btn sm o" data-buy-trail="${t.id}" style="flex:1;gap:4px">${t.inv?`🎁 Invita ${t.inv}`:`${DC}<span>${t.price}</span>`}</button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
@@ -5465,6 +5515,7 @@ function healthHTML(sm){const r=sm.rec;if(r.sniff==null)return'';const [lo,hi]=p
 /* ================= v4 · RASTROS · ANILLO · FAROS DE BOTÍN ================= */
 const TRAILS=[
  {id:'clasico',n:'Huella Clásica',r:'comun',tier:'corto',price:0,c:'#FF7A4D',d:'La línea naranja de siempre.'},
+ {id:'manada',n:'Huellas de la Manada',r:'epica',tier:'medio',price:0,inv:5,c:'#FF8FB8',d:'Exclusivo: solo se consigue invitando a 5 amigos que salgan a pasear.'},
  {id:'huellitas',n:'Huellitas',r:'comun',tier:'corto',price:90,c:'#F6EAC8',d:'Deja pisadas de perrito por donde pasas.'},
  {id:'menta',n:'Chicle de Menta',r:'comun',tier:'corto',price:160,c:'#4FD18B',d:'Línea punteada fresca que avanza contigo.'},
  {id:'burbujas',n:'Burbujas',r:'infrecuente',tier:'corto',price:260,c:'#7EE7FF',d:'Burbujas que flotan sobre tu ruta.'},
@@ -5489,6 +5540,7 @@ function drawTrailPx(ctx,P,st,u,now){if(!P||P.length<2)return;const s=v=>v*u;ctx
   switch(st){
   case 'huellitas':{tStroke(ctx,P,'rgba(246,234,200,.28)',s(1.5));ctx.fillStyle='#F6EAC8';for(const q of tSample(P,s(9))){const side=(q.i%2?1:-1)*s(3),nx=-Math.sin(q.a),ny=Math.cos(q.a),x=q.x+nx*side,y=q.y+ny*side,fx=Math.cos(q.a),fy=Math.sin(q.a);
     ctx.beginPath();ctx.arc(x,y,s(1.9),0,7);ctx.fill();for(const k of [-1,0,1]){ctx.beginPath();ctx.arc(x+fx*s(2.8)+nx*k*s(1.6),y+fy*s(2.8)+ny*k*s(1.6),s(.9),0,7);ctx.fill()}}break}
+  case 'manada':{tStroke(ctx,P,'rgba(90,30,74,.55)',s(4.5));tStroke(ctx,P,'#FF8FB8',s(2),[s(3),s(4)],-now/50*u);for(const q of tSample(P,s(10))){ctx.fillStyle=q.i%2?'#FFC93C':'#FFF4FA';const side=(q.i%2?1:-1)*s(3.2),nx=-Math.sin(q.a),ny=Math.cos(q.a),x=q.x+nx*side,y=q.y+ny*side,fx=Math.cos(q.a),fy=Math.sin(q.a);ctx.beginPath();ctx.arc(x,y,s(2.1),0,7);ctx.fill();for(const k of [-1,0,1]){ctx.beginPath();ctx.arc(x+fx*s(3)+nx*k*s(1.7),y+fy*s(3)+ny*k*s(1.7),s(1),0,7);ctx.fill()}}break}
   case 'menta':{tStroke(ctx,P,'#0E3B2E',s(5));tStroke(ctx,P,'#4FD18B',s(3),[s(5),s(3)],-now/40*u);break}
   case 'burbujas':{tStroke(ctx,P,'rgba(126,231,255,.35)',s(2));ctx.lineWidth=Math.max(1,s(1));for(const q of tSample(P,s(11))){const r=s(1.8+((q.i*7)%3)),y=q.y+Math.sin(now/400+q.i)*s(2.2);ctx.strokeStyle='#7EE7FF';ctx.beginPath();ctx.arc(q.x,y,r,0,7);ctx.stroke();ctx.fillStyle='#FFFFFF';ctx.fillRect(q.x-r*.5,y-r*.6,Math.max(1,s(.9)),Math.max(1,s(.9)))}break}
   case 'corazones':{tStroke(ctx,P,'#7A1F3D',s(4));tStroke(ctx,P,'#FF5C8A',s(2));const H=['.##.##.','#######','.#####.','..###..','...#...'];for(const q of tSample(P,s(15))){const p=1+.18*Math.sin(now/220+q.i),px=s(.75)*p;ctx.fillStyle='#FF2D6B';H.forEach((row,j)=>{for(let k=0;k<row.length;k++)if(row[k]==='#')ctx.fillRect(q.x+(k-3.5)*px,q.y+(j-3)*px,px+.5,px+.5)});ctx.fillStyle='#FFD1DF';ctx.fillRect(q.x-2*px,q.y-2*px,px,px)}break}
@@ -6148,7 +6200,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);startupQueue([()=>{if(S.pact)return false;TIP_SHOWN=true;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden},()=>{if(TIP_SHOWN||S.tipsOff||!S.onboarded)return false;careTip();return true}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);setTimeout(invClaim,3000);setTimeout(invConfirm,9000);setTimeout(()=>{try{invCheck()}catch(e){}},7000);startupQueue([()=>{if(S.pact)return false;TIP_SHOWN=true;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden},()=>{if(TIP_SHOWN||S.tipsOff||!S.onboarded)return false;careTip();return true}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
