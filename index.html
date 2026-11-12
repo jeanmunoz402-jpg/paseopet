@@ -3254,6 +3254,39 @@ function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
   sh.querySelector('#fxS').onclick=()=>{s.f.forEach(f=>{const[k,,t]=f;if(t==='yn')F[k]=yn;else if(t==='chips')F[k]=[...sel];else{let v=(sh.querySelector('#fx_'+k).value||'').trim();if(t==='tel')v=fxTel(v);if(k==='chip')v=v.replace(/\D/g,'');F[k]=v}});
    save();closeSheet();if(tab==='pack')renderPack();fxReward();toast('Ficha guardada','paw','#2CE6A6')}})}
 function fxReward(){if(!S.fxGot&&fxPct()>=70){S.fxGot=1;S.coins=(S.coins||0)+40;save(true);try{pushProfile()}catch(e){}try{coinSfx()}catch(e){}setTimeout(()=>toast('Ficha al 70%: +40 DogCoins','star','#FFC93C'),900);if(tab==='pack')renderPack()}}
+/* ===== PUENTE CON LA APK DE ANDROID (avisos y GPS en segundo plano) ===== */
+let NPORT=null,NAT=false;
+window.addEventListener('message',e=>{try{if(NPORT||!e.ports||!e.ports[0]||e.source)return;NPORT=e.ports[0];NPORT.onmessage=m=>natMsg(m.data);NAT=true;setTimeout(natSync,300)}catch(x){}});
+function natSend(o){try{if(NPORT)NPORT.postMessage(JSON.stringify(o))}catch(e){}}
+function natMsg(d){let o=null;try{o=typeof d==='string'?JSON.parse(d):d}catch(e){return}if(!o)return;
+ if(o.t==='hello'){NAT=true;natSync()}
+ else if(o.t==='pts')natPts(o.pts)}
+function natPts(pts){if(!WK||!Array.isArray(pts)||!pts.length)return;let n=0;
+ for(const q of pts){const[la,ln,ac,ts]=q;if(!(ts>(WK.fixTs||0)))continue;try{onFix({coords:{latitude:la,longitude:ln,accuracy:ac},timestamp:ts})}catch(e){}n++}
+ if(n){persistActive();try{updateLive()}catch(e){}}}
+function natSchedule(){if(S.natOff||!S.onboarded)return[];const L=[],now=Date.now(),nm=(S.pet&&S.pet.name)||'tu perro';
+ const at=(d,h,m)=>{const x=new Date(d);x.setHours(h,m||0,0,0);return x.getTime()};const add=(id,t,title,body)=>{if(t>now+60e3)L.push({id,at:t,title,body})};
+ const walked=!!(S.days||{})[dkey()],st=(S.pet&&S.pet.streak)||0;
+ for(let i=0;i<3;i++){const d=new Date();d.setDate(d.getDate()+i);if(i===0&&walked)continue;add('racha'+i,at(d,19,30),`🐾 ${nm} te espera`,st>1&&i===0?`Pasea hoy para no perder tu racha de ${st} días.`:'Un paseo corto hoy suma XP y DogCoins.')}
+ const H=(S.vacc||[]).filter(v=>v.next).map(v=>[v.n,v.next]);const vn=(S.pet.fx||{}).vetNext;if(vn)H.push(['Control veterinario',vn]);
+ H.slice(0,10).forEach(([n,dt],i)=>{const d=new Date(String(dt)+'T00:00');if(isNaN(d))return;const pv=new Date(d);pv.setDate(d.getDate()-1);add('sal'+i+'a',at(pv,10),`💉 Mañana: ${n}`,`Recuerda la cita de ${nm}.`);add('sal'+i+'b',at(d,9),`💉 Hoy: ${n}`,`Hoy toca ${n} para ${nm}.`)});
+ {const d=new Date();d.setDate(d.getDate()+((8-d.getDay())%7||7));add('evt',at(d,9),'🎯 Nuevo evento semanal','Empezó el evento de la semana. ¡Sal a ganar DogCoins!')}
+ {const d=new Date(),last=new Date(d.getFullYear(),d.getMonth()+1,0);add('pase',at(last,18),'🗓️ Último día del pase del mes','Hoy puedes sumar el último día y reclamar tus premios.')}
+ return L}
+function natSync(){if(!NPORT)return;natSend({t:'sched',list:natSchedule()});natSend({t:'walk',on:!!WK,name:(S.pet&&S.pet.name)||''});if(WK)natSend({t:'pull',since:WK.fixTs||0})}
+function natWalk(on){if(!NPORT)return;natSend({t:'walk',on:!!on,name:(S.pet&&S.pet.name)||''})}
+document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
+/* ===== APK de Android ===== */
+const APK_URL='https://github.com/jeanmunoz402-jpg/paseopet/releases/download/apk-latest/PaseoPet.apk';
+function apkOffer(){try{return !NAT&&/Android/i.test(navigator.userAgent)&&!isApp()&&!inClaude()&&!String(document.referrer||'').startsWith('android-app://')}catch(e){return false}}
+function apkHidden(){try{return localStorage.getItem('pp_apk_x')==='1'}catch(e){return false}}
+function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala PaseoPet como una app más de tu teléfono: abre a pantalla completa y se actualiza sola.</div>
+  <a class="btn o big" id="apkGo" href="${APK_URL}" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Descargar PaseoPet (APK)</a>
+  <div class="box dark"><span class="t2">Cómo instalarla</span><div class="small">1. Toca el botón y espera la descarga.<br>2. Abre el archivo descargado.<br>3. Si Android lo pide, permite «instalar apps desconocidas» solo para esta vez.<br>4. Abre PaseoPet y activa la ubicación.</div></div>
+  <div class="mute small">Si entras con Google, tu progreso se mantiene: verás lo mismo que en el navegador.</div>
+  <button class="btn" id="apkCopy">Copiar enlace de descarga</button><button class="btn sm" id="apkNo">No mostrar más en Inicio</button>`,sh=>{
+  sh.querySelector('#apkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(APK_URL);toast('Enlace copiado','paw','#2CE6A6')}catch(e){toast('No se pudo copiar','bell','#FFC93C')}};
+  sh.querySelector('#apkNo').onclick=()=>{try{localStorage.setItem('pp_apk_x','1')}catch(e){}closeSheet();if(tab==='home')renderHome()}})}
 /* ===== MODO PERDIDO ===== */
 function lostPostHTML(p){const pet=p.pet||petOf(p.uid),fnd=!!p.found,mine=p.uid===UID,nm=esc(pet.name||'Mascota');
  const tel=fxTel(p.tel||''),rows=[p.lastSeen&&`<div><span class="lbl">Visto por última vez</span><br><b>${esc(p.lastSeen)}</b></div>`,p.senas&&`<div><span class="lbl">Señas</span><br>${esc(p.senas)}</div>`,p.chip&&`<div><span class="lbl">Microchip</span><br>${esc(p.chip)}</div>`,p.text&&`<div class="small">${esc(p.text)}</div>`].filter(Boolean).join('');
@@ -3348,6 +3381,7 @@ function renderHome(){
   ${p.last!==dkey()&&hr>=19&&p.streak>0?`<div class="banner">${ico('fire').replace('<img','<img style="width:20px;height:20px;display:inline;vertical-align:middle"')} Tu racha de ${p.streak} días está en riesgo. Sal un rato antes de medianoche.</div>`:''}
   ${activeReq?`<button class="box hot row" id="trkCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Paseo con paseador</div><div class="mute small">${{pendiente:'Esperando respuesta',aceptada:'Aceptado',en_camino:'Paseador en camino',paseando:'Paseando ahora',entregada:'Entregado: califica'}[activeReq.status]}</div></div><span class="tag o">VER</span></button>`:''}
   ${jobs.length?`<button class="box vio row" id="jobCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Trabajos de paseador</div><div class="mute small">${jobs.length} activo${jobs.length>1?'s':''}</div></div><span class="tag">ABRIR</span></button>`:''}
+  ${apkOffer()&&!apkHidden()?`<button class="banner" id="apkBan" style="text-align:left;width:100%">📲 Instala PaseoPet en tu Android ►</button>`:''}
   ${(()=>{const h=healthDue();return h?`<button class="banner" id="healthBan" style="text-align:left;width:100%">💉 ${esc(h.n)}: ${h.dl<0?'vencida hace '+(-h.dl)+' día'+(h.dl<-1?'s':''):h.dl===0?'vence hoy':'vence en '+h.dl+' día'+(h.dl>1?'s':'')}. Toca para ver Salud.</button>`:''})()}
   ${petCardHTML({compact:true})}
   ${remindBannerHTML()}<div class="box" style="gap:8px"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${seasonInfo()[0]} ${seasonInfo()[1]}</div><div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div>
@@ -3409,7 +3443,7 @@ function renderHome(){
   $$('#s-home [data-prof]').forEach(b=>b.onclick=()=>openProfile(b.dataset.prof));
   if($('#frBan'))$('#frBan').onclick=()=>{SOC.tab='amigos';go('feed')};
   {const lb=$$('#s-home .lb');if(lb.length){const bx=lb[0].closest('.box');if(bx&&!bx.querySelector('#toRank')){const b=document.createElement('button');b.className='btn sm';b.id='toRank';b.textContent='Ver ranking completo';b.onclick=()=>{SOC.tab='ranking';go('feed')};bx.appendChild(b)}}}
-  $('#wxHome').onclick=()=>go('weather');
+  $('#wxHome').onclick=()=>go('weather');if($('#apkBan'))$('#apkBan').onclick=openApk;
   $('#bell').onclick=openNotifs;$('#donBtn').onclick=openDonate;$('#setBtn').onclick=openSettings;
   if($('#trkCard'))$('#trkCard').onclick=()=>openTrack(activeReq.id);
   if($('#jobCard'))$('#jobCard').onclick=()=>{go('pack');setTimeout(()=>{const el=$('#walkerBox');el&&el.scrollIntoView()},50)};
@@ -3519,14 +3553,14 @@ function startWalk(resume){
   if(!resume){ensureDogs();WK.crew=(PLAN.crew&&PLAN.crew.length?PLAN.crew:[S.pet.pid]).slice()}if(!resume&&start)spawnStreetItems(WK,start);if(!resume)angelWalkStart(WK);if(S.bgMode!==false)bgKeepAlive(true);
   {const lc=$('#liveCv');if(lc&&!lc._tap){lc._tap=1;lc.addEventListener('click',liveTap)}}
   $('#o-live').hidden=false;$('#o-live').classList.toggle('eco',!!S.eco);$('#ecoBtn').textContent=S.eco?'VER MAPA':'AHORRO';renderEvBtns();updateLive();
-  startWatch();requestWake();persistActive();
+  startWatch();requestWake();persistActive();natWalk(true);
   if(!resume){toast('¡Paseo iniciado! Detente un minuto en las huellas verdes para olfatear y desenterrar botín','play');bark(2,.8)}
 }
 function startWatch(){stopWatch();if(!navigator.geolocation)return;try{watchId=navigator.geolocation.watchPosition(onFix,e=>{$('#gpsPill').textContent=e.code===1?'SIN PERMISO':'SIN SEÑAL';if(e.code===1)gpsFail('denied',()=>startWatch());else if(e.code===2)setTimeout(()=>{if(WK)startWatch()},5000)},{enableHighAccuracy:true,maximumAge:0,timeout:30000})}catch(e){}}
 function stopWatch(){if(watchId!=null){try{navigator.geolocation.clearWatch(watchId)}catch(e){}watchId=null}}
 async function requestWake(){try{if(navigator.wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener&&wakeLock.addEventListener('release',()=>{wakeLock=null})}}catch(e){wakeLock=null}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'&&!WK){try{if(BGA&&!BGA.paused)BGA.pause();mediaSession(false)}catch(e){}}if(document.visibilityState==='visible'){if(WK&&!wakeLock)requestWake();if(WK&&watchId==null)startWatch();if(S&&S.onboarded)fetchWX()}});
-function onFix(pos){if(!WK)return;const c=pos.coords,p={lat:c.latitude,lng:c.longitude,ts:pos.timestamp||Date.now()};WK.acc=c.accuracy;WK.pos={lat:p.lat,lng:p.lng};WK.lastFixTs=Date.now();if(WK.lostWarned){WK.lostWarned=false;toast('GPS recuperado','gps','#4FD18B')}
+function onFix(pos){if(!WK)return;{const ts=pos.timestamp||Date.now();if(WK.fixTs&&ts<=WK.fixTs)return;WK.fixTs=ts}const c=pos.coords,p={lat:c.latitude,lng:c.longitude,ts:pos.timestamp||Date.now()};WK.acc=c.accuracy;WK.pos={lat:p.lat,lng:p.lng};WK.lastFixTs=Date.now();if(WK.lostWarned){WK.lostWarned=false;toast('GPS recuperado','gps','#4FD18B')}
   $('#gpsPill').textContent=c.accuracy>40?`GPS DÉBIL ±${Math.round(c.accuracy)}M`:`GPS ±${Math.round(c.accuracy)}M`;
   if(WK.paused)return;if(c.accuracy>50)return;
   if(c.accuracy<=25)sniffFix(p,c.accuracy);angelFix(p);
@@ -3596,7 +3630,7 @@ $('#sosBtn').onclick=()=>{const p=(WK&&WK.pos)||lastFix;const loc=p?`${p.lat.toF
 $('#finBtn').onclick=confirmEnd;
 function persistActive(){if(!WK)return;try{localStorage.setItem(ACTIVE_KEY(),JSON.stringify(WK))}catch(e){}}
 setInterval(()=>{if(WK)persistActive()},10000);
-function clearActive(){try{localStorage.removeItem(ACTIVE_KEY())}catch(e){}}
+function clearActive(){try{localStorage.removeItem(ACTIVE_KEY())}catch(e){}try{if(!WK){natWalk(false);natSend({t:'sched',list:natSchedule()})}}catch(e){}}
 function checkResume(){let a=null;try{a=JSON.parse(localStorage.getItem(ACTIVE_KEY())||'null')}catch(e){}if(!a)return;if(Date.now()-a.t0>8*3600e3){clearActive();return}
   sheet(`<div class="t1">PASEO SIN TERMINAR</div><div>Tienes un paseo de ${fmtKm(a.dist)} km iniciado ${ago(a.t0)} atrás.</div><button class="btn o" id="rsC">Continuar paseo</button><button class="btn" id="rsF">Terminar y guardar</button><button class="btn r" id="rsD">Descartar</button>`,sh=>{
    sh.querySelector('#rsC').onclick=()=>{closeSheet();unlockAudio();a.last=null;startWalk(a)};sh.querySelector('#rsF').onclick=()=>{closeSheet();WK=a;endWalk()};sh.querySelector('#rsD').onclick=()=>{clearActive();closeSheet()}})}
@@ -5001,7 +5035,9 @@ function renderSettings(){const p=S.pet;let acct='';
   <div class="box"><span class="t2">Comunidad</span>
    <button class="setrow" id="stProf">${ico('paw')}<span><b>Mi perfil público</b><br><span class="mute small">Así te ven los demás</span></span><span class="chev">►</span></button>
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
-   <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button></div>
+   <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button>
+    ${NAT?`<button class="setrow" id="stNat">${ico('bell')}<span><b>Avisos en el teléfono</b><br><span class="mute small">${S.natOff?'Desactivados':'Racha, vacunas, evento semanal y pase del mes'}</span></span><span class="chev">${S.natOff?'OFF':'ON'}</span></button>`:''}
+    ${apkOffer()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">Pantalla completa y sin navegador</span></span><span class="chev">►</span></button>`:''}</div>
   ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
   <div class="box"><span class="t2">Datos</span><div class="mute small">${MODE==='local'?'Tus datos se guardan solo en este navegador.':'Tu historial, salud y casa son privados. Tu perro, nivel, publicaciones y territorios los ve la comunidad.'}</div>
    <button class="btn r" id="stReset">${setResetArm?'Toca otra vez: se borra todo':'Borrar todos mis datos'}</button></div>
@@ -5018,7 +5054,7 @@ function renderSettings(){const p=S.pet;let acct='';
   $('#stSnd').onclick=()=>{S.sound=S.sound===false;save();renderSettings();if(S.sound)bark(2)};$('#stVoz').onclick=()=>{S.voice=S.voice===false;save();renderSettings();if(S.voice)say('Voz del entrenador activada')};
   $('#stBg').onclick=()=>{S.bgMode=S.bgMode===false;save();if(WK)bgKeepAlive(S.bgMode);renderSettings()};$('#stTest').onclick=()=>{audioCtx();bark(2);say(`Hola, soy ${S.pet.name}`)};
   const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isApp()){exitHint(true);return}if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
-  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;$('#stDon').onclick=openDonate;
+  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stNat'))$('#stNat').onclick=()=>{S.natOff=!S.natOff;save();natSend({t:'sched',list:natSchedule()});renderSettings();toast(S.natOff?'Avisos desactivados':'Avisos activados','bell')};$('#stDon').onclick=openDonate;
   $('#stReset').onclick=async()=>{if(!setResetArm){setResetArm=true;renderSettings();setTimeout(()=>{setResetArm=false;if(tab==='settings')renderSettings()},3500);return}setResetArm=false;await wipeMine()}}
 let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:tab;go('settings')}
 /* ================= CLIMA ANIMADO ================= */

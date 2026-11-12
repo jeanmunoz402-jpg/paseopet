@@ -1,9 +1,15 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "cl.paseopet.app",
-    "sha256_cert_fingerprints": ["73:CF:05:47:12:3E:3E:CF:D5:35:C2:10:D7:A9:04:C8:F7:AC:21:E9:11:40:6A:B5:2D:4C:FF:06:F2:92:E5:46"]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.use_as_origin"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "cl.paseopet.app",
+      "sha256_cert_fingerprints": [
+        "73:CF:05:47:12:3E:3E:CF:D5:35:C2:10:D7:A9:04:C8:F7:AC:21:E9:11:40:6A:B5:2D:4C:FF:06:F2:92:E5:46"
+      ]
+    }
   }
-}
 ]
