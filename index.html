@@ -3209,7 +3209,80 @@ function advClaim(k){advInit();let c=0,msg='';
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-adv]');if(t&&S)advClaim(t.dataset.adv)});
 function cartaTxt(lw){const p=S.pet;let h=0;const s=(lw.date||'')+Math.round(lw.dist||0);for(const ch of s)h=(h*31+ch.charCodeAt(0))>>>0;return `${p.name}: «Hoy caminamos ${fmtKm(lw.dist)} km en ${fmtTime(lw.time)}. ${CARTA_FR[h%CARTA_FR.length].replace(/^./,x=>x.toUpperCase())}. ¡Gracias por el paseo!»`}
 async function shareLetter(t){try{if(navigator.share){await navigator.share({text:t+'\n\nPaseoPet · paseopet.site'});return}}catch(e){if(e&&e.name==='AbortError')return}try{await navigator.clipboard.writeText(t+'\n\nPaseoPet · paseopet.site');toast('Texto copiado para compartir','paw','#2CE6A6')}catch(e){toast('No se pudo compartir en este navegador','bell','#FFC93C')}}
-function healthDue(){const t0=new Date(dkey());return (S.vacc||[]).filter(v=>v.next).map(v=>({n:v.n,dl:Math.ceil((new Date(v.next)-t0)/86400000)})).filter(v=>v.dl<=7).sort((a,b)=>a.dl-b.dl)[0]||null}
+/* ===== FICHA DE LA MASCOTA (privada: solo se guarda en la cuenta del dueño) ===== */
+const FX_RASGOS=['Juguetón','Tranquilo','Cariñoso','Tímido','Sociable con perros','Bueno con niños','Reactivo con otros perros','Le asustan los fuegos artificiales','Tira de la correa','Ladra harto','Mañoso para comer','Escapista'];
+const FX_SECS=[
+ {id:'ident',n:'Identidad',f:[['chip','Microchip','text',15,'15 dígitos'],['reg','Registro municipal (RNMC)','text',20,'N° de inscripción'],['ester','Esterilizado','yn'],['senas','Señas particulares','area',120,'Mancha en la pata, cicatriz…'],['adop','Contigo desde','date']]},
+ {id:'salud',n:'Salud',f:[['alerg','Alergias','area',120,'Escribe «Ninguna» si no tiene'],['cond','Condiciones o tratamientos','area',160,'Displasia, cardiopatía…'],['meds','Medicamentos y dosis','area',160,'Nombre · dosis · horario'],['comida','Alimento y porción','text',80,'Marca · gramos al día'],['seguro','Seguro o plan de salud','text',60,'']]},
+ {id:'vet',n:'Veterinario',f:[['vetN','Veterinario/a','text',40,''],['vetC','Clínica','text',50,''],['vetT','Teléfono','tel',20,'+56 9 …'],['vetU','Urgencias 24 h','text',60,'Clínica o teléfono'],['vetNext','Próximo control','date']]},
+ {id:'dueno',n:'Dueño y emergencia',f:[['oN','Tu nombre','text',40,''],['oT','Tu teléfono','tel',20,'+56 9 …'],['oC','Comuna','text',30,''],['eN','Contacto de emergencia','text',40,'Otra persona de confianza'],['eT','Teléfono de emergencia','tel',20,'+56 9 …'],['eR','Parentesco','text',30,'Hermana, vecino…']]},
+ {id:'pers',n:'Personalidad',f:[['rasgos','Rasgos','chips'],['fav','Favoritos','text',80,'Comida, juguete, lugar'],['cmds','Comandos que sabe','text',80,'Sentado, pata, quieto…']]}
+];
+const FX_KEYS=['chip','ester','senas','alerg','cond','comida','vetN','vetT','oN','oT','eN','eT','rasgos','fav'];
+function fxD(){const p=S.pet;if(!p.fx||typeof p.fx!=='object')p.fx={};return p.fx}
+function fxFilled(k){const v=fxD()[k];return Array.isArray(v)?v.length>0:!!(v&&String(v).trim())}
+function fxPct(){return Math.round(FX_KEYS.filter(fxFilled).length*100/FX_KEYS.length)}
+function ageInfo(born){if(!born)return null;const b=new Date(born),n=new Date(dkey());if(isNaN(b))return null;let m=(n.getFullYear()-b.getFullYear())*12+n.getMonth()-b.getMonth();if(n.getDate()<b.getDate())m--;if(m<0)return null;const y=Math.floor(m/12),mm=m%12;const t=y?`${y} año${y>1?'s':''}${mm?` y ${mm} mes${mm>1?'es':''}`:''}`:`${mm} mes${mm!==1?'es':''}`;const a=m/12;return{t,h:a>=.25?Math.round(16*Math.log(a)+31):null}}
+function fxTel(s){return String(s||'').replace(/[^\d+\s()-]/g,'').trim()}
+function fichaBoxHTML(){const p=S.pet,F=fxD(),pc=fxPct(),ag=ageInfo(p.born);
+ const sub=[p.breed,p.sex,ag&&ag.t,ag&&ag.h?`≈ ${ag.h} años humanos`:'',p.kg?String(p.kg).replace('.',',')+' kg':''].filter(Boolean).map(esc).join(' · ');
+ const rows=FX_SECS.map(s=>{const keys=s.f.map(f=>f[0]),n=keys.filter(fxFilled).length;let det=`${n}/${keys.length} datos`;if(s.id==='salud'&&F.alerg)det='Alergias: '+F.alerg;else if(s.id==='vet'&&F.vetN)det=F.vetN+(F.vetT?' · '+F.vetT:'');else if(s.id==='dueno'&&F.oN)det=F.oN+(F.oT?' · '+F.oT:'');else if(s.id==='pers'&&(F.rasgos||[]).length)det=F.rasgos.slice(0,3).join(', ');
+  return `<button class="listrow" data-fx="${s.id}" style="width:100%;text-align:left"><div class="col" style="gap:2px;min-width:0"><b>${s.n}</b><span class="mute small" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(det)}</span></div><span class="tag ${n===keys.length?'g':n?'y':'d'}">${n===keys.length?'✓':'Editar'}</span></button>`}).join('');
+ return `<div class="box" id="fichaBox"><div class="row between"><span class="t2">Ficha</span><span class="tag ${pc>=70?'g':'o'}">${pc}% completa</span></div>
+  <div class="col" style="gap:2px"><b>${esc(p.name)}</b><span class="mute small">${sub||'Completa la fecha de nacimiento y el peso en Editar mascota'}</span></div>
+  <div style="height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden"><div style="height:100%;width:${pc}%;background:linear-gradient(90deg,#FFC93C,#FF7A4D)"></div></div>
+  ${rows}
+  <button class="btn o" id="fxCardBtn">Crear ficha de emergencia</button>
+  <div class="mute small">🔒 Estos datos son privados: solo tú los ves. No se muestran en tu perfil ni en el ranking.${pc<70&&!S.fxGot?' Completa el 70% y gana 40 DogCoins.':''}</div></div>`}
+function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
+ const fld=f=>{const[k,l,t,max,ph]=f,v=F[k]||'';
+  if(t==='yn')return `<div class="field"><label>${l}</label><div class="chips" id="fxyn">${[['si','Sí'],['no','No'],['','No sé']].map(([a,b])=>`<button type="button" class="chip ${(F[k]||'')===a?'on':''}" data-yn="${a}">${b}</button>`).join('')}</div></div>`;
+  if(t==='chips')return `<div class="field"><label>${l}</label><div class="chips wrap" id="fxch">${FX_RASGOS.map(r=>`<button type="button" class="chip ${(F[k]||[]).includes(r)?'on':''}" data-r="${esc(r)}">${esc(r)}</button>`).join('')}</div></div>`;
+  if(t==='area')return `<div class="field"><label for="fx_${k}">${l}</label><textarea class="inp" id="fx_${k}" maxlength="${max}" placeholder="${esc(ph||'')}">${esc(v)}</textarea></div>`;
+  if(t==='date')return `<div class="field"><label for="fx_${k}">${l}</label><input class="inp" id="fx_${k}" type="date" value="${esc(v)}"></div>`;
+  return `<div class="field"><label for="fx_${k}">${l}</label><input class="inp" id="fx_${k}" ${t==='tel'?'type="tel" inputmode="tel"':'type="text"'} maxlength="${max}" placeholder="${esc(ph||'')}" value="${esc(v)}"></div>`};
+ sheet(`<div class="t1">${s.n.toUpperCase()}</div>${s.f.map(fld).join('')}<button class="btn o" id="fxS">Guardar</button><div class="mute small">🔒 Solo tú ves estos datos.</div>`,sh=>{
+  let yn=F.ester||'';const sel=new Set(F.rasgos||[]);
+  sh.querySelectorAll('[data-yn]').forEach(b=>b.onclick=()=>{yn=b.dataset.yn;sh.querySelectorAll('[data-yn]').forEach(x=>x.classList.toggle('on',x===b))});
+  sh.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const r=b.dataset.r;if(sel.has(r))sel.delete(r);else sel.add(r);b.classList.toggle('on',sel.has(r))});
+  sh.querySelector('#fxS').onclick=()=>{s.f.forEach(f=>{const[k,,t]=f;if(t==='yn')F[k]=yn;else if(t==='chips')F[k]=[...sel];else{let v=(sh.querySelector('#fx_'+k).value||'').trim();if(t==='tel')v=fxTel(v);if(k==='chip')v=v.replace(/\D/g,'');F[k]=v}});
+   save();closeSheet();if(tab==='pack')renderPack();fxReward();toast('Ficha guardada','paw','#2CE6A6')}})}
+function fxReward(){if(!S.fxGot&&fxPct()>=70){S.fxGot=1;S.coins=(S.coins||0)+40;save(true);try{pushProfile()}catch(e){}try{coinSfx()}catch(e){}setTimeout(()=>toast('Ficha al 70%: +40 DogCoins','star','#FFC93C'),900);if(tab==='pack')renderPack()}}
+function bindFicha(){$$('#s-pack [data-fx]').forEach(b=>b.onclick=()=>openFx(b.dataset.fx));const c=$('#fxCardBtn');if(c)c.onclick=openFxCard}
+function drawFxCard(cv,o){const p=S.pet,F=fxD(),W=1080,H=1350;cv.width=W;cv.height=H;const x=cv.getContext('2d');x.imageSmoothingEnabled=true;
+ const font=(sz,w)=>x.font=`${w||700} ${sz}px ${HDF}`;
+ const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
+ const txt=(s,X,Y,sz,c,al,w)=>{font(sz,w);x.textAlign=al||'left';x.textBaseline='alphabetic';x.fillStyle=c;x.fillText(s,X,Y)};
+ const wrap=(s,maxW,sz,w,maxL)=>{font(sz,w);const words=String(s).split(/\s+/),L=[];let cur='';for(const wd of words){const t=cur?cur+' '+wd:wd;if(x.measureText(t).width>maxW&&cur){L.push(cur);cur=wd}else cur=t}if(cur)L.push(cur);if(L.length>maxL){L.length=maxL;L[maxL-1]=L[maxL-1].replace(/.{0,2}$/,'…')}return L};
+ let g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2A1F6B');g.addColorStop(1,'#0E0A26');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.fillStyle='#FF7A4D';x.fillRect(0,0,W,120);txt('FICHA DE IDENTIFICACIÓN',W/2,78,46,'#1A0A02','center',800);
+ const sz=330,ax=W/2-sz/2,ay=160;x.save();x.beginPath();x.arc(W/2,ay+sz/2,sz/2,0,7);x.closePath();g=x.createLinearGradient(ax,ay,ax+sz,ay+sz);g.addColorStop(0,'#4A3AA8');g.addColorStop(1,'#2A1F6B');x.fillStyle=g;x.fill();x.clip();
+ const pcv=petC(p,0);x.imageSmoothingEnabled=false;const sc=Math.max(1,Math.round(sz*1.12/pcv.width)),dw=pcv.width*sc;x.drawImage(pcv,0,0,pcv.width,pcv.height,ax+(sz-dw)/2,ay+sz-dw*.98,dw,dw);x.restore();x.imageSmoothingEnabled=true;x.lineWidth=8;x.strokeStyle='#FFC93C';x.beginPath();x.arc(W/2,ay+sz/2,sz/2,0,7);x.stroke();
+ txt(p.name,W/2,590,92,'#F4F6FB','center',800);
+ const ag=ageInfo(p.born);txt([p.breed,p.sex,ag&&ag.t].filter(Boolean).join('  ·  '),W/2,642,36,'rgba(244,246,251,.78)','center',600);
+ const rows=[];
+ if(F.senas)rows.push(['SEÑAS PARTICULARES',F.senas]);
+ if(o.chip&&F.chip)rows.push(['MICROCHIP',F.chip]);
+ if(o.med){const no=v=>!v||/^(ninguna?|no|sin)\b/i.test(String(v).trim());const m=[F.alerg&&(no(F.alerg)?'Sin alergias':'Alergias: '+F.alerg),!no(F.cond)&&'Condiciones: '+F.cond,!no(F.meds)&&'Medicamentos: '+F.meds].filter(Boolean).join(' · ');if(m)rows.push(['SALUD',m])}
+ if(o.tel){if(F.oN||F.oT)rows.push(['MI FAMILIA',[F.oN,F.oT].filter(Boolean).join('  ·  ')]);if(F.eN||F.eT)rows.push(['EMERGENCIA',[F.eN,F.eR&&'('+F.eR+')',F.eT].filter(Boolean).join('  ')])}
+ if(!rows.length)rows.push(['COMPLETA TU FICHA','Agrega datos en Manada › Salud y más › Ficha']);
+ const top=672,bot=1262;x.fillStyle='rgba(255,255,255,.07)';rr(54,top,W-108,bot-top,28);x.fill();
+ let blocks,tot;for(const ml of [3,2,1]){blocks=rows.map(([l,v])=>({l,L:wrap(v,W-190,40,600,ml)}));tot=blocks.reduce((a,b)=>a+36+b.L.length*48+20,0);if(tot<=bot-top-20)break}let y=top+(bot-top-tot)/2+10;if(y<top+16)y=top+16;
+ blocks.forEach(b=>{txt(b.l,96,y+24,26,'#FFA078','left',800);y+=36;b.L.forEach(s=>{txt(s,96,y+34,40,'#F4F6FB','left',600);y+=48});y+=20});
+ txt('PASEO',W/2-4,1320,42,'#F4F6FB','right',800);txt('PET',W/2+4,1320,42,'#FF7A4D','left',800)}
+function openFxCard(){const O={tel:true,chip:true,med:true};
+ sheet(`<div class="t1">FICHA DE EMERGENCIA</div><canvas id="fxCv" style="width:100%;height:auto;border-radius:12px"></canvas>
+  <div class="toggle"><span>Mostrar teléfonos</span><button class="sw on" data-o="tel" aria-label="Mostrar teléfonos"></button></div>
+  <div class="toggle"><span>Mostrar microchip</span><button class="sw on" data-o="chip" aria-label="Mostrar microchip"></button></div>
+  <div class="toggle"><span>Mostrar datos de salud</span><button class="sw on" data-o="med" aria-label="Mostrar datos de salud"></button></div>
+  <button class="btn o" id="fxShare">Compartir imagen</button><button class="btn" id="fxSave">Guardar imagen</button>
+  <div class="mute small">Úsala si tu mascota se pierde o para dejarla con un cuidador. Tú decides qué datos aparecen.</div>`,sh=>{
+  const cv=sh.querySelector('#fxCv'),draw=()=>drawFxCard(cv,O);draw();
+  sh.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{O[b.dataset.o]=!O[b.dataset.o];b.classList.toggle('on',O[b.dataset.o]);draw()});
+  const blob=()=>new Promise(r=>cv.toBlob(r,'image/png')),nm=`ficha-${(S.pet.name||'mascota').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.png`;
+  sh.querySelector('#fxSave').onclick=async()=>{const b=await blob();if(b)saveBlob(b,nm)};
+  sh.querySelector('#fxShare').onclick=async()=>{const b=await blob();if(!b)return;const f=new File([b],nm,{type:'image/png'});try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:'Ficha de '+S.pet.name+' · PaseoPet'});return}}catch(e){if(e&&e.name==='AbortError')return}saveBlob(b,nm)}})}
+function healthDue(){const t0=new Date(dkey());const a=(S.vacc||[]).filter(v=>v.next).map(v=>({n:v.n,dl:Math.ceil((new Date(v.next)-t0)/86400000)}));const vn=(S.pet.fx||{}).vetNext;if(vn)a.push({n:'Control veterinario',dl:Math.ceil((new Date(vn)-t0)/86400000)});return a.filter(v=>v.dl<=7).sort((x,y)=>x.dl-y.dl)[0]||null}
 async function weeklyCard(){const p=S.pet,c=document.createElement('canvas');c.width=1080;c.height=1080;const x=c.getContext('2d');
   const g=x.createLinearGradient(0,0,0,1080);g.addColorStop(0,'#2A1F6B');g.addColorStop(1,'#0E0A26');x.fillStyle=g;x.fillRect(0,0,1080,1080);
   x.fillStyle='rgba(255,201,60,.12)';x.beginPath();x.arc(540,430,380,0,7);x.fill();
@@ -3854,7 +3927,7 @@ function drawCardHD(cv){const r=CARD.rec,sh=CARD.show,col=CARD.color,t=CARD.tpl;
 let resetArm=false;
 let PK_TAB='perros',PK_LOCK=false,PK_COL=false;
 function packTabs(){const root=$('#s-pack');if(!root)return;
-  const MAP={'Estilo':'estilo','Constancia':'act','Expediciones':'act','Historial':'act','Medallas':'logros','Colección':'logros','Salud':'mas','Modo paseador':'mas'};
+  const MAP={'Estilo':'estilo','Constancia':'act','Expediciones':'act','Historial':'act','Medallas':'logros','Colección':'logros','Ficha':'mas','Salud':'mas','Modo paseador':'mas'};
   let g='perros';
   [...root.children].forEach(k=>{if(k.classList.contains('hdr'))return;const t=k.querySelector('.t2'),key=t&&MAP[t.textContent.trim()];if(key)g=key;else if(k.classList.contains('g3')&&g==='estilo')g='act';k.dataset.g=g});
   const T=[['perros','Perros'],['estilo','Estilo'],['logros','Logros'],['act','Actividad'],['mas','Salud y más']];
@@ -3886,6 +3959,7 @@ function renderPack(){rollDay();const p=S.pet;
   <div class="box"><div class="row between"><span class="t2">Historial</span><span class="lbl">Últimos paseos</span></div><div class="col" id="histList"><div class="mute small">Cargando…</div></div></div>
   <div class="box"><div class="row between"><span class="t2">Medallas</span><span class="lbl">${S.badges.length}/${BADGES.length}</span></div>${medalsGridHTML()}</div>
   <div class="box"><div class="row between"><span class="t2">Colección</span><span class="lbl">${ITEMS.filter(i=>S.inv[i.id]).length}/${ITEMS.length}</span></div>${albumHTML()}</div>
+  ${fichaBoxHTML()}
   <div class="box"><div class="row between"><span class="t2">Salud</span><button class="btn sm" id="addVac">+ Vacuna</button></div>
    ${S.vacc.length?S.vacc.map((v,i)=>{const dl=v.next?Math.ceil((new Date(v.next)-new Date(dkey()))/86400000):null;return `<div class="listrow"><div class="col" style="gap:2px"><b>${esc(v.n)}</b><span class="mute small">Puesta: ${esc(v.date||'—')}${v.next?' · próxima: '+esc(v.next):''}</span></div><div class="row">${dl==null?'':dl<0?'<span class="tag r">Vencida</span>':dl<=30?`<span class="tag y">${dl} días</span>`:'<span class="tag g">Al día</span>'}<button class="iconbtn" data-dv="${i}" aria-label="Borrar vacuna" style="width:36px;height:36px">${ico('trash')}</button></div></div>`}).join(''):'<div class="mute small">Registra vacunas y te avisamos cuando se acerque la próxima.</div>'}
    <div class="row between"><span class="t2">Peso</span><button class="btn sm" id="addKg">+ Peso</button></div>
@@ -3903,7 +3977,7 @@ function renderPack(){rollDay();const p=S.pet;
   $$('[data-acc]').forEach(b=>b.onclick=()=>{const c=COS.find(x=>x.id===b.dataset.acc);if(c.price&&!owned(c.id)){buyCos(c);return}if(c.ok&&!c.ok(S)){toast('Se desbloquea con: '+c.req,'lock');return}p.acc=c.id;save();pushProfile();renderPack()});
   $$('[data-pcoat]').forEach(b=>b.onclick=()=>{p.coat=+b.dataset.pcoat;p.custom=false;save();pushProfile();renderPack()});$('#pkCustom').onclick=()=>{p.custom=!p.custom;if(p.custom){const L=dogLook({...p,custom:false});p.fur=L.b;p.spot=L.d}save();pushProfile();renderPack()};
   $$('[data-fur]').forEach(b=>b.onclick=()=>{p.fur=b.dataset.fur;save();pushProfile();renderPack()});$$('[data-spot]').forEach(b=>b.onclick=()=>{p.spot=b.dataset.spot;save();pushProfile();renderPack()});
-  $('#editPet').onclick=editPet;bindPetCard();bindDogsBox($('#s-pack'));$('#addVac').onclick=addVac;$('#addKg').onclick=addKg;
+  $('#editPet').onclick=editPet;bindPetCard();bindDogsBox($('#s-pack'));$('#addVac').onclick=addVac;bindFicha();$('#addKg').onclick=addKg;
   $$('[data-dv]').forEach(b=>b.onclick=()=>{S.vacc.splice(+b.dataset.dv,1);save();renderPack()});
   $('#wkOn').onclick=()=>{S.walker.on=!S.walker.on;if(!S.walker.on)S.walker.avail=false;save();pushProfile();renderPack()};
   if($('#wkPrice')){const upd=()=>{S.walker.price=Math.max(1000,+$('#wkPrice').value||6000);S.walker.zone=$('#wkZone').value.trim();S.walker.bio=$('#wkBio').value.trim();save();pushProfile()};['#wkPrice','#wkZone','#wkBio'].forEach(s=>$(s).onchange=upd);
