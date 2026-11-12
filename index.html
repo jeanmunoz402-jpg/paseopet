@@ -3278,7 +3278,9 @@ function natWalk(on){if(!NPORT)return;natSend({t:'walk',on:!!on,name:(S.pet&&S.p
 document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
 /* ===== APK de Android ===== */
 const APK_URL='https://github.com/jeanmunoz402-jpg/paseopet/releases/download/apk-latest/PaseoPet.apk';
-function apkOffer(){try{return !NAT&&/Android/i.test(navigator.userAgent)&&!isApp()&&!inClaude()&&!String(document.referrer||'').startsWith('android-app://')}catch(e){return false}}
+function inApk(){try{if(NAT||String(document.referrer||'').startsWith('android-app://')){try{sessionStorage.setItem('pp_twa','1')}catch(e){}return true}return sessionStorage.getItem('pp_twa')==='1'}catch(e){return !!NAT}}
+function isAndroid(){try{return /Android/i.test(navigator.userAgent)}catch(e){return false}}
+function apkOffer(){return !inApk()&&isAndroid()}
 function apkHidden(){try{return localStorage.getItem('pp_apk_x')==='1'}catch(e){return false}}
 function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala PaseoPet como una app más de tu teléfono: abre a pantalla completa y se actualiza sola.</div>
   <a class="btn o big" id="apkGo" href="${APK_URL}" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Descargar PaseoPet (APK)</a>
@@ -3286,7 +3288,7 @@ function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala Pas
   <div class="mute small">Si entras con Google, tu progreso se mantiene: verás lo mismo que en el navegador.</div>
   <button class="btn" id="apkCopy">Copiar enlace de descarga</button><button class="btn sm" id="apkNo">No mostrar más en Inicio</button>`,sh=>{
   sh.querySelector('#apkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(APK_URL);toast('Enlace copiado','paw','#2CE6A6')}catch(e){toast('No se pudo copiar','bell','#FFC93C')}};
-  sh.querySelector('#apkNo').onclick=()=>{try{localStorage.setItem('pp_apk_x','1')}catch(e){}closeSheet();if(tab==='home')renderHome()}})}
+  sh.querySelector('#apkNo').onclick=()=>{try{localStorage.setItem('pp_apk_x','1')}catch(e){}closeSheet();if(tab==='home'&&S&&S.onboarded)renderHome()}})}
 /* ===== MODO PERDIDO ===== */
 function lostPostHTML(p){const pet=p.pet||petOf(p.uid),fnd=!!p.found,mine=p.uid===UID,nm=esc(pet.name||'Mascota');
  const tel=fxTel(p.tel||''),rows=[p.lastSeen&&`<div><span class="lbl">Visto por última vez</span><br><b>${esc(p.lastSeen)}</b></div>`,p.senas&&`<div><span class="lbl">Señas</span><br>${esc(p.senas)}</div>`,p.chip&&`<div><span class="lbl">Microchip</span><br>${esc(p.chip)}</div>`,p.text&&`<div class="small">${esc(p.text)}</div>`].filter(Boolean).join('');
@@ -4640,7 +4642,9 @@ function loginScreen(o={}){LOGIN_SHOWN=true;return new Promise(resolve=>{const o
      ${msg?`<div class="banner small">${msg}</div>`:''}
      <div class="mute small" style="font-size:12.5px">Tu nombre de pila se muestra junto a tu mascota. Tu correo de Gmail es privado y nunca se publica.</div>
    </div>
+   ${apkOffer()?`<button class="btn big o" id="obApk" style="width:100%">📲 Descargar la app para Android</button>`:''}
    <div class="t2 blinktxt" style="color:var(--gold)">CONECTA TU GMAIL PARA JUGAR</div></div>`;
+   {const oa=$('#obApk');if(oa)oa.onclick=openApk}
    const gc=$('#gCont');if(gc)gc.onclick=()=>{coinSfx();resolve(u)};
    const gi=$('#gIn');if(gi)gi.onclick=async e=>{
      const b=e.currentTarget;b.disabled=true;const sp=b.querySelector('span');if(sp)sp.textContent='Conectando con Gmail…';else b.textContent='Conectando con Gmail…';
@@ -5037,7 +5041,7 @@ function renderSettings(){const p=S.pet;let acct='';
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
    <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button>
     ${NAT?`<button class="setrow" id="stNat">${ico('bell')}<span><b>Avisos en el teléfono</b><br><span class="mute small">${S.natOff?'Desactivados':'Racha, vacunas, evento semanal y pase del mes'}</span></span><span class="chev">${S.natOff?'OFF':'ON'}</span></button>`:''}
-    ${apkOffer()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">Pantalla completa y sin navegador</span></span><span class="chev">►</span></button>`:''}</div>
+    ${!inApk()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
   ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
   <div class="box"><span class="t2">Datos</span><div class="mute small">${MODE==='local'?'Tus datos se guardan solo en este navegador.':'Tu historial, salud y casa son privados. Tu perro, nivel, publicaciones y territorios los ve la comunidad.'}</div>
    <button class="btn r" id="stReset">${setResetArm?'Toca otra vez: se borra todo':'Borrar todos mis datos'}</button></div>
