@@ -2864,8 +2864,9 @@ function pickPhoto(camera){return new Promise(res=>{const inp=camera?$('#fileCam
 /* ================= UI PRIMITIVES ================= */
 function toast(html,icon,color){const t=document.createElement('div');t.className='toast';if(color)t.style.boxShadow=`inset 0 0 0 3px ${color},4px 4px 0 rgba(0,0,0,.6)`;t.innerHTML=(icon?ico(icon):'')+`<span>${html}</span>`;$('#toasts').appendChild(t);while($('#toasts').children.length>3)$('#toasts').firstChild.remove();setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s steps(3)';setTimeout(()=>t.remove(),300)},2800);try{navigator.vibrate&&navigator.vibrate(25)}catch(e){}}
 function sheet(html,mount){try{if(isApp()&&!(history.state&&history.state.pps))history.pushState({pps:1},'')}catch(e){}$('#sheet').innerHTML=html;$('#sheetWrap').hidden=false;$('#sheet').scrollTop=0;hydrateIcons($('#sheet'));mount&&mount($('#sheet'))}
-function closeSheet(fromBack){const was=!$('#sheetWrap').hidden;$('#sheetWrap').hidden=true;gpsFixOpen=false;try{if(fromBack!==true&&was&&history.state&&history.state.pps)history.back()}catch(e){}}
-window.addEventListener('popstate',()=>{if(!$('#sheetWrap').hidden)closeSheet(true)});
+let SHEET_SELFBACK=false;
+function closeSheet(fromBack){const was=!$('#sheetWrap').hidden;$('#sheetWrap').hidden=true;gpsFixOpen=false;try{if(fromBack!==true&&was&&history.state&&history.state.pps){SHEET_SELFBACK=true;history.back()}}catch(e){}}
+window.addEventListener('popstate',()=>{if(SHEET_SELFBACK){SHEET_SELFBACK=false;/* lo causó closeSheet: si ya se abrió otra ventana, no cerrarla */if(!$('#sheetWrap').hidden){try{history.pushState({pps:1},'')}catch(e){}}return}if(!$('#sheetWrap').hidden)closeSheet(true)});
 $('#backdrop').onclick=closeSheet;
 let fx=[];
 function boom(n=90){const r=$('#fx').getBoundingClientRect();const cols=['#FF6B2C','#7C5CFF','#2CE6A6','#FFC93C','#3C9DFF','#FF3B5C'];for(let i=0;i<n;i++)fx.push({x:r.width/2/3,y:r.height*.3/3,vx:(Math.random()-.5)*4,vy:-Math.random()*4.5-1,c:cols[i%6],l:0});try{navigator.vibrate&&navigator.vibrate([40,30,80])}catch(e){}}
