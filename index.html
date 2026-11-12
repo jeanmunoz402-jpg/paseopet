@@ -1049,6 +1049,11 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .feedmore{width:100%}.media.nophoto img{display:none}
 .hdr .logo img.hdr-word{width:auto;height:24px;max-width:100%;min-width:0;object-fit:contain;filter:drop-shadow(0 2px 0 rgba(14,10,38,.6))}
 .hdr .logo img.hdr-brand{image-rendering:pixelated}
+.igp.lost{display:flex;flex-direction:column;gap:10px;padding:0 12px 12px;border-radius:14px;overflow:hidden;box-shadow:inset 0 0 0 3px #FF5C7A}
+.igp.lost.found{box-shadow:inset 0 0 0 3px #2CE6A6}
+.lostban{margin:0 -12px;padding:9px 12px;background:#FF5C7A;color:#fff;font-weight:800;letter-spacing:.02em;text-align:center}
+.igp.lost.found .lostban{background:#2CE6A6;color:#04281C}
+.igp.lost a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 </style>
 
 <div class="app" id="app">
@@ -3233,6 +3238,7 @@ function fichaBoxHTML(){const p=S.pet,F=fxD(),pc=fxPct(),ag=ageInfo(p.born);
   <div style="height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden"><div style="height:100%;width:${pc}%;background:linear-gradient(90deg,#FFC93C,#FF7A4D)"></div></div>
   ${rows}
   <button class="btn o" id="fxCardBtn">Crear ficha de emergencia</button>
+  ${S.lostId?'<button class="btn g" id="lostFound">Ya apareció ✓ (cerrar aviso)</button>':'<button class="btn r" id="lostBtn">🚨 Mi mascota se perdió</button>'}
   <div class="mute small">🔒 Estos datos son privados: solo tú los ves. No se muestran en tu perfil ni en el ranking.${pc<70&&!S.fxGot?' Completa el 70% y gana 40 DogCoins.':''}</div></div>`}
 function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
  const fld=f=>{const[k,l,t,max,ph]=f,v=F[k]||'';
@@ -3248,7 +3254,34 @@ function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
   sh.querySelector('#fxS').onclick=()=>{s.f.forEach(f=>{const[k,,t]=f;if(t==='yn')F[k]=yn;else if(t==='chips')F[k]=[...sel];else{let v=(sh.querySelector('#fx_'+k).value||'').trim();if(t==='tel')v=fxTel(v);if(k==='chip')v=v.replace(/\D/g,'');F[k]=v}});
    save();closeSheet();if(tab==='pack')renderPack();fxReward();toast('Ficha guardada','paw','#2CE6A6')}})}
 function fxReward(){if(!S.fxGot&&fxPct()>=70){S.fxGot=1;S.coins=(S.coins||0)+40;save(true);try{pushProfile()}catch(e){}try{coinSfx()}catch(e){}setTimeout(()=>toast('Ficha al 70%: +40 DogCoins','star','#FFC93C'),900);if(tab==='pack')renderPack()}}
-function bindFicha(){$$('#s-pack [data-fx]').forEach(b=>b.onclick=()=>openFx(b.dataset.fx));const c=$('#fxCardBtn');if(c)c.onclick=openFxCard}
+/* ===== MODO PERDIDO ===== */
+function lostPostHTML(p){const pet=p.pet||petOf(p.uid),fnd=!!p.found,mine=p.uid===UID,nm=esc(pet.name||'Mascota');
+ const tel=fxTel(p.tel||''),rows=[p.lastSeen&&`<div><span class="lbl">Visto por última vez</span><br><b>${esc(p.lastSeen)}</b></div>`,p.senas&&`<div><span class="lbl">Señas</span><br>${esc(p.senas)}</div>`,p.chip&&`<div><span class="lbl">Microchip</span><br>${esc(p.chip)}</div>`,p.text&&`<div class="small">${esc(p.text)}</div>`].filter(Boolean).join('');
+ return `<article class="igp lost ${fnd?'found':''}" data-post="${p.id}"><div class="lostban">${fnd?'🎉 ¡YA APARECIÓ '+nm.toUpperCase()+'!':'🚨 SE PERDIÓ '+nm.toUpperCase()}</div>
+ <div class="row" style="gap:12px;align-items:center"><button data-prof="${p.uid}" aria-label="Perfil de ${nm}">${petHTML(pet,84,{bob:!fnd})}</button><div class="grow col" style="gap:3px;min-width:0"><b>${nm}</b><span class="mute small">${esc([pet.breed,personName(p.uid)&&'Dueño/a: '+personName(p.uid)].filter(Boolean).join(' · '))}</span><span class="lbl">Hace ${ago(p.ts)==='ahora'?'un momento':ago(p.ts)}</span></div><button data-more="${p.id}" aria-label="Opciones" class="iconbtn">⋯</button></div>
+ ${fnd?'<div class="mute small">Gracias a toda la comunidad por ayudar.</div>':`<div class="col" style="gap:8px">${rows}</div><div class="row" style="gap:8px;flex-wrap:wrap">${tel?`<a class="btn o sm" href="tel:${esc(tel.replace(/[^\d+]/g,''))}">Llamar</a>`:''}<button class="btn sm" data-lsh="${p.id}">Compartir aviso</button>${mine?`<button class="btn g sm" data-lfound="${p.id}">Ya apareció ✓</button>`:''}</div>`}</article>`}
+function lostText(p){const pet=p.pet||petOf(p.uid);return `🚨 SE PERDIÓ ${String(pet.name||'').toUpperCase()}${pet.breed?' ('+pet.breed+')':''}.${p.lastSeen?' Visto por última vez: '+p.lastSeen+'.':''}${p.senas?' Señas: '+p.senas+'.':''}${p.tel?' Contacto: '+p.tel:''}\nAyúdanos a compartir 🐾`}
+function bindLost(root){
+ root.querySelectorAll('[data-lsh]').forEach(b=>b.onclick=()=>{const p=postById(b.dataset.lsh);if(p)shareLetter(lostText(p))});
+ root.querySelectorAll('[data-lfound]').forEach(b=>b.onclick=()=>lostFound(b.dataset.lfound))}
+async function lostFound(id){await W8('posts/'+id,()=>DB.doc('posts/'+id).update({found:true,foundTs:Date.now()})).catch(()=>{});
+ const p=postById(id);if(p){p.found=true;p.foundTs=Date.now()}if(S.lostId===id)S.lostId='';save();closeSheet();toast('¡Qué alegría! Aviso cerrado','star','#2CE6A6');if(tab==='feed')renderFeed();if(tab==='pack')renderPack()}
+function lostActive(p){return p.type==='perdido'&&!p.found&&Date.now()-p.ts<14*864e5}
+function openLost(){const F=fxD(),p=S.pet;
+ if(MODE!=='firebase'){sheet(`<div class="t1">MODO PERDIDO</div><div>Para avisar a la comunidad necesitas entrar con tu cuenta de Google (en Ajustes).</div><div class="mute small">Mientras tanto puedes crear la ficha de emergencia y compartirla por WhatsApp o Instagram.</div><button class="btn o" id="lsFc">Crear ficha de emergencia</button><button class="btn" id="lsX">Cerrar</button>`,sh=>{sh.querySelector('#lsX').onclick=closeSheet;sh.querySelector('#lsFc').onclick=()=>{closeSheet();openFxCard()}});return}
+ const O={tel:!!F.oT,senas:!!F.senas,chip:false};
+ const tg=(k,l,hint,dis)=>`<div class="toggle"><span>${l}${hint?`<br><span class="mute small">${hint}</span>`:''}</span><button class="sw ${O[k]?'on':''}" data-lo="${k}" ${dis?'disabled':''} aria-label="${l}"></button></div>`;
+ sheet(`<div class="t1">¡${esc(p.name).toUpperCase()} SE PERDIÓ!</div><div class="mute small">Se publica un aviso destacado en el muro. Lo ve toda la comunidad de PaseoPet.</div>
+  <div class="field"><label for="lsW">¿Dónde lo viste por última vez?</label><input class="inp" id="lsW" maxlength="80" placeholder="Calle, plaza o comuna"></div>
+  <div class="field"><label for="lsM">Mensaje (opcional)</label><textarea class="inp" id="lsM" maxlength="200" placeholder="Es muy cariñoso, responde a su nombre…"></textarea></div>
+  ${tg('tel','Mostrar mi teléfono',F.oT?'':'Agrégalo en la ficha (Dueño y emergencia)',!F.oT)}${tg('senas','Mostrar señas particulares',F.senas?'':'Agrégalas en la ficha (Identidad)',!F.senas)}${tg('chip','Mostrar microchip','Mejor no publicarlo: sirve para comprobar que eres el dueño',!F.chip)}
+  <button class="btn r big" id="lsGo">Publicar aviso</button><button class="btn" id="lsX">Cancelar</button>`,sh=>{
+  sh.querySelectorAll('[data-lo]').forEach(b=>b.onclick=()=>{O[b.dataset.lo]=!O[b.dataset.lo];b.classList.toggle('on',O[b.dataset.lo])});
+  sh.querySelector('#lsX').onclick=closeSheet;
+  sh.querySelector('#lsGo').onclick=async e=>{const w=sh.querySelector('#lsW').value.trim();if(!w){toast('Indica dónde lo viste por última vez','sos');return}e.currentTarget.disabled=true;
+   const body={uid:UID,ts:Date.now(),type:'perdido',text:sh.querySelector('#lsM').value.trim().slice(0,200),lastSeen:w.slice(0,80),found:false,pet:{name:p.name,species:p.species,fur:p.fur,spot:p.spot,acc:p.acc,bid:p.bid||'',coat:p.coat|0,custom:!!p.custom,level:p.level,breed:p.breed},tel:O.tel?fxTel(F.oT):'',senas:O.senas?String(F.senas||'').slice(0,120):'',chip:O.chip?String(F.chip||''):''};
+   try{const ref=await publishPost(body,null);S.lostId=ref.id;save();closeSheet();SOC.tab='feed';SOC.filter='todos';go('feed');toast('Aviso publicado. Compártelo para que llegue más lejos','megafono','#FF5C7A')}catch(err){e.currentTarget.disabled=false;if(!(err&&err.code==='limit'))toast('No se pudo publicar el aviso. Intenta de nuevo','sos')}}})}
+function bindFicha(){$$('#s-pack [data-fx]').forEach(b=>b.onclick=()=>openFx(b.dataset.fx));const lb=$('#lostBtn');if(lb)lb.onclick=openLost;const lf=$('#lostFound');if(lf)lf.onclick=()=>lostFound(S.lostId);const c=$('#fxCardBtn');if(c)c.onclick=openFxCard}
 function drawFxCard(cv,o){const p=S.pet,F=fxD(),W=1080,H=1350;cv.width=W;cv.height=H;const x=cv.getContext('2d');x.imageSmoothingEnabled=true;
  const font=(sz,w)=>x.font=`${w||700} ${sz}px ${HDF}`;
  const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
@@ -5006,7 +5039,7 @@ const lsSet=k=>{try{return new Set(JSON.parse(localStorage.getItem(k)||'[]'))}ca
 const lsPut=(k,s)=>{try{localStorage.setItem(k,JSON.stringify([...s].slice(-400)))}catch(e){}};
 let suggHidden=false;
 function storyGroups(){const day=Date.now()-86400000,fids=new Set(friendIds()),g=new Map();
-  for(const p of SH.posts.slice().sort((a,b)=>a.ts-b.ts)){if(p.ts<day)continue;if(!g.has(p.uid))g.set(p.uid,[]);g.get(p.uid).push(p)}
+  for(const p of SH.posts.slice().sort((a,b)=>a.ts-b.ts)){if(p.ts<day||p.type==='perdido')continue;if(!g.has(p.uid))g.set(p.uid,[]);g.get(p.uid).push(p)}
   const seen=lsSet(SEEN_KEY);const arr=[...g.entries()].map(([uid,posts])=>({uid,posts,pet:posts[posts.length-1].pet||petOf(uid),unseen:posts.some(p=>!seen.has(p.id)),fr:fids.has(uid)}));
   return arr.sort((a,b)=>(b.uid===UID)-(a.uid===UID)||(b.unseen-a.unseen)||(b.fr-a.fr)||(b.posts[b.posts.length-1].ts-a.posts[a.posts.length-1].ts))}
 function storiesHTML(){const gs=storyGroups();const mine=gs.find(g=>g.uid===UID);
@@ -5018,12 +5051,12 @@ function suggHTML(){if(MODE==='local'||suggHidden)return '';const s=suggestions(
 function likersText(id){const ls=SH.likes.filter(l=>l.post===id);if(!ls.length)return '';const fids=new Set(friendIds());const named=ls.find(l=>l.uid!==UID&&fids.has(l.uid))||ls.find(l=>l.uid!==UID);const nm=named?petOf(named.uid).name:null;
   return ls.length===1?`Le gusta a <b>${esc(nm||(ls[0].uid===UID?'ti':'1 persona'))}</b>`:`Le gusta a <b>${esc(nm||'ti')}</b> y <b>${ls.length-1} más</b>`}
 function postMedia(p,pet){return hasPhoto(p)?`<div class="media" data-k="${p.id}"><img class="ph2" ${phAttr(p)} alt="Foto de ${esc(pet.name)}"></div>`:p.pts&&p.pts.length>1?`<div class="media" data-k="${p.id}"><canvas data-mini="${p.id}"></canvas><div class="ov2"><div class="pill"><span class="num" style="font-size:11px">${String(p.km).replace('.',',')}</span><span class="lbl">km</span></div><div class="pill"><span class="num" style="font-size:11px">${fmtTime(p.time)}</span><span class="lbl">tiempo</span></div><div class="pill"><span class="num" style="font-size:11px;color:var(--orange)">${p.hexes||0}</span><span class="lbl">territ.</span></div></div></div>`:p.type==='paseo'?`<div class="row" style="padding:0 12px 6px;gap:8px"><span class="tag o">${String(p.km).replace('.',',')} km</span><span class="tag d">${fmtTime(p.time)}</span></div>`:''}
-function igPostHTML(p){const pet=p.pet||petOf(p.uid),n=likeCount(p.id),c=SH.comments.filter(x=>x.post===p.id).length,liked=iLiked(p.id),saved=lsSet(SAVED_KEY).has(p.id);
+function igPostHTML(p){if(p.type==='perdido')return lostPostHTML(p);const pet=p.pet||petOf(p.uid),n=likeCount(p.id),c=SH.comments.filter(x=>x.post===p.id).length,liked=iLiked(p.id),saved=lsSet(SAVED_KEY).has(p.id);
   return `<article class="igp" data-post="${p.id}"><header><button class="igav" data-prof="${p.uid}" aria-label="Perfil de ${esc(pet.name)}"><span><img class="spr" src="${petU(pet)}" alt=""></span></button><div class="grow" style="min-width:0"><button data-prof="${p.uid}" style="text-align:left"><b>${esc(pet.name)}</b> <span class="mute small">· NV ${pet.level||1}</span></button><div class="mute small">${esc(personName(p.uid))}${p.uid!==UID&&frState(p.uid)==='friend'?' · amigo':''}</div></div><button class="btn sm" data-more="${p.id}" aria-label="Más opciones" style="min-height:30px">⋯</button></header>
   ${postMedia(p,pet)}
   <div class="igacts"><button data-like="${p.id}" class="${liked?'on':''}" aria-label="Me gusta">${ico('paw',liked?'#FF6B2C':'#F4F6FB')}<span>${n||''}</span></button><button data-cm="${p.id}" aria-label="Comentar">${ico('bubble','#F4F6FB')}<span>${c||''}</span></button><button data-sh="${p.id}" aria-label="Compartir">${ico('share','#F4F6FB')}</button><span class="grow"></span><button data-save="${p.id}" aria-label="Guardar">${ico(saved?'bookmarkF':'bookmark',saved?'#FFC93C':'#F4F6FB')}</button></div>
   <div class="igbody"><div class="small lk" data-lk="${p.id}">${likersText(p.id)}</div>${p.text?`<div class="cap"><b>${esc(pet.name)}</b>${esc(p.text).replace(/#[\wáéíóúñ]+/gi,m=>`<span class="hash">${m}</span>`)}</div>`:''}${c?`<button class="lnk" data-cm="${p.id}">Ver ${c===1?'el comentario':'los '+c+' comentarios'}</button>`:''}<span class="lbl">Hace ${ago(p.ts)==='ahora'?'un momento':ago(p.ts)}</span></div></article>`}
-function bindPosts(root){
+function bindPosts(root){bindLost(root);
   root.querySelectorAll('[data-like]').forEach(b=>b.onclick=()=>toggleLike(b.dataset.like));
   root.querySelectorAll('.media').forEach(m=>{let last=0;m.addEventListener('pointerup',()=>{const t=performance.now();if(t-last<320){if(!iLiked(m.dataset.k))toggleLike(m.dataset.k);const bb=document.createElement('img');bb.className='burst spr';bb.src=iconU('paw','#FF6B2C');bb.alt='';m.appendChild(bb);setTimeout(()=>bb.remove(),700)}last=t})});
   root.querySelectorAll('[data-cm]').forEach(b=>b.onclick=()=>openComments(b.dataset.cm));
@@ -5037,7 +5070,7 @@ function postMenu(id){const p=postById(id);if(!p)return;const mine=p.uid===UID,s
    sh.querySelector('#pmX').onclick=closeSheet;sh.querySelector('#pmProf').onclick=()=>{closeSheet();openProfile(p.uid)};
    const a=sh.querySelector('#pmAdd');if(a)a.onclick=()=>{closeSheet();sendFriend(p.uid)};const c=sh.querySelector('#pmCopy');if(c)c.onclick=()=>{try{navigator.clipboard.writeText(p.text).then(()=>toast('Texto copiado','bubble'))}catch(e){}closeSheet()};
    let arm=false;const d=sh.querySelector('#pmDel');if(d)d.onclick=async()=>{if(!arm){arm=true;d.textContent='Toca otra vez para borrar';return}closeSheet();await W8('posts/'+id,()=>DB.doc('posts/'+id).delete()).catch(()=>{});DB.doc('postimg/'+id).delete().catch(()=>{});SH.posts=SH.posts.filter(x=>x.id!==id);POSTX.delete(id);if(tab==='feed')renderFeed();toast('Publicación borrada','trash')}})}
-function exploreHTML(){const ps=SH.posts;if(!ps.length)return `<div class="box empty">${ico('pin')}<div class="t2">Nada que explorar aún</div><div class="mute small">Cuando la comunidad publique, verás sus paseos y fotos aquí.</div></div>`;
+function exploreHTML(){const ps=SH.posts.filter(p=>p.type!=='perdido');if(!ps.length)return `<div class="box empty">${ico('pin')}<div class="t2">Nada que explorar aún</div><div class="mute small">Cuando la comunidad publique, verás sus paseos y fotos aquí.</div></div>`;
   return `<div class="mute small">Paseos y fotos de toda la comunidad.</div><div class="xgrid">${ps.map(p=>`<button data-xp="${p.id}" aria-label="Ver publicación">${hasPhoto(p)?`<img ${phAttr(p)} alt="">`:`<canvas data-mini="${p.id}"></canvas>`}${p.km?`<span class="xk">${String(p.km).replace('.',',')} km</span>`:''}</button>`).join('')}</div>`}
 function openPost(id){const p=postById(id);if(!p)return;sheet(igPostHTML(p)+'<button class="btn" id="opx">Cerrar</button>',sh=>{hydrateIcons(sh);bindPosts(sh);sh.querySelector('#opx').onclick=closeSheet})}
 function podiumHTML(rows){if(rows.length<2)return '';const t=rows.slice(0,3),ord=[t[1],t[0],t[2]].filter(Boolean),H={0:84,1:62,2:46},C={0:'#FFC93C',1:'#C9D3E8',2:'#D9894A'};
@@ -5049,7 +5082,7 @@ function renderFeed(){const nreq=pendingIn().length;const root=$('#s-feed');
   if(SOC.tab==='amigos')body=friendsHTML()+suggHTML();
   else if(SOC.tab==='ranking'){if(MODE==='local')body=friendsHTML();else{const rows=rankRows();body=podiumHTML(rows)+rankHTML()}}
   else if(SOC.tab==='explore')body=exploreHTML();
-  else{const fids=new Set(friendIds());const posts=SOC.filter==='amigos'?SH.posts.filter(p=>p.uid===UID||fids.has(p.uid)):SH.posts;
+  else{const fids=new Set(friendIds());const posts0=SOC.filter==='amigos'?SH.posts.filter(p=>p.uid===UID||fids.has(p.uid)):SH.posts;const posts=[...posts0.filter(lostActive),...posts0.filter(x=>!lostActive(x))];
     body=`${MODE==='local'?`<div class="banner small">Estás sin cuenta: solo ves tus publicaciones.${fbConfigured()?' Entra con Google en Ajustes para ver la comunidad.':''}</div>`:''}${storiesHTML()}${suggHTML()}
     <div class="chips">${[['todos','Para ti'],['amigos','Amigos']].map(([k,n])=>`<button class="chip ${SOC.filter===k?'on':''}" data-sf="${k}">${n}</button>`).join('')}</div>
     ${posts.length?posts.map(igPostHTML).join('')+(MODE==='firebase'&&FEEDX.more?`<button class="btn feedmore" id="feedMore">${FEEDX.loading?'Cargando…':'Ver más publicaciones'}</button>`:''):FEEDX.loading?'<div class="box empty"><div class="t2">Cargando el muro…</div></div>':`<div class="box empty">${ico('bubble')}<div class="t2">${SOC.filter==='amigos'?'Tus amigos aún no publican':'Aún no hay publicaciones'}</div><div class="mute small">Publica tu próximo paseo o una foto de tu perro.</div><button class="btn sm o" id="emptyPost">Publicar ahora</button></div>`}`}
