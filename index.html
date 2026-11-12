@@ -1054,6 +1054,15 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .lostban{margin:0 -12px;padding:9px 12px;background:#FF5C7A;color:#fff;font-weight:800;letter-spacing:.02em;text-align:center}
 .igp.lost.found .lostban{background:#2CE6A6;color:#04281C}
 .igp.lost a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.apkpop{position:fixed;inset:0;z-index:9500;background:rgba(8,6,24,.74);display:flex;align-items:center;justify-content:center;padding:18px;animation:apkfade .2s ease-out}
+.apkcard{position:relative;width:min(350px,100%);max-height:calc(100% - 20px);overflow:auto;background:linear-gradient(180deg,#2E2373,#17123A);border-radius:22px;box-shadow:inset 0 0 0 3px #FFC93C,0 24px 60px rgba(0,0,0,.55);padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;animation:apkin .28s cubic-bezier(.2,1.3,.4,1)}
+.apkdog{width:112px;height:auto;image-rendering:pixelated;margin-top:-4px;animation:bob 1.6s steps(2) infinite}
+.apkword{width:190px;height:auto;margin-top:-8px}
+.apkli{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;font-size:14.5px;background:rgba(255,255,255,.07);border-radius:14px;padding:10px 12px}
+.apkx{position:absolute;top:8px;right:10px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:16px}
+@keyframes apkfade{from{opacity:0}}
+@keyframes apkin{from{transform:translateY(24px) scale(.94);opacity:0}}
+@media (prefers-reduced-motion:reduce){.apkpop,.apkcard,.apkdog{animation:none}}
 </style>
 
 <div class="app" id="app">
@@ -3256,7 +3265,7 @@ function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
 function fxReward(){if(!S.fxGot&&fxPct()>=70){S.fxGot=1;S.coins=(S.coins||0)+40;save(true);try{pushProfile()}catch(e){}try{coinSfx()}catch(e){}setTimeout(()=>toast('Ficha al 70%: +40 DogCoins','star','#FFC93C'),900);if(tab==='pack')renderPack()}}
 /* ===== PUENTE CON LA APK DE ANDROID (avisos y GPS en segundo plano) ===== */
 let NPORT=null,NAT=false;
-window.addEventListener('message',e=>{try{if(NPORT||!e.ports||!e.ports[0]||e.source)return;NPORT=e.ports[0];NPORT.onmessage=m=>natMsg(m.data);NAT=true;setTimeout(natSync,300)}catch(x){}});
+window.addEventListener('message',e=>{try{if(NPORT||!e.ports||!e.ports[0]||e.source)return;NPORT=e.ports[0];NPORT.onmessage=m=>natMsg(m.data);NAT=true;try{apkMark()}catch(x){}setTimeout(natSync,300)}catch(x){}});
 function natSend(o){try{if(NPORT)NPORT.postMessage(JSON.stringify(o))}catch(e){}}
 function natMsg(d){let o=null;try{o=typeof d==='string'?JSON.parse(d):d}catch(e){return}if(!o)return;
  if(o.t==='hello'){NAT=true;natSync()}
@@ -3278,9 +3287,17 @@ function natWalk(on){if(!NPORT)return;natSend({t:'walk',on:!!on,name:(S.pet&&S.p
 document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
 /* ===== APK de Android ===== */
 const APK_URL='https://github.com/jeanmunoz402-jpg/paseopet/releases/download/apk-latest/PaseoPet.apk';
-function inApk(){try{if(NAT||String(document.referrer||'').startsWith('android-app://')){try{sessionStorage.setItem('pp_twa','1')}catch(e){}return true}return sessionStorage.getItem('pp_twa')==='1'}catch(e){return !!NAT}}
+function inApk(){try{if(NAT||String(document.referrer||'').startsWith('android-app://')){try{sessionStorage.setItem('pp_twa','1')}catch(e){}apkMark();return true}return sessionStorage.getItem('pp_twa')==='1'}catch(e){return !!NAT}}
 function isAndroid(){try{return /Android/i.test(navigator.userAgent)}catch(e){return false}}
-function apkOffer(){return !inApk()&&isAndroid()}
+function apkOffer(){return !inApk()&&isAndroid()&&!apkHas()}
+function iosHas(){try{if(isIOS()&&isApp()){localStorage.setItem('pp_ios_has','1');return true}return localStorage.getItem('pp_ios_has')==='1'}catch(e){return false}}
+function iosOffer(){return isIOS()&&!isApp()&&!iosHas()&&!inClaude()}
+function instOffer(){return apkOffer()||iosOffer()}
+function openInstall(){if(isIOS())openIos();else openApk()}
+function openIos(){sheet(`<div class="t1">APP PARA IPHONE</div><div>Agrega PaseoPet a tu pantalla de inicio: queda con su ícono, a pantalla completa y sin la barra de Safari.</div>
+  <div class="box dark"><span class="t2">Cómo agregarla</span><div class="small">1. Abre <b>paseopet.site</b> en <b>Safari</b>.<br>2. Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).<br>3. Elige <b>«Agregar a inicio»</b> y luego <b>«Agregar»</b>.<br>4. Abre PaseoPet desde el nuevo ícono.</div></div>
+  <div class="mute small">Si entras con Google, tu perro y tu progreso siguen ahí. En iPhone los avisos y el GPS con la pantalla apagada aún no están disponibles: deja la pantalla encendida durante el paseo.</div>
+  <button class="btn o" id="iosHas">Ya la agregué</button><button class="btn" id="iosX">Cerrar</button>`,sh=>{sh.querySelector('#iosX').onclick=closeSheet;sh.querySelector('#iosHas').onclick=()=>{try{localStorage.setItem('pp_ios_has','1')}catch(e){}closeSheet();toast('¡Listo! Ábrela desde el ícono de tu inicio','paw','#2CE6A6');if(tab==='home'&&S&&S.onboarded)renderHome()}})}
 function apkHidden(){try{return localStorage.getItem('pp_apk_x')==='1'}catch(e){return false}}
 function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala PaseoPet como una app más de tu teléfono: abre a pantalla completa y se actualiza sola.</div>
   <a class="btn o big" id="apkGo" href="${APK_URL}" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Descargar PaseoPet (APK)</a>
@@ -3289,6 +3306,38 @@ function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala Pas
   <button class="btn" id="apkCopy">Copiar enlace de descarga</button><button class="btn sm" id="apkNo">No mostrar más en Inicio</button>`,sh=>{
   sh.querySelector('#apkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(APK_URL);toast('Enlace copiado','paw','#2CE6A6')}catch(e){toast('No se pudo copiar','bell','#FFC93C')}};
   sh.querySelector('#apkNo').onclick=()=>{try{localStorage.setItem('pp_apk_x','1')}catch(e){}closeSheet();if(tab==='home'&&S&&S.onboarded)renderHome()}})}
+/* ===== Ventana emergente: instalar la APK ===== */
+function apkHas(){try{return localStorage.getItem('pp_apk_has')==='1'}catch(e){return false}}
+function apkMark(){try{localStorage.setItem('pp_apk_has','1')}catch(e){}}
+let APK_DET=null;
+function apkDetect(){if(APK_DET)return APK_DET;APK_DET=(async()=>{try{if(navigator.getInstalledRelatedApps){const l=await navigator.getInstalledRelatedApps();if((l||[]).some(a=>a&&a.id==='cl.paseopet.app'))apkMark()}}catch(e){}})();return APK_DET}
+let APK_POP_DONE=false;
+function apkPopMaybe(){if(APK_POP_DONE)return;APK_POP_DONE=true;let tries=0,calm=0;
+ const tick=async()=>{tries++;await apkDetect();try{
+  if(!S||!S.onboarded||WK||!instOffer())return;
+  const snz=+(localStorage.getItem('pp_apk_snz')||0);if(Date.now()<snz)return;
+  if($('.apkpop'))return;
+  const free=tab==='home'&&$('#sheetWrap').hidden&&$('#ob').hidden;calm=free?calm+1:0;
+  if(calm>=2){apkPop();return}}catch(e){return}
+  if(tries<40)setTimeout(tick,2000)};
+ setTimeout(tick,2500)}
+function apkPop(){const nm=esc((S.pet&&S.pet.name)||'tu perro'),ios=isIOS();const el=document.createElement('div');el.className='apkpop';el.setAttribute('role','dialog');el.setAttribute('aria-label','Instala la app de PaseoPet');
+ el.innerHTML=`<div class="apkcard"><button class="apkx" aria-label="Cerrar">✕</button>
+  <img class="apkdog" src="${APP_DOG}" alt=""><img class="apkword" src="${APP_WORD}" alt="PaseoPet">
+  <div class="t2" style="color:var(--gold)">${ios?'¡Agrégala a tu iPhone!':'¡Pasea mejor con la app!'}</div>
+  ${ios?`<div class="apkli"><div>📱 Ícono en tu pantalla de inicio</div><div>🖥️ Pantalla completa, sin la barra de Safari</div><div>⚡ Abre más rápido para salir a pasear con ${nm}</div></div>
+  <button class="btn o big" id="apkPHow" style="width:100%">Ver cómo agregarla</button>`:`<div class="apkli"><div>📱 Pantalla completa, sin navegador</div><div>🔔 Avisos de racha y vacunas de ${nm}</div><div>🛰️ El GPS sigue con la pantalla apagada</div></div>
+  <a class="btn o big" id="apkPGo" href="${APK_URL}" style="width:100%;text-decoration:none;display:flex;align-items:center;justify-content:center">Instalar app (gratis)</a>
+  <button class="btn sm" id="apkPHow" style="width:100%">Cómo se instala</button>`}
+  <div class="row" style="gap:8px;width:100%"><button class="btn sm" id="apkPNo" style="flex:1">Ahora no</button><button class="btn sm" id="apkPHas" style="flex:1">Ya la tengo</button></div></div>`;
+ document.body.appendChild(el);
+ const close=()=>el.remove();const snooze=d=>{try{localStorage.setItem('pp_apk_snz',String(Date.now()+d*864e5))}catch(e){}};
+ el.querySelector('.apkx').onclick=()=>{snooze(3);close()};
+ el.addEventListener('click',e=>{if(e.target===el){snooze(3);close()}});
+ el.querySelector('#apkPNo').onclick=()=>{snooze(3);close()};
+ el.querySelector('#apkPHas').onclick=()=>{if(ios){try{localStorage.setItem('pp_ios_has','1')}catch(e){}}else apkMark();close();toast('¡Perfecto! Ábrela desde el ícono de PaseoPet','paw','#2CE6A6');if(tab==='home')renderHome()};
+ {const g=el.querySelector('#apkPGo');if(g)g.onclick=()=>{snooze(2);setTimeout(close,400)}}
+ el.querySelector('#apkPHow').onclick=()=>{close();openInstall()}}
 /* ===== MODO PERDIDO ===== */
 function lostPostHTML(p){const pet=p.pet||petOf(p.uid),fnd=!!p.found,mine=p.uid===UID,nm=esc(pet.name||'Mascota');
  const tel=fxTel(p.tel||''),rows=[p.lastSeen&&`<div><span class="lbl">Visto por última vez</span><br><b>${esc(p.lastSeen)}</b></div>`,p.senas&&`<div><span class="lbl">Señas</span><br>${esc(p.senas)}</div>`,p.chip&&`<div><span class="lbl">Microchip</span><br>${esc(p.chip)}</div>`,p.text&&`<div class="small">${esc(p.text)}</div>`].filter(Boolean).join('');
@@ -3383,7 +3432,7 @@ function renderHome(){
   ${p.last!==dkey()&&hr>=19&&p.streak>0?`<div class="banner">${ico('fire').replace('<img','<img style="width:20px;height:20px;display:inline;vertical-align:middle"')} Tu racha de ${p.streak} días está en riesgo. Sal un rato antes de medianoche.</div>`:''}
   ${activeReq?`<button class="box hot row" id="trkCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Paseo con paseador</div><div class="mute small">${{pendiente:'Esperando respuesta',aceptada:'Aceptado',en_camino:'Paseador en camino',paseando:'Paseando ahora',entregada:'Entregado: califica'}[activeReq.status]}</div></div><span class="tag o">VER</span></button>`:''}
   ${jobs.length?`<button class="box vio row" id="jobCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Trabajos de paseador</div><div class="mute small">${jobs.length} activo${jobs.length>1?'s':''}</div></div><span class="tag">ABRIR</span></button>`:''}
-  ${apkOffer()&&!apkHidden()?`<button class="banner" id="apkBan" style="text-align:left;width:100%">📲 Instala PaseoPet en tu Android ►</button>`:''}
+  ${instOffer()&&!apkHidden()?`<button class="banner" id="apkBan" style="text-align:left;width:100%">📲 Instala PaseoPet en tu ${isIOS()?'iPhone':'Android'} ►</button>`:''}
   ${(()=>{const h=healthDue();return h?`<button class="banner" id="healthBan" style="text-align:left;width:100%">💉 ${esc(h.n)}: ${h.dl<0?'vencida hace '+(-h.dl)+' día'+(h.dl<-1?'s':''):h.dl===0?'vence hoy':'vence en '+h.dl+' día'+(h.dl>1?'s':'')}. Toca para ver Salud.</button>`:''})()}
   ${petCardHTML({compact:true})}
   ${remindBannerHTML()}<div class="box" style="gap:8px"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${seasonInfo()[0]} ${seasonInfo()[1]}</div><div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div>
@@ -3445,7 +3494,7 @@ function renderHome(){
   $$('#s-home [data-prof]').forEach(b=>b.onclick=()=>openProfile(b.dataset.prof));
   if($('#frBan'))$('#frBan').onclick=()=>{SOC.tab='amigos';go('feed')};
   {const lb=$$('#s-home .lb');if(lb.length){const bx=lb[0].closest('.box');if(bx&&!bx.querySelector('#toRank')){const b=document.createElement('button');b.className='btn sm';b.id='toRank';b.textContent='Ver ranking completo';b.onclick=()=>{SOC.tab='ranking';go('feed')};bx.appendChild(b)}}}
-  $('#wxHome').onclick=()=>go('weather');if($('#apkBan'))$('#apkBan').onclick=openApk;
+  $('#wxHome').onclick=()=>go('weather');if($('#apkBan'))$('#apkBan').onclick=openInstall;apkPopMaybe();
   $('#bell').onclick=openNotifs;$('#donBtn').onclick=openDonate;$('#setBtn').onclick=openSettings;
   if($('#trkCard'))$('#trkCard').onclick=()=>openTrack(activeReq.id);
   if($('#jobCard'))$('#jobCard').onclick=()=>{go('pack');setTimeout(()=>{const el=$('#walkerBox');el&&el.scrollIntoView()},50)};
@@ -4642,9 +4691,9 @@ function loginScreen(o={}){LOGIN_SHOWN=true;return new Promise(resolve=>{const o
      ${msg?`<div class="banner small">${msg}</div>`:''}
      <div class="mute small" style="font-size:12.5px">Tu nombre de pila se muestra junto a tu mascota. Tu correo de Gmail es privado y nunca se publica.</div>
    </div>
-   ${apkOffer()?`<button class="btn big o" id="obApk" style="width:100%">📲 Descargar la app para Android</button>`:''}
+   ${instOffer()?`<button class="btn big o" id="obApk" style="width:100%">📲 ${isIOS()?'Agregar la app a tu iPhone':'Descargar la app para Android'}</button>`:''}
    <div class="t2 blinktxt" style="color:var(--gold)">CONECTA TU GMAIL PARA JUGAR</div></div>`;
-   {const oa=$('#obApk');if(oa)oa.onclick=openApk}
+   {const oa=$('#obApk');if(oa)oa.onclick=openInstall}
    const gc=$('#gCont');if(gc)gc.onclick=()=>{coinSfx();resolve(u)};
    const gi=$('#gIn');if(gi)gi.onclick=async e=>{
      const b=e.currentTarget;b.disabled=true;const sp=b.querySelector('span');if(sp)sp.textContent='Conectando con Gmail…';else b.textContent='Conectando con Gmail…';
@@ -5041,7 +5090,8 @@ function renderSettings(){const p=S.pet;let acct='';
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
    <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button>
     ${NAT?`<button class="setrow" id="stNat">${ico('bell')}<span><b>Avisos en el teléfono</b><br><span class="mute small">${S.natOff?'Desactivados':'Racha, vacunas, evento semanal y pase del mes'}</span></span><span class="chev">${S.natOff?'OFF':'ON'}</span></button>`:''}
-    ${!inApk()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
+    ${isIOS()&&!isApp()?`<button class="setrow" id="stIos">${ico('star')}<span><b>Agregar la app a tu iPhone</b><br><span class="mute small">Ícono en tu inicio y pantalla completa</span></span><span class="chev">►</span></button>`:''}
+    ${!inApk()&&!isIOS()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
   ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
   <div class="box"><span class="t2">Datos</span><div class="mute small">${MODE==='local'?'Tus datos se guardan solo en este navegador.':'Tu historial, salud y casa son privados. Tu perro, nivel, publicaciones y territorios los ve la comunidad.'}</div>
    <button class="btn r" id="stReset">${setResetArm?'Toca otra vez: se borra todo':'Borrar todos mis datos'}</button></div>
@@ -5058,7 +5108,7 @@ function renderSettings(){const p=S.pet;let acct='';
   $('#stSnd').onclick=()=>{S.sound=S.sound===false;save();renderSettings();if(S.sound)bark(2)};$('#stVoz').onclick=()=>{S.voice=S.voice===false;save();renderSettings();if(S.voice)say('Voz del entrenador activada')};
   $('#stBg').onclick=()=>{S.bgMode=S.bgMode===false;save();if(WK)bgKeepAlive(S.bgMode);renderSettings()};$('#stTest').onclick=()=>{audioCtx();bark(2);say(`Hola, soy ${S.pet.name}`)};
   const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isApp()){exitHint(true);return}if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
-  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stNat'))$('#stNat').onclick=()=>{S.natOff=!S.natOff;save();natSend({t:'sched',list:natSchedule()});renderSettings();toast(S.natOff?'Avisos desactivados':'Avisos activados','bell')};$('#stDon').onclick=openDonate;
+  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stIos'))$('#stIos').onclick=openIos;if($('#stNat'))$('#stNat').onclick=()=>{S.natOff=!S.natOff;save();natSend({t:'sched',list:natSchedule()});renderSettings();toast(S.natOff?'Avisos desactivados':'Avisos activados','bell')};$('#stDon').onclick=openDonate;
   $('#stReset').onclick=async()=>{if(!setResetArm){setResetArm=true;renderSettings();setTimeout(()=>{setResetArm=false;if(tab==='settings')renderSettings()},3500);return}setResetArm=false;await wipeMine()}}
 let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:tab;go('settings')}
 /* ================= CLIMA ANIMADO ================= */
