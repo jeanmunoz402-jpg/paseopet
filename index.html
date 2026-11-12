@@ -698,7 +698,7 @@ body{background:var(--bg)}
 .cos .cprice{position:absolute;left:2px;right:2px;bottom:2px;font-family:var(--pix);font-size:7px;background:#17123A;color:var(--gold);padding:2px 0;text-align:center}
 .cos button.lock:has(.cprice){opacity:.8}
 /* ===== TIENDA, AURAS RGB & CLIMA DETALLADO ===== */
-.nav{grid-template-columns:repeat(6,1fr)}
+.nav{grid-template-columns:repeat(5,1fr)}
 .nav button{font-size:10px}
 .coinbtn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:linear-gradient(180deg,#3A2C14,#241A08);box-shadow:inset 0 0 0 2px var(--gold),0 3px 0 #0E0A26;color:var(--gold);font-family:var(--pix);font-size:9px;height:40px}
 .coinbtn img{width:20px;height:20px;animation:mbob 1.6s steps(2) infinite}
@@ -764,7 +764,7 @@ body{background:var(--bg)}
 .coinbtn{height:38px;padding:0 9px;font-size:9px;gap:5px}
 .hdr .iconbtn{width:38px;height:38px}
 .hdr .iconbtn img,.iconbtn img{width:22px;height:22px}
-.nav{position:relative;left:auto;right:auto;bottom:auto;flex:none;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,#231B54,#140F34);box-shadow:inset 0 2px 0 #0E0A26,inset 0 4px 0 #3A3180,0 -4px 12px rgba(0,0,0,.45);align-items:stretch;z-index:25}
+.nav{position:relative;left:auto;right:auto;bottom:auto;flex:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,#231B54,#140F34);box-shadow:inset 0 2px 0 #0E0A26,inset 0 4px 0 #3A3180,0 -4px 12px rgba(0,0,0,.45);align-items:stretch;z-index:25}
 .nav[hidden]{display:none!important}
 .nav button{background:#1B1444;border:0;color:#B2A8E2;font-family:var(--pix);font-size:6.5px;padding:6px 2px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;letter-spacing:.01em;text-transform:uppercase;box-shadow:inset 0 0 0 2px #322870;min-width:0;line-height:1.1}
 .nav button img{width:22px;height:22px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.45))}
@@ -783,6 +783,11 @@ body{background:var(--bg)}
 .store-stage .pc-stage .aura{inset:auto;width:112px;height:112px;left:50%;top:50%;margin:-56px 0 0 -56px}
 .pcard .pc-stage{overflow:hidden;background:radial-gradient(circle at 50% 54%,rgba(46,35,108,.65) 0%,rgba(14,10,38,.45) 78%);box-shadow:inset 0 0 0 2px rgba(246,234,200,.22)}
 .pcard .pc-stage .aura{inset:auto;width:108px;height:108px;left:50%;top:50%;margin:-54px 0 0 -54px}
+.chipscroll{flex-wrap:nowrap!important;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.chipscroll .chip{flex:none;white-space:nowrap}
+#s-pack[data-pk="perros"]>[data-g]:not([data-g="perros"]),#s-pack[data-pk="estilo"]>[data-g]:not([data-g="estilo"]),#s-pack[data-pk="logros"]>[data-g]:not([data-g="logros"]),#s-pack[data-pk="act"]>[data-g]:not([data-g="act"]),#s-pack[data-pk="mas"]>[data-g]:not([data-g="mas"]){display:none!important}
+.store-stage .pc-stage{width:112px!important;height:96px!important}
+.store-stage{padding-top:8px!important;padding-bottom:8px!important;gap:4px!important}
 .wxchip{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 10px;color:var(--fg);text-align:left;background:linear-gradient(180deg,#2A2164,#1D164B);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--lc,#3A3180)}
 .wxchip .wi{width:26px;height:26px;flex:none}
 .wxchip .num{font-size:14px;flex:none}
@@ -1057,7 +1062,6 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
   <nav class="nav" id="nav" hidden>
     <button data-tab="home"><span class="nb"><img class="spr" data-ico="nHome" alt=""></span><span class="nl">Inicio</span></button>
     <button data-tab="map"><span class="nb"><img class="spr" data-ico="nMap" alt=""></span><span class="nl">Mapa</span></button>
-    <button data-tab="store"><span class="nb"><img class="spr" data-ico="nStore" alt=""></span><span class="nl">Tienda</span></button>
     <button data-tab="walk" class="go"><span class="nb"><img class="spr" data-ico="nWalk" data-x="#FFFFFF" alt=""></span><span class="nl">PASEAR</span></button>
     <button data-tab="feed"><span class="nb"><img class="spr" data-ico="nSocial" alt=""></span><span class="nl">Social</span></button>
     <button data-tab="pack"><span class="nb"><img class="spr" data-ico="nPack" alt=""></span><span class="nl">Manada</span></button>
@@ -3684,11 +3688,27 @@ function drawCard(cvArg){const cv=cvArg||$('#cardCv');if(!cv)return;const r=CARD
 
 /* ================= MANADA ================= */
 let resetArm=false;
+let PK_TAB='perros',PK_LOCK=false,PK_COL=false;
+function packTabs(){const root=$('#s-pack');if(!root)return;
+  const MAP={'Estilo':'estilo','Constancia':'act','Expediciones':'act','Historial':'act','Medallas':'logros','Colección':'logros','Salud':'mas','Modo paseador':'mas'};
+  let g='perros';
+  [...root.children].forEach(k=>{if(k.classList.contains('hdr'))return;const t=k.querySelector('.t2'),key=t&&MAP[t.textContent.trim()];if(key)g=key;else if(k.classList.contains('g3')&&g==='estilo')g='act';k.dataset.g=g});
+  const T=[['perros','Perros'],['estilo','Estilo'],['logros','Logros'],['act','Actividad'],['mas','Salud y más']];
+  const bar=document.createElement('div');bar.className='chips chipscroll pktabs';bar.innerHTML=T.map(([k,n])=>`<button class="chip ${PK_TAB===k?'on':''}" data-pk="${k}">${n}</button>`).join('');
+  const hdr=root.querySelector('.hdr');if(hdr)hdr.after(bar);
+  root.dataset.pk=PK_TAB;
+  bar.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{PK_TAB=b.dataset.pk;root.scrollTop=0;renderPack()});
+  /* medallas: ganadas + próximas; resto plegado */
+  const mg=root.querySelector('.mgrid');if(mg){const lock=[...mg.querySelectorAll('.mdl.lock')];if(!PK_LOCK&&lock.length>6){lock.slice(6).forEach(x=>x.remove());const b=document.createElement('button');b.className='btn sm';b.textContent=`Ver las ${lock.length-6} medallas restantes`;mg.after(b);b.onclick=()=>{PK_LOCK=true;renderPack()}}}
+  /* colección plegada */
+  const col=[...root.children].find(k=>k.dataset.g==='logros'&&k.querySelector('.t2')&&k.querySelector('.t2').textContent.trim()==='Colección');
+  if(col&&!PK_COL){const kids=[...col.children].slice(1);const w=document.createElement('div');w.hidden=true;kids.forEach(x=>w.appendChild(x));col.appendChild(w);const b=document.createElement('button');b.className='btn sm';b.textContent='Ver colección de objetos';col.appendChild(b);b.onclick=()=>{PK_COL=true;renderPack()}}
+}
 function renderPack(){rollDay();const p=S.pet;
   const weeks=17,end=new Date(),startD=new Date(end);startD.setDate(end.getDate()-(weeks*7-1)+(6-((end.getDay()+6)%7)));const cells=[];for(let i=0;i<weeks*7;i++){const d=new Date(startD);d.setDate(startD.getDate()+i);const k=dkey(d),v=S.days[k]||0;cells.push(`<i class="${d>end?'':v?'l'+v:''}" style="${d>end?'opacity:.2':''}" title="${k}"></i>`)}
   const inbox=SH.reqWalker.filter(r=>['pendiente','aceptada','en_camino','paseando'].includes(r.status));
   const wts=(S.weights||[]).slice(-12);
-  $('#s-pack').innerHTML=`<div class="hdr"><div class="t1" style="flex:1">MI MANADA</div><span class="tag ${MODE==='local'?'d':'g'}">${MODE==='local'?'Sin cuenta':MODE==='firebase'?'Cuenta Google':'Compartido'}</span><button class="iconbtn" id="setBtn2" aria-label="Ajustes">${ico('gear')}</button></div>
+  $('#s-pack').innerHTML=`<div class="hdr"><div class="t1" style="flex:1">MI MANADA</div><span class="tag ${MODE==='local'?'d':'g'}">${MODE==='local'?'Sin cuenta':MODE==='firebase'?'Cuenta Google':'Compartido'}</span><button class="coinbtn" id="pkCoin" aria-label="Tienda de PaseoPet">${DC}<span>${S.coins||0}</span></button><button class="iconbtn" id="setBtn2" aria-label="Ajustes">${ico('gear')}</button></div>
   ${dogsBoxHTML()}${angelsBoxHTML()}
   ${petCardHTML({edit:true})}
   <div class="box"><div class="row between"><span class="t2">Estilo</span><button class="coinbtn" id="pkStoreBtn" style="height:32px">${DC}<span>${S.coins||0} · Ir a Tienda ►</span></button></div><div class="cos">${COS.map(c=>{const ok=c.price?owned(c.id):!c.ok||c.ok(S);return `<button data-acc="${c.id}" class="${p.acc===c.id?'on':''} ${ok?'':'lock'}" aria-label="${c.n}${ok?'':c.price?' cuesta '+c.price+' DogCoins':' bloqueado: '+c.req}"><img class="spr" src="${petU({...p,acc:c.id})}" alt="">${ok?'':c.price?`<span class="cprice">${c.price}</span>`:`<img class="spr lk" src="${iconU('lock')}" alt="">`}</button>`}).join('')}</div><div class="mute small">En la <b>Tienda</b> puedes canjear tus DogCoins por <b>Skins para tu perro</b> y <b>Auras hasta Arcoíris RGB</b>.</div>
@@ -3713,7 +3733,7 @@ function renderPack(){rollDay();const p=S.pet;
     <div class="g3"><div class="mini"><span class="num">${S.walker.jobs||0}</span><span class="lbl">Paseos</span></div><div class="mini"><span class="num">${S.walker.rating?S.walker.rating.toFixed(1):'—'}</span><span class="lbl">Nota</span></div><div class="mini"><span class="num" style="font-size:11px">${clp(S.walker.earn)}</span><span class="lbl">Ganado</span></div></div>
     ${inbox.length?`<span class="lbl">Solicitudes</span>${inbox.map(r=>`<div class="box dark row" style="padding:10px">${petHTML(r.pet,48)}<div class="grow col" style="gap:2px"><b>${esc(r.pet.name)} · ${r.dur} min</b><span class="mute small">${esc(personName(r.owner))} · ${clp(r.price)} · ${esc(r.status)}</span>${r.note?`<span class="small">“${esc(r.note)}”</span>`:''}</div><div class="col">${r.status==='pendiente'?`<button class="btn sm g" data-acpt="${r.id}">Aceptar</button><button class="btn sm" data-rej="${r.id}">No</button>`:`<button class="btn sm v" data-job="${r.id}">Abrir</button>`}</div></div>`).join('')}`:''}`:'<div class="mute small">Activa para ofrecer paseos a otras personas de la comunidad y cobrar por ellos. El pago lo acuerdan entre ustedes (efectivo o transferencia).</div>'}</div>
 `;
-  hydrateIcons($('#s-pack'));
+  hydrateIcons($('#s-pack'));packTabs();
   if($('#pkStoreBtn'))$('#pkStoreBtn').onclick=()=>go('store');
   $$('[data-acc]').forEach(b=>b.onclick=()=>{const c=COS.find(x=>x.id===b.dataset.acc);if(c.price&&!owned(c.id)){buyCos(c);return}if(c.ok&&!c.ok(S)){toast('Se desbloquea con: '+c.req,'lock');return}p.acc=c.id;save();pushProfile();renderPack()});
   $$('[data-pcoat]').forEach(b=>b.onclick=()=>{p.coat=+b.dataset.pcoat;p.custom=false;save();pushProfile();renderPack()});$('#pkCustom').onclick=()=>{p.custom=!p.custom;if(p.custom){const L=dogLook({...p,custom:false});p.fur=L.b;p.spot=L.d}save();pushProfile();renderPack()};
@@ -3726,6 +3746,7 @@ function renderPack(){rollDay();const p=S.pet;
   $$('[data-acpt]').forEach(b=>b.onclick=()=>setReq(b.dataset.acpt,{status:'aceptada',acceptedTs:Date.now()}));
   $$('[data-rej]').forEach(b=>b.onclick=()=>setReq(b.dataset.rej,{status:'rechazada'}));
   $$('[data-job]').forEach(b=>b.onclick=()=>openJob(b.dataset.job));
+  $('#pkCoin').onclick=()=>go('store');
   $('#setBtn2').onclick=openSettings;bindMedals($('#s-pack'));$$('#s-pack [data-item]').forEach(b=>b.onclick=()=>openItem(b.dataset.item));
   loadHistory();
 }
@@ -5194,7 +5215,7 @@ function setEco(on){S.eco=!!on;save();const o=$('#o-live');o.classList.toggle('e
 function kcalHuman(dist,moving){const h=moving/3600;if(h<=0)return 0;const kmh=dist/1000/h;const met=kmh<3.2?2.8:kmh<4.8?3.5:kmh<5.6?4.3:5;return Math.round(met*(+S.humanKg||70)*h)}
 function kcalDog(dist){return Math.round((+S.pet.kg||10)*dist/1000*1.1)}
 /* ---- tienda y DogCoins ---- */
-let STORE_TAB='auras',STORE_TIER='all',STORE_PREV=null;
+let STORE_TAB='auras',STORE_TIER='all',STORE_PREV=null,STORE_LIM=8;
 function owned(id){return id==='trail:clasico'||id===''||id==='natural'||id==='default'||id==='noche'||id==='skin:natural'||id==='aura:default'||id==='biome:noche'||(S.owned||[]).includes(id)}
 function rTagHTML(r){
   if(r==='mitica'||r==='rgb')return `<span class="rtag rgb">★ ARCOIRIS RGB ★</span>`;
@@ -5427,7 +5448,7 @@ function renderStore(){
 
   el.innerHTML=`
   <div class="hdr">
-    <div class="col" style="gap:2px"><div class="t1">TIENDA PASEOPET</div><span class="mute small">Auras, skins, rastros, escenarios y potenciadores</span></div>
+    <div class="col" style="gap:2px"><div class="t1">TIENDA PASEOPET</div></div>
     <button class="coinbtn" id="stCoinBtn" title="Economía de DogCoins">${DC}<span>${S.coins||0}</span></button>
   </div>
   <div class="store-stage ${au.id==='rgb'||sk.id==='arcoiris'?'aura-card-rgb':''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2}">
@@ -5435,38 +5456,33 @@ function renderStore(){
       <span class="tag ${STORE_PREV?'o':'g'}">${STORE_PREV?'PROBANDO EN VIVO':'EQUIPADO AHORA'}</span>
       ${STORE_PREV?`<button class="btn sm" id="stResetPrev" style="min-height:28px;padding:4px 8px">Restaurar</button>`:`<button class="btn sm" id="stHowCoins" style="min-height:28px;padding:4px 8px">Economía y Metas</button>`}
     </div>
-    <div class="pc-stage ${bm.cls||''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2};width:142px;height:134px;margin:2px 0">
+    <div class="pc-stage ${bm.cls||''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${au.id!=='default'?au.c2:e.c2};width:110px;height:96px;margin:0">
       <div class="aura ${au.cls||''}"></div>
       <canvas class="pfx" data-spark="7" data-aura="${au.id}" aria-hidden="true"></canvas>
-      ${petHTML(prevPet,104,{bob:true})}
+      ${petHTML(prevPet,80,{bob:true})}
     </div>
-    <div class="row" style="gap:6px;flex-wrap:wrap;justify-content:center;z-index:2">
-      <span class="tag v">Skin: ${esc(sk.n)}</span>
-      <span class="tag ${au.id==='rgb'?'o':'y'}">Aura: ${esc(au.n)}</span>
-      <span class="tag g">Bioma: ${esc(bm.n)}</span>
-      <span class="tag d">Acc: ${esc(ac.n)}</span>
-      <span class="tag o">Rastro: ${esc(trailById(prevPet.trail||'clasico').n)}</span>
-    </div>
+    <div class="mute small" style="z-index:2;text-align:center">Aura: ${esc(au.n.replace(/^Aura (de )?/,""))} · Skin: ${esc(sk.n)}</div>
   </div>
   <div class="box row between" style="background:linear-gradient(135deg,#241A3E,#151D34);box-shadow:inset 0 0 0 3px var(--gold),0 6px 0 rgba(0,0,0,.35)">
     <div class="row" style="gap:10px;min-width:0">${DC}<div class="col" style="gap:2px;min-width:0"><b>Cofre Diario del Paseador</b><span class="mute small">${chestClaimed?'¡Ya reclamaste tus +8 DogCoins de hoy!':chestReady?'¡Caminaste 20+ min hoy! Reclama tu cofre':`Pasea 20 min hoy (${Math.min(20,Math.floor(S.today.min))}/20 min) para abrirlo`}</span></div></div>
     <button class="btn sm ${chestReady?'o':''}" id="stChest" style="gap:5px" ${chestReady?'':'disabled'}>${chestClaimed?'Listo ✓':`${DC}<span>+8</span>`}</button>
   </div>
-  <div class="chips">
+  <div class="chips chipscroll">
     ${[['auras','✨ Auras RGB'],['skins','🐕 Skins'],['trails','🐾 Rastros'],['biomes','🏞️ Escenarios'],['boosts','⚡ Potenciadores'],['acc','🎀 Accesorios']].map(([k,n])=>`<button class="chip ${STORE_TAB===k?'on':''}" data-sttab="${k}">${n}</button>`).join('')}
   </div>
   ${STORE_TAB!=='boosts'?`<div class="chips">
-    ${[['all','Todas las metas'],['corto','Corto Plazo'],['medio','Medio Plazo'],['largo','Largo Plazo · Legendario / RGB']].map(([k,n])=>`<button class="chip ${STORE_TIER===k?'on':''}" data-sttier="${k}">${n}</button>`).join('')}
+    ${[['all','Todas'],['corto','Corto plazo'],['medio','Medio plazo'],['largo','Largo plazo']].map(([k,n])=>`<button class="chip ${STORE_TIER===k?'on':''}" data-sttier="${k}">${n}</button>`).join('')}
   </div>`:''}
   ${gridHTML}`;
 
+  {const gr=el.querySelector('.sgrid');if(gr&&gr.children.length>STORE_LIM){const tot=gr.children.length;[...gr.children].slice(STORE_LIM).forEach(c=>c.remove());const mb=document.createElement('button');mb.className='btn';mb.id='stMore';mb.textContent=`Ver más (${tot-STORE_LIM})`;gr.after(mb);mb.onclick=()=>{STORE_LIM+=8;renderStore()}}}
   hydrateIcons(el);
   $('#stCoinBtn').onclick=openCoinGuide;
   const hc=$('#stHowCoins');if(hc)hc.onclick=openCoinGuide;
   const rp=$('#stResetPrev');if(rp)rp.onclick=()=>{STORE_PREV=null;renderStore()};
   const ch=$('#stChest');if(ch&&chestReady)ch.onclick=()=>{S.dailyChest=dkey();S.coins=(S.coins||0)+8;save();coinSfx();boom(65);toast('¡Cofre Diario reclamado: +8 DogCoins!','star','#FFC93C');renderStore()};
-  el.querySelectorAll('[data-sttab]').forEach(b=>b.onclick=()=>{STORE_TAB=b.dataset.sttab;renderStore()});
-  el.querySelectorAll('[data-sttier]').forEach(b=>b.onclick=()=>{STORE_TIER=b.dataset.sttier;renderStore()});
+  el.querySelectorAll('[data-sttab]').forEach(b=>b.onclick=()=>{STORE_TAB=b.dataset.sttab;STORE_LIM=8;renderStore()});
+  el.querySelectorAll('[data-sttier]').forEach(b=>b.onclick=()=>{STORE_TIER=b.dataset.sttier;STORE_LIM=8;renderStore()});
 
   el.querySelectorAll('[data-prev-aura]').forEach(b=>b.onclick=()=>{STORE_PREV={...(STORE_PREV||{}),aura:b.dataset.prevAura};renderStore()});
   el.querySelectorAll('[data-prev-skin]').forEach(b=>b.onclick=()=>{STORE_PREV={...(STORE_PREV||{}),skin:b.dataset.prevSkin};renderStore()});
