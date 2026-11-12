@@ -783,6 +783,16 @@ body{background:var(--bg)}
 .store-stage .pc-stage .aura{inset:auto;width:112px;height:112px;left:50%;top:50%;margin:-56px 0 0 -56px}
 .pcard .pc-stage{overflow:hidden;background:radial-gradient(circle at 50% 54%,rgba(46,35,108,.65) 0%,rgba(14,10,38,.45) 78%);box-shadow:inset 0 0 0 2px rgba(246,234,200,.22)}
 .pcard .pc-stage .aura{inset:auto;width:108px;height:108px;left:50%;top:50%;margin:-54px 0 0 -54px}
+.wxchip{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:6px 10px;color:var(--fg);text-align:left;background:linear-gradient(180deg,#2A2164,#1D164B);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--lc,#3A3180)}
+.wxchip .wi{width:26px;height:26px;flex:none}
+.wxchip .num{font-size:14px;flex:none}
+.wxchip .grow{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.acc{display:flex;flex-direction:column;gap:12px}
+details.acc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;background:linear-gradient(180deg,#2A2164,#1D164B);box-shadow:inset 0 0 0 3px #0E0A26,inset 0 0 0 5px #3A3180}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary::after{content:'▼';font-size:10px;color:var(--gold)}
+details.acc[open]>summary::after{content:'▲'}
+.pcard.cmp .pc-stage.pc-hero{height:176px}
 .proc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .proc-card{background:linear-gradient(180deg,#271F60,#191342);box-shadow:inset 0 0 0 2px #3A3180;padding:8px 6px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;border:0;color:var(--fg);position:relative;min-width:0}
 .proc-card.done{box-shadow:inset 0 0 0 2px var(--mint);background:linear-gradient(180deg,#1B3B38,#14242C)}
@@ -3127,6 +3137,7 @@ function renderOB(){const p=S.pet,ob=$('#ob');p.sex=p.sex||'macho';const st=Math
 
 /* ================= HOME ================= */
 function leagueRows(){const wk=weekKey();const arr=Object.entries(SH.profiles).filter(([id,p])=>p.weekKey===wk&&p.weekXp>0||id===UID).map(([id,p])=>({id,xp:id===UID?S.weekXp:p.weekXp,pet:id===UID?S.pet:p.pet}));if(!arr.find(a=>a.id===UID))arr.push({id:UID,xp:S.weekXp,pet:S.pet});return arr.sort((a,b)=>b.xp-a.xp)}
+let HOME_MORE=false;
 function renderHome(){
   const p=S.pet,frac=p.xp/need(p.level),hr=new Date().getHours();const lw=S.lastWalk;
   const lg=leagueRows(),pos=lg.findIndex(r=>r.id===UID)+1,top=lg.slice(0,5);if(pos>5)top.push(lg[pos-1]);
@@ -3138,39 +3149,17 @@ function renderHome(){
   $('#s-home').innerHTML=`
   <div class="hdr"><div class="logo"><img class="hdr-brand" src="${APP_LOGO}" alt="PaseoPet"><span>PASEO<b>PET</b></span></div><button class="coinbtn" id="homeCoins" aria-label="Tienda de PaseoPet">${DC}<span>${S.coins||0}</span></button><button class="iconbtn donate" id="donBtn" aria-label="Apoyar PaseoPet">${ico('heartx')}</button><button class="iconbtn" id="bell" aria-label="Avisos">${ico('bell')}${unread?'<span class="dot"></span>':''}</button><button class="iconbtn" id="setBtn" aria-label="Ajustes">${ico('gear')}</button></div>
   ${gpsFramedBlocked()?`<div class="box" style="box-shadow:inset 0 0 0 3px var(--gold)"><div class="t2" style="color:var(--gold)">GPS BLOQUEADO</div><div class="small">Estás viendo PaseoPet dentro de otra página (como Wix), que bloquea el GPS.</div>${embedInfo().url?`<a class="btn o" href="${esc(embedInfo().url)}" target="_blank" rel="noopener">Abrir en pantalla completa</a>`:''}</div>`:''}
-  ${wxCardHTML('wxHome')}
+  ${wxChipHTML('wxHome')}
   ${p.last!==dkey()&&hr>=19&&p.streak>0?`<div class="banner">${ico('fire').replace('<img','<img style="width:20px;height:20px;display:inline;vertical-align:middle"')} Tu racha de ${p.streak} días está en riesgo. Sal un rato antes de medianoche.</div>`:''}
   ${activeReq?`<button class="box hot row" id="trkCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Paseo con paseador</div><div class="mute small">${{pendiente:'Esperando respuesta',aceptada:'Aceptado',en_camino:'Paseador en camino',paseando:'Paseando ahora',entregada:'Entregado: califica'}[activeReq.status]}</div></div><span class="tag o">VER</span></button>`:''}
   ${jobs.length?`<button class="box vio row" id="jobCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Trabajos de paseador</div><div class="mute small">${jobs.length} activo${jobs.length>1?'s':''}</div></div><span class="tag">ABRIR</span></button>`:''}
-  ${petCardHTML()}
-  <div class="box" style="gap:8px">
-    <div class="row between"><span class="t2">PROCESO DIARIO</span><span class="lbl" style="color:var(--gold)">3 PASOS</span></div>
-    <div class="proc-grid">
-      <button class="proc-card ${wxNow?'done':'next'}" id="procStep1">
-        <span class="proc-num">${wxNow?'1 · LISTO':'PASO 1'}</span>
-        ${ico('thermo')}
-        <span class="proc-title">CLIMA Y PATITAS</span>
-        <span class="proc-sub">${wxNow?(wxOk?'Asfalto seguro':'Ver precaución'):'Revisar asfalto'}</span>
-      </button>
-      <button class="proc-card ${walkedToday?'done':'next'}" id="procStep2">
-        <span class="proc-num">${walkedToday?'2 · HECHO':'PASO 2'}</span>
-        ${ico('play')}
-        <span class="proc-title">SALIR A PASEAR</span>
-        <span class="proc-sub">${walkedToday?`${Math.round(S.today.min)} min hoy`:'GPS + Territorios'}</span>
-      </button>
-      <button class="proc-card ${chestDone?'done':walkedToday?'next':''}" id="procStep3">
-        <span class="proc-num">${chestDone?'3 · CANJEADO':'PASO 3'}</span>
-        ${ico('moneda')}
-        <span class="proc-title">COFRE Y TIENDA</span>
-        <span class="proc-sub">${chestDone?'Cofre abierto':`${S.coins||0} DogCoins`}</span>
-      </button>
-    </div>
-    <button class="btn o big" id="goWalk" style="width:100%">${ico('play','#1A0A02')}¡INICIAR PROCESO DE PASEO!</button>
-  </div>
-  <button class="box row" id="homeStoreBan" style="text-align:left;background:linear-gradient(90deg,#2D1E66,#3B1C5E);box-shadow:inset 0 0 0 2px #0E0A26,inset 0 0 0 4px var(--gold)">${ico16('mChest')}<div class="grow col" style="gap:2px"><div class="t2" style="color:var(--gold)">TIENDA DE PASEO · ${S.coins||0} DOGCOINS</div><div class="mute small">Canjea tus paseos por Skins para perros y Auras hasta Arcoíris RGB.</div></div><span class="rtag rgb">VER ►</span></button>
-  ${remindBannerHTML()}<div class="box"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div></div>
+  ${petCardHTML({compact:true})}
+  ${remindBannerHTML()}<div class="box" style="gap:8px"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div>
+    <button class="btn o big" id="goWalk" style="width:100%">${ico('play','#1A0A02')}¡SALIR A PASEAR!</button>
+    <button class="btn sm" id="procStep3">${chestDone?'Cofre de hoy abierto':'Cofre y tienda'} · ${S.coins||0} DogCoins</button></div>
   <div class="box"><div class="row between"><span class="t2">Misiones de hoy</span><span class="lbl">Nivel ${(S.mis.t||0)+1}</span></div>
    ${MIS.map(m=>{const v=Math.min(m.goal,m.id==='km'?+(+S.mis.p[m.id]||0).toFixed(1):Math.floor(S.mis.p[m.id]||0)),d=S.mis.done[m.id];return `<div class="mission">${`<span class="mic">${ico16(d?'mStar':{min:'mBoot',hex:'mFlag',item:'mChest'}[m.id]||'mStar')}</span>`}<div class="col" style="gap:5px"><div>${m.t}</div>${segBar(v/m.goal,d?'g sm':'o sm')}</div><span class="lbl" style="color:${d?'var(--mint)':'#C9BDFF'};text-align:right">${d?'OK':v+'/'+m.goal}<br>+${m.xp} XP · <b style="color:var(--gold)">+${m.coins||15}<i class="dc" aria-hidden="true"></i></b></span></div>`}).join('')}</div>
+  <details class="acc" id="homeMore" ${HOME_MORE?'open':''}><summary><span class="t2">Más desafíos</span><span class="lbl">Etapas · Contrato · Liga #${pos}</span></summary>
   ${chainsBoxHTML()}
   ${(()=>{
     const wc=S.wkCon||{km:0,hex:0,items:0,claimed:false};
@@ -3195,8 +3184,10 @@ function renderHome(){
   <div class="box"><div class="row between"><span class="t2">Liga semanal</span><span class="tag y">#${pos} de ${lg.length}</span></div>
    ${top.map(r=>`<div class="lb ${r.id===UID?'me':''}" data-prof="${r.id}" role="button" tabindex="0"><span class="num" style="font-size:11px">${lg.indexOf(r)+1}</span><img class="spr" src="${petU(r.pet)}" alt=""><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.pet.name)}${r.id===UID?' (tú)':''}</span><span class="lbl" style="color:#C9BDFF">${r.xp} XP</span></div>`).join('')}
    <div class="mute small">${lg.length<2?(MODE==='local'?'La liga se llena con otras manadas en la app compartida.':'Comparte PaseoPet para competir con más manadas.'):'Se reinicia cada lunes.'}</div></div>
+  </details>
   ${lw?`<div class="box"><div class="row between"><span class="t2">Último paseo</span><span class="lbl">${lw.date===dkey()?'Hoy':lw.date}</span></div><canvas class="mapthumb" id="lastCv"></canvas><div class="g3"><div class="mini"><span class="num">${fmtKm(lw.dist)}</span><span class="lbl">Km</span></div><div class="mini"><span class="num">${fmtTime(lw.time)}</span><span class="lbl">Tiempo</span></div><div class="mini"><span class="num" style="color:#C9BDFF">+${lw.xp}</span><span class="lbl">XP</span></div></div></div>`:`<div class="box empty">${ico('boot')}<div class="t2">Sin paseos todavía</div><div class="mute small">Tu primer paseo da +25 XP extra.</div></div>`}`;
   $('#goWalk').onclick=()=>go('walk');bindPetCard();
+  {const hm=$('#homeMore');if(hm)hm.addEventListener('toggle',()=>{HOME_MORE=hm.open})}
   if($('#claimWkCon'))$('#claimWkCon').onclick=()=>{
     if(!S.wkCon||S.wkCon.claimed)return;
     S.wkCon.claimed=true;
@@ -3213,8 +3204,6 @@ function renderHome(){
     renderHome();
   };
   if($('#facBtn'))$('#facBtn').onclick=openFactionModal;
-  if($('#procStep1'))$('#procStep1').onclick=()=>go('weather');
-  if($('#procStep2'))$('#procStep2').onclick=()=>go('walk');
   if($('#procStep3'))$('#procStep3').onclick=()=>go('store');
   if($('#homeCoins'))$('#homeCoins').onclick=()=>go('store');
   if($('#homeStoreBan'))$('#homeStoreBan').onclick=()=>go('store');
@@ -3274,30 +3263,19 @@ function renderPre(){
     ruta:['Guía en mapa','Supera tu tiempo','+XP y DogCoins normales']
   }[PLAN.mode]||[];
   $('#s-walk').innerHTML=`
-  <div class="row between"><div class="t1">PREPARAR PASEO</div><span class="tag ${gpsReady?'g':'y'}">PROCESO EN 3 PASOS</span></div>
-  <div class="box row" style="padding:10px 12px">${petHTML(p,48,{bob:true})}<div class="grow col" style="gap:3px"><div class="t2">${esc(p.name)} · Listo para salir</div><span class="lbl" style="color:#C9BDFF">NV ${p.level} · Racha ${p.streak} días · Meta hoy ${Math.round(S.today.min)}/${p.goal} min</span></div></div>
+  <div class="row between"><div class="t1">PREPARAR PASEO</div><button class="chip" id="gpsChip">${gpsTxt}</button></div>
+  <div class="box row" style="padding:10px 12px">${petHTML(p,48,{bob:true})}<div class="grow col" style="gap:3px"><div class="t2">${esc(p.name)} · Listo para salir</div><span class="lbl" style="color:#C9BDFF">NV ${p.level} · Racha ${p.streak} días</span></div></div>
   ${crewHTML()}${angelPreHTML()}
-
   <div class="step-box ${gpsReady?'ok':g&&g.err?'warn':''}">
-    <div class="step-hdr"><span class="step-badge">PASO 1 · SEÑAL Y CLIMA</span><button class="chip" id="gpsChip">${gpsTxt}</button></div>
-    ${wxCardHTML('wxPre')}
-    ${g&&g.err?`<div class="box dark" style="box-shadow:inset 0 0 0 2px var(--gold)"><div class="t2" style="color:var(--gold)">GPS no disponible</div><div class="small">${GPS_MSG[g.err]}</div><div class="g3"><button class="btn sm" id="gpsRetry">Reintentar</button><button class="btn sm" id="gpsHelp">Ayuda GPS</button><button class="btn sm v" id="manualBtn">Modo Manual</button></div></div>`:`<div class="row between small"><span class="mute">${gpsReady?'✓ Señal GPS verificada para trazar tu recorrido.':'Esperando precisión GPS al aire libre…'}</span><button class="lbl" id="gpsHelp" style="background:none;border:0;color:var(--blue);cursor:pointer;text-decoration:underline">Diagnóstico GPS</button></div>`}
-  </div>
-
-  <div class="step-box ok">
-    <div class="step-hdr"><span class="step-badge">PASO 2 · MODALIDAD DE PASEO</span><span class="lbl" style="color:var(--gold)">RECOMPENSAS</span></div>
+    ${wxChipHTML('wxPre')}
+    ${g&&g.err?`<div class="box dark" style="box-shadow:inset 0 0 0 2px var(--gold)"><div class="t2" style="color:var(--gold)">GPS no disponible</div><div class="small">${GPS_MSG[g.err]}</div><div class="g3"><button class="btn sm" id="gpsRetry">Reintentar</button><button class="btn sm" id="gpsHelp">Ayuda GPS</button><button class="btn sm v" id="manualBtn">Modo Manual</button></div></div>`:`<div class="row between small"><span class="mute">${gpsReady?'✓ Señal GPS lista.':'Esperando señal GPS al aire libre…'}</span><button class="lbl" id="gpsHelp" style="background:none;border:0;color:var(--blue);cursor:pointer;text-decoration:underline">Diagnóstico GPS</button></div>`}
     <div class="chips wrap">${[['libre','Libre'],['meta','Meta de km'],['conquista','Conquista'],['ruta','Repetir ruta']].map(m=>`<button class="chip ${PLAN.mode===m[0]?'on':''}" data-m="${m[0]}">${m[1]}</button>`).join('')}</div>
-    <div class="mute small">${{libre:'Camina por donde quieras. Conquista territorios hexagonales y recoge objetos en las calles.',meta:'Define una meta en kilómetros; te avisaremos con ladrido y voz al lograrla.',conquista:'Marcamos 5 hexágonos vecinos en el mapa. Conquístalos todos para ganar +40 XP extra.',ruta:'Sigue el trazado de una ruta que hayas guardado anteriormente.'}[PLAN.mode]}</div>
+    <div class="mute small">${{libre:'Camina por donde quieras. Conquista territorios y recoge objetos en las calles.',meta:'Define una meta en kilómetros; te avisaremos al lograrla.',conquista:'Marcamos 5 hexágonos vecinos. Conquístalos todos para ganar +40 XP extra.',ruta:'Sigue el trazado de una ruta que hayas guardado.'}[PLAN.mode]}</div>
     <div class="row" style="gap:6px;flex-wrap:wrap">${modeRewards.map(r=>`<span class="tag d" style="font-size:6.5px">${r}</span>`).join('')}</div>
     ${PLAN.mode==='meta'?`<div class="chips">${[1,2,3,5].map(k=>`<button class="chip ${PLAN.km===k?'on':''}" data-k="${k}">${k} km</button>`).join('')}</div>`:''}
     ${PLAN.mode==='ruta'?(S.routes.length?`<div class="col">${S.routes.map((r,i)=>`<button class="chip ${PLAN.route===i?'on':''}" data-r="${i}" style="justify-content:space-between">${esc(r.name)} · ${fmtKm(r.dist)} km</button>`).join('')}</div>`:'<div class="banner small">Aún no guardas rutas. Al terminar un paseo toca “Guardar ruta”.</div>'):''}
-  </div>
-
-  <div class="step-box ${gpsReady?'ok':''}">
-    <div class="step-hdr"><span class="step-badge">PASO 3 · ¡A CAMINAR!</span><span class="lbl">${gpsReady?'LISTO':'ESPERANDO GPS'}</span></div>
     <button class="btn o big" id="startBtn" ${gpsReady?'':'disabled'}>${ico('play','#1A0A02')}<span>${preStartTxt()}</span></button>
     ${g&&!g.err?`<button class="btn sm" id="manualBtn2">¿Paseaste sin teléfono? Registrar paseo manual</button>`:''}
-    <div class="mute small" style="text-align:center">Registra Agua, Pipí, Popó, Juego, Amigos y Fotos con los botones del panel en vivo.</div>
   </div>`;
   $$('[data-m]').forEach(b=>b.onclick=()=>{PLAN.mode=b.dataset.m;renderPre()});$$('[data-k]').forEach(b=>b.onclick=()=>{PLAN.km=+b.dataset.k;renderPre()});$$('[data-r]').forEach(b=>b.onclick=()=>{PLAN.route=+b.dataset.r;renderPre()});
   if($('#gpsRetry'))$('#gpsRetry').onclick=()=>{PLAN.gps=null;checkGps()};
@@ -4078,7 +4056,7 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
   const isRgb=au.id==='rgb'||sk.id==='arcoiris';
   const sparkLv=isRgb?8:Math.max(e.spark,au.id!=='default'?(au.r==='legendaria'?6:au.r==='epica'?5:3):0);
   const tLeft=talentPtsLeft();
-  return `<div class="pcard evo${e.i} ${isRgb?'aura-card-rgb':''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${e.c2}">
+  return `<div class="pcard ${o.compact?'cmp ':''}evo${e.i} ${isRgb?'aura-card-rgb':''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${e.c2}">
   <canvas class="pfx" data-spark="${sparkLv}" data-aura="${au.id}" aria-hidden="true"></canvas><div class="pc-frame f${e.i}" aria-hidden="true"></div>
   <div class="pc-in">
    <div class="row between pc-top"><span class="evob">${evoTag(e.i,e.n.toUpperCase())}${p.prestige?` · P${p.prestige}`:''}</span><div class="row"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
@@ -4101,14 +4079,15 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
      <div class="evotrack" aria-label="Progreso de evolución">${EVO.map((x,j)=>`<i class="${j<=e.i?'on':''} ${j===e.i?'cur':''}" style="--c:${x.c}" title="${x.n} · Nv ${x.lv}"></i>`).join('')}</div>
      <div class="mute small">${e.next?`Evoluciona a <b style="color:${e.next.c}">${e.next.n}</b> en Nv ${e.next.lv} · faltan ${e.next.lv-p.level} nivel${e.next.lv-p.level>1?'es':''}`:'¡Forma final alcanzada! Toca a tu perro para Ascender (Prestigio).'}</div></div>
    ${streakHTML()}
-   <div class="g4"><div class="mini"><span class="num">${S.totals.walks}</span><span class="lbl">Paseos</span></div><div class="mini"><span class="num" style="color:var(--mint)">${p.happy}%</span><span class="lbl">Feliz</span></div><div class="mini"><span class="num">${S.terrCount}</span><span class="lbl">Territ.</span></div><div class="mini"><span class="num">${S.totals.km.toFixed(1).replace('.',',')}</span><span class="lbl">Km</span></div></div>
-   <div class="attrs">${rpgStats().map(([a,n,v,c])=>`<div class="pattr" title="${n}"><span class="lbl" style="color:${c}">${a}</span><div class="seg sm"><i style="width:${v}%;background:repeating-linear-gradient(90deg,${c} 0 8px,transparent 8px 10px)"></i></div><span class="num" style="font-size:9px">${v}</span></div>`).join('')}</div>
-   <button class="medals" id="pcMed" aria-label="Ver medallas y logros">${show.length?show.map(b=>`<span class="med" style="--c:${RAR[b.r].c}" title="${esc(b.n)}"><img class="spr ms" src="${medalU(b)}" alt=""></span>`).join(''):'<span class="small mute">Aún sin medallas. ¡A pasear!</span>'}<span class="grow"></span><span class="lbl" style="color:var(--fg)">Logros ${earned.length}/${BADGES.length} ►</span></button>
+   ${o.compact?'':`<div class="g4"><div class="mini"><span class="num">${S.totals.walks}</span><span class="lbl">Paseos</span></div><div class="mini"><span class="num" style="color:var(--mint)">${p.happy}%</span><span class="lbl">Feliz</span></div><div class="mini"><span class="num">${S.terrCount}</span><span class="lbl">Territ.</span></div><div class="mini"><span class="num">${S.totals.km.toFixed(1).replace('.',',')}</span><span class="lbl">Km</span></div></div>`}
+   ${o.compact?'':`<div class="attrs">${rpgStats().map(([a,n,v,c])=>`<div class="pattr" title="${n}"><span class="lbl" style="color:${c}">${a}</span><div class="seg sm"><i style="width:${v}%;background:repeating-linear-gradient(90deg,${c} 0 8px,transparent 8px 10px)"></i></div><span class="num" style="font-size:9px">${v}</span></div>`).join('')}</div>`}
+   ${o.compact?`<button class="btn sm" id="pcFull">Ver ficha completa ►</button>`:`<button class="medals" id="pcMed" aria-label="Ver medallas y logros">${show.length?show.map(b=>`<span class="med" style="--c:${RAR[b.r].c}" title="${esc(b.n)}"><img class="spr ms" src="${medalU(b)}" alt=""></span>`).join(''):'<span class="small mute">Aún sin medallas. ¡A pasear!</span>'}<span class="grow"></span><span class="lbl" style="color:var(--fg)">Logros ${earned.length}/${BADGES.length} ►</span></button>`}
    ${o.edit?'<button class="btn sm" id="editPet">Editar datos</button>':''}
   </div><div class="ground" style="z-index:3"></div></div>`}
 function bindPetCard(){
   const a=$('#pcEvo');if(a)a.onclick=openEvo;
   const m=$('#pcMed');if(m)m.onclick=openBadges;
+  const pf=$('#pcFull');if(pf)pf.onclick=()=>go('pack');
   const cp=$('#carePet');if(cp)cp.onclick=()=>{
     const p=S.pet;p.happy=Math.min(100,(p.happy||70)+5);
     const first=S.lastPetCare!==dkey();
@@ -4751,6 +4730,10 @@ let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:t
 /* ================= CLIMA ANIMADO ================= */
 function wxKind(n){if(!n)return 'cloud';const c=n.code;if(c>=95)return 'storm';if((c>=71&&c<=77)||c===85||c===86)return 'snow';if(c>=51)return 'rain';if(c===45||c===48)return 'fog';if(c===3)return 'cloud';if(!n.day)return 'night';if(c===1||c===2)return 'partly';return 'sun'}
 const wxBgHTML=()=>`<div class="wxbg" style="--cloud:url(${iconU('cloud')})" aria-hidden="true"><i></i><i></i><i></i></div>`;
+function wxChipHTML(id){const n=nowWx();
+  if(!n)return `<button class="wxchip" id="${id}"><img class="spr wi" src="${wxIcon24U(3,true)}" alt=""><span class="grow">${WX.loading?'Cargando clima…':WX.err?'Clima no disponible · reintentar':'Clima y patitas · toca para ver'}</span></button>`;
+  const ev=evalHour(n),Lv=LVL[ev.lvl],pav=r0(pavement(n));
+  return `<button class="wxchip" id="${id}" style="--lc:${Lv.c}"><img class="spr wi" src="${wxIcon24U(n.code,n.day)}" alt=""><span class="num">${r0(n.temp)}°C</span><span class="grow small">${esc(WX.loc&&WX.loc.name||'')} · Asfalto ${pav}°C</span><span class="tag ${Lv.tag}">${Lv.n}</span></button>`}
 function wxCardHTML(id){const n=nowWx();
   if(!n)return `<button class="box row wxcard wxk-cloud" id="${id}">${wxBgHTML()}<img class="spr wi wxi" src="${wxIcon24U(3,true)}" alt="" style="width:58px;height:58px"><div class="grow col" style="gap:4px"><span class="lbl">Clima y Patitas</span><div class="small">${WX.loading?'Cargando clima…':WX.err?WX_ERR[WX.err]:'Toca para ver el clima'}</div></div></button>`;
   const ev=evalHour(n),Lv=LVL[ev.lvl],t0=ev.R[0],pav=r0(pavement(n));
