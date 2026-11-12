@@ -1,0 +1,26 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'cl.paseopet.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'cl.paseopet.app'
+        minSdk 21
+        targetSdk 34
+        versionCode Integer.parseInt(System.getenv('RUN_NUM') ?: '1')
+        versionName '1.0.' + (System.getenv('RUN_NUM') ?: '1')
+    }
+    signingConfigs {
+        release {
+            storeFile file('release.jks')
+            storePassword System.getenv('KS_PASS') ?: 'paseopet-ks'
+            keyAlias 'paseopet'
+            keyPassword System.getenv('KS_PASS') ?: 'paseopet-ks'
+        }
+    }
+    buildTypes { release { signingConfig signingConfigs.release; minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'com.google.androidbrowserhelper:locationdelegation:1.1.1'
+}

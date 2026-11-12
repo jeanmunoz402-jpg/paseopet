@@ -1,0 +1,37 @@
+name: APK
+on:
+  workflow_dispatch:
+  push:
+    paths: ['android/**', '.github/workflows/apk.yml']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v3
+        with: { gradle-version: '8.7' }
+      - name: Llave de firma (se conserva entre compilaciones)
+        id: ks
+        uses: actions/cache@v4
+        with:
+          path: android/app/release.jks
+          key: paseopet-keystore-v1
+      - name: Crear llave si no existe
+        if: steps.ks.outputs.cache-hit != 'true'
+        run: keytool -genkeypair -keystore android/app/release.jks -alias paseopet -keyalg RSA -keysize 2048 -validity 10000 -storepass paseopet-ks -keypass paseopet-ks -dname "CN=PaseoPet, O=PaseoPet, C=CL"
+      - name: Compilar
+        working-directory: android
+        env: { RUN_NUM: '${{ github.run_number }}' }
+        run: gradle assembleRelease --no-daemon --stacktrace
+      - name: Publicar APK
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk PaseoPet.apk
+          SHA=$(keytool -list -v -keystore android/app/release.jks -storepass paseopet-ks | grep 'SHA256:' | head -1 | sed 's/.*SHA256: //')
+          echo "SHA256 de la firma: $SHA" | tee -a "$GITHUB_STEP_SUMMARY"
+          gh release delete apk-latest --yes --cleanup-tag 2>/dev/null || true
+          gh release create apk-latest PaseoPet.apk --title "PaseoPet APK" --notes "APK de PaseoPet para instalar directo en Android. Compilación ${{ github.run_number }}. SHA256 de la firma: $SHA"
