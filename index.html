@@ -3261,8 +3261,83 @@ function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
   sh.querySelectorAll('[data-yn]').forEach(b=>b.onclick=()=>{yn=b.dataset.yn;sh.querySelectorAll('[data-yn]').forEach(x=>x.classList.toggle('on',x===b))});
   sh.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{const r=b.dataset.r;if(sel.has(r))sel.delete(r);else sel.add(r);b.classList.toggle('on',sel.has(r))});
   sh.querySelector('#fxS').onclick=()=>{s.f.forEach(f=>{const[k,,t]=f;if(t==='yn')F[k]=yn;else if(t==='chips')F[k]=[...sel];else{let v=(sh.querySelector('#fx_'+k).value||'').trim();if(t==='tel')v=fxTel(v);if(k==='chip')v=v.replace(/\D/g,'');F[k]=v}});
-   save();closeSheet();if(tab==='pack')renderPack();fxReward();toast('Ficha guardada','paw','#2CE6A6')}})}
+   F.ts=Date.now();dsPushSoon();save();closeSheet();if(tab==='pack')renderPack();fxReward();toast('Ficha guardada','paw','#2CE6A6')}})}
 function fxReward(){if(!S.fxGot&&fxPct()>=70){S.fxGot=1;S.coins=(S.coins||0)+40;save(true);try{pushProfile()}catch(e){}try{coinSfx()}catch(e){}setTimeout(()=>toast('Ficha al 70%: +40 DogCoins','star','#FFC93C'),900);if(tab==='pack')renderPack()}}
+/* ===== PERRO COMPARTIDO (varios dueños, cada uno con su cuenta) ===== */
+const DS_F=['name','species','sex','breed','bid','coat','custom','fur','spot','born','kg','size','nat'];
+const DS_ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function dsCode(){let s='';const a=new Uint32Array(8);try{crypto.getRandomValues(a)}catch(e){for(let i=0;i<8;i++)a[i]=Math.random()*1e9}for(let i=0;i<8;i++)s+=DS_ALPHA[a[i]%DS_ALPHA.length];return s}
+function dsRef(sid){return DB.doc('shared/'+sid)}
+function dsMine(){return ((FBUSER&&FBUSER.displayName)||'').split(' ')[0].slice(0,20)||'Dueño'}
+function dsOn(){return MODE==='firebase'&&!!DB&&!!UID}
+function dsErr(e){toast(e&&(e.code==='invalid_argument'||e.code==='permission-denied')?'El perro compartido aún no está activado en Firebase (faltan las reglas).':'No se pudo conectar. Revisa tu internet e intenta otra vez.','sos','#FF5C7A')}
+function dsProg(p){return [p.prestige||0,p.level||1,p.xp||0]}
+function dsAhead(a,b){const x=dsProg(a),y=dsProg(b);for(let i=0;i<3;i++){if(x[i]!==y[i])return x[i]>y[i]}return false}
+function dsPack(d,r){const pet={};DS_F.forEach(k=>{if(d[k]!==undefined)pet[k]=d[k]});['level','xp','prestige','streak','best','last','happy','cls'].forEach(k=>{if(d[k]!==undefined)pet[k]=d[k]});
+ const o=Object.assign({},r||{},{pet,its:d.its||0,fx:d.fx||{},v:Date.now(),by:UID});o.names=Object.assign({},(r&&r.names)||{},{[UID]:dsMine()});
+ if(d===S.pet){o.vacc=S.vacc||[];o.weights=(S.weights||[]).slice(-40);o.vaccTs=S.vaccTs||0}return o}
+/* fusiona lo remoto en el perro local: el progreso nunca retrocede */
+function dsMerge(d,r){if(!r||!r.pet)return false;const rp=r.pet;let ch=false;
+ if(dsAhead(rp,d)){['level','xp','prestige','cls'].forEach(k=>{if(rp[k]!==undefined)d[k]=rp[k]});ch=true}
+ if((rp.last||'')>(d.last||'')){d.last=rp.last;d.streak=rp.streak||0;ch=true}else if(rp.last===d.last&&(rp.streak||0)>(d.streak||0)){d.streak=rp.streak;ch=true}
+ if((rp.best||0)>(d.best||0)){d.best=rp.best;ch=true}
+ if((r.its||0)>(d.its||0)){DS_F.forEach(k=>{if(rp[k]!==undefined)d[k]=rp[k]});d.its=r.its;ch=true}
+ if(r.fx&&(r.fx.ts||0)>((d.fx&&d.fx.ts)||0)){d.fx=r.fx;ch=true}
+ if(d===S.pet&&(r.vaccTs||0)>(S.vaccTs||0)){S.vacc=r.vacc||[];S.weights=r.weights||[];S.vaccTs=r.vaccTs;ch=true}
+ const seen=d.slog||0;let top=seen;(r.log||[]).forEach(l=>{if(l.ts>seen&&l.u!==UID)notify(`${l.n} paseó a ${d.name} ${String(l.km).replace('.',',')} km 🐾`,'paw');if(l.ts>top)top=l.ts});if(top!==seen){d.slog=top;ch=true}
+ d.sown=(r.owners||[]).map(u=>(r.names||{})[u]||'Dueño');return ch}
+function dsLocalAhead(d,r){if(!r||!r.pet)return true;const rp=r.pet;return dsAhead(d,rp)||(d.last||'')>(rp.last||'')||(d.its||0)>(r.its||0)||((d.fx&&d.fx.ts)||0)>((r.fx&&r.fx.ts)||0)||(d===S.pet&&(S.vaccTs||0)>(r.vaccTs||0))}
+async function dsPush(d,logEntry){if(!dsOn()||!d.sid)return;try{const s=await dsRef(d.sid).get();if(!s.exists){d.sid='';save();return}const r=s.data();if(!(r.owners||[]).includes(UID)){d.sid='';save();return}
+  dsMerge(d,r);const o=dsPack(d,r);if(logEntry){o.log=[logEntry,...(r.log||[])].slice(0,30);d.slog=Math.max(d.slog||0,logEntry.ts)}
+  await dsRef(d.sid).set(o)}catch(e){}}
+let DS_T=null;function dsPushSoon(){clearTimeout(DS_T);DS_T=setTimeout(()=>{ensureDogs();(S.dogs||[]).filter(d=>d.sid).forEach(d=>dsPush(d))},1500)}
+let DS_AT=0;
+async function dsSync(){if(!dsOn()||!S||!S.dogs)return;DS_AT=Date.now();let ch=false;
+ for(const d of S.dogs.filter(x=>x.sid)){try{const s=await dsRef(d.sid).get();if(!s.exists||!((s.data().owners||[]).includes(UID))){toast(`${d.name} ya no está compartido contigo`,'paw','#FFC93C');d.sid='';ch=true;continue}
+  const r=s.data();if(dsMerge(d,r))ch=true;if(dsLocalAhead(d,r))dsPush(d)}catch(e){}}
+ if(ch){save();try{render()}catch(e){}}}
+function dsSyncMaybe(){if(Date.now()-DS_AT>60e3)dsSync()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&S&&S.onboarded)dsSyncMaybe()});
+function dsAfterWalk(w){if(!dsOn()||w.manual)return;ensureDogs();const crew=w.crew&&w.crew.length?w.crew:[S.pet.pid];
+ const e={u:UID,n:dsMine(),km:+((w.dist||0)/1000).toFixed(2),min:Math.round((w.time||0)/60),ts:Date.now()};
+ S.dogs.filter(d=>d.sid).forEach(d=>dsPush(d,crew.includes(d.pid)?e:null))}
+function openShareDog(i){ensureDogs();const d=S.dogs[i];if(!d)return;
+ if(!dsOn()){sheet(`<div class="t1">PERRO COMPARTIDO</div><div>Para compartir a ${esc(d.name)} con otro dueño, los dos necesitan entrar con su cuenta de Google.</div><button class="btn" id="dsX">Cerrar</button>`,sh=>sh.querySelector('#dsX').onclick=closeSheet);return}
+ if(!d.sid){sheet(`<div class="t1">COMPARTIR A ${esc((d.name||'').toUpperCase())}</div>
+  <div>Invita a otra persona como dueño. Cada uno usa su propia cuenta y los dos ven el mismo perro.</div>
+  <div class="box dark small"><div>🐾 Cualquiera que lo pasee suma nivel, racha y XP al mismo perro.</div><div>📋 Comparten la ficha, las vacunas y el peso.</div><div>🔔 Te avisamos cuando el otro dueño lo saque a pasear.</div></div>
+  <div class="mute small">Tus kilómetros, monedas y objetos siguen siendo tuyos. Pueden ser hasta 4 dueños.</div>
+  <button class="btn o big" id="dsMk">Crear código de invitación</button><button class="btn" id="dsX">Cancelar</button>`,sh=>{
+   sh.querySelector('#dsX').onclick=closeSheet;
+   sh.querySelector('#dsMk').onclick=async e=>{e.currentTarget.disabled=true;const sid=dsCode();if(!d.fx)d.fx={};if(!d.fx.ts)d.fx.ts=Date.now();if(!d.its)d.its=Date.now();if(d===S.pet&&!S.vaccTs)S.vaccTs=Date.now();
+    const o=dsPack(d,null);o.owners=[UID];o.log=[];try{await dsRef(sid).set(o);d.sid=sid;d.sown=[dsMine()];save();closeSheet();openShareDog(i);if(tab==='pack')renderPack()}catch(err){e.currentTarget.disabled=false;dsErr(err)}}});return}
+ const own=(d.sown||[]).join(', ')||'Solo tú por ahora';
+ sheet(`<div class="t1">${esc((d.name||'').toUpperCase())} COMPARTIDO</div>
+  <div class="col" style="align-items:center;gap:6px"><span class="lbl">Código de invitación</span><div class="num" style="font-size:26px;letter-spacing:.18em;color:var(--gold)">${esc(d.sid)}</div></div>
+  <div class="mute small">La otra persona entra a PaseoPet con su cuenta, va a Manada › Perros y toca «Unirme a un perro compartido».</div>
+  <button class="btn o" id="dsSh">Enviar invitación</button>
+  <div class="box dark"><span class="t2">Dueños</span><div class="small">${esc(own)}</div><span class="t2" style="margin-top:6px">Últimos paseos</span><div class="small" id="dsLog">Cargando…</div></div>
+  <button class="btn r sm" id="dsOut">Dejar de compartir</button><button class="btn" id="dsX">Cerrar</button>`,async sh=>{
+  sh.querySelector('#dsX').onclick=closeSheet;
+  sh.querySelector('#dsSh').onclick=()=>shareLetter(`¡Sé dueño de ${d.name} conmigo en PaseoPet! 🐾\nEntra a paseopet.site, ve a Manada › Perros › «Unirme a un perro compartido» y escribe este código: ${d.sid}`);
+  let arm=false;sh.querySelector('#dsOut').onclick=async e=>{if(!arm){arm=true;e.currentTarget.textContent=`Toca otra vez: ${d.name} queda solo en tu cuenta`;return}
+   try{const s=await dsRef(d.sid).get();if(s.exists){const r=s.data(),rest=(r.owners||[]).filter(u=>u!==UID);if(rest.length)await dsRef(d.sid).set(Object.assign({},r,{owners:rest,v:Date.now(),by:UID}));else await dsRef(d.sid).delete()}}catch(err){}
+   d.sid='';d.sown=[];save();closeSheet();toast(`${d.name} ya no está compartido`,'paw');if(tab==='pack')renderPack()};
+  try{const s=await dsRef(d.sid).get();if(s.exists){const r=s.data();dsMerge(d,r);save();const el=sh.querySelector('#dsLog');if(el)el.innerHTML=(r.log||[]).slice(0,6).map(l=>`${esc(l.n)} · ${String(l.km).replace('.',',')} km · ${ago(l.ts)==='ahora'?'recién':'hace '+ago(l.ts)}`).join('<br>')||'Aún no hay paseos compartidos.'}}catch(e){const el=sh.querySelector('#dsLog');if(el)el.textContent='No se pudo cargar.'}})}
+function openJoinDog(){if(!dsOn()){toast('Entra con tu cuenta de Google para unirte a un perro compartido','paw','#FFC93C');return}
+ sheet(`<div class="t1">UNIRME A UN PERRO</div><div>Escribe el código que te envió el otro dueño.</div>
+  <div class="field"><label for="dsC">Código</label><input class="inp" id="dsC" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="Ej: K7MPQ2XA" style="text-transform:uppercase;letter-spacing:.15em;font-size:20px"></div>
+  <div id="dsPrev"></div><button class="btn o big" id="dsGo">Buscar perro</button><button class="btn" id="dsX">Cancelar</button>`,sh=>{
+  sh.querySelector('#dsX').onclick=closeSheet;let found=null;
+  sh.querySelector('#dsGo').onclick=async e=>{const b=e.currentTarget,code=sh.querySelector('#dsC').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+   if(found){ensureDogs();if(S.dogs.some(x=>x.sid===code)){toast('Ya tienes a este perro en tu manada','paw');closeSheet();return}if(S.dogs.length>=MAX_DOGS){toast(`Tu manada está llena (${MAX_DOGS}). Quita un perro primero.`,'paw','#FFC93C');return}
+    b.disabled=true;const r=found;try{const own=(r.owners||[]).includes(UID)?r.owners:[...(r.owners||[]),UID];if(!(r.owners||[]).includes(UID))await dsRef(code).set(Object.assign({},r,{owners:own,names:Object.assign({},r.names||{},{[UID]:dsMine()}),v:Date.now()}));
+     const nd=Object.assign(newState().pet,r.pet||{},{pid:newPid(),sid:code,its:r.its||0,fx:r.fx||{},slog:Math.max(0,...(r.log||[]).map(l=>l.ts||0)),sown:own.map(u=>(Object.assign({},r.names||{},{[UID]:dsMine()}))[u]||'Dueño')});
+     S.dogs.push(nd);const idx=S.dogs.length-1;S.activeDog=idx;S.pet=nd;if(r.vacc){S.vacc=r.vacc;S.weights=r.weights||[];S.vaccTs=r.vaccTs||0}save();pushProfile();closeSheet();toast(`¡Ahora eres dueño de ${nd.name}!`,'star','#2CE6A6');render()}catch(err){b.disabled=false;dsErr(err)}return}
+   if(code.length<6){toast('El código tiene 8 letras y números','sos');return}b.disabled=true;
+   try{const s=await dsRef(code).get();b.disabled=false;if(!s.exists){toast('No encontramos ese código. Revísalo con el otro dueño.','sos');return}const r=s.data();if((r.owners||[]).length>=4&&!(r.owners||[]).includes(UID)){toast('Ese perro ya tiene 4 dueños','paw','#FFC93C');return}
+    found=r;const pet=Object.assign(newState().pet,r.pet||{});sh.querySelector('#dsPrev').innerHTML=`<div class="box dark row" style="gap:12px;align-items:center">${petHTML(pet,72,{bob:true})}<div class="col" style="gap:3px"><b>${esc(pet.name)}</b><span class="mute small">Nivel ${pet.level} · ${esc((pet.breed||'').split(' (')[0])}</span><span class="mute small">Dueños: ${esc((r.owners||[]).map(u=>(r.names||{})[u]||'Dueño').join(', '))}</span></div></div>`;b.textContent=`Unirme como dueño de ${pet.name}`}
+   catch(err){b.disabled=false;dsErr(err)}}})}
 /* ===== PUENTE CON LA APK DE ANDROID (avisos y GPS en segundo plano) ===== */
 let NPORT=null,NAT=false,NATI={};
 window.addEventListener('message',e=>{try{if(NPORT||!e.ports||!e.ports[0]||e.source)return;NPORT=e.ports[0];NPORT.onmessage=m=>natMsg(m.data);NAT=true;try{apkMark()}catch(x){}setTimeout(natSync,300)}catch(x){}});
@@ -3496,7 +3571,7 @@ function renderHome(){
   $$('#s-home [data-prof]').forEach(b=>b.onclick=()=>openProfile(b.dataset.prof));
   if($('#frBan'))$('#frBan').onclick=()=>{SOC.tab='amigos';go('feed')};
   {const lb=$$('#s-home .lb');if(lb.length){const bx=lb[0].closest('.box');if(bx&&!bx.querySelector('#toRank')){const b=document.createElement('button');b.className='btn sm';b.id='toRank';b.textContent='Ver ranking completo';b.onclick=()=>{SOC.tab='ranking';go('feed')};bx.appendChild(b)}}}
-  $('#wxHome').onclick=()=>go('weather');if($('#apkBan'))$('#apkBan').onclick=openInstall;apkPopMaybe();
+  $('#wxHome').onclick=()=>go('weather');if($('#apkBan'))$('#apkBan').onclick=openInstall;apkPopMaybe();dsSyncMaybe();
   $('#bell').onclick=openNotifs;$('#donBtn').onclick=openDonate;$('#setBtn').onclick=openSettings;
   if($('#trkCard'))$('#trkCard').onclick=()=>openTrack(activeReq.id);
   if($('#jobCard'))$('#jobCard').onclick=()=>{go('pack');setTimeout(()=>{const el=$('#walkerBox');el&&el.scrollIntoView()},50)};
@@ -3729,7 +3804,7 @@ async function finalize(w){
   const id='w'+(w.t0||Date.now());
   const rec={id,date:w.date,ts:w.t0||Date.now(),dist:Math.round(w.dist),time:Math.round(w.time),moving:Math.round(w.moving),xp:gained,hexes:terr.taken,stolen:terr.stolen.length,items:w.got||[],events:(w.events||[]).map(e=>({t:e.t,lat:e.lat,lng:e.lng})),pts,splits:(w.splits||[]).map(Math.round),manual:!!w.manual,diary:'',coins,kcalH:kcalHuman(w.dist,w.moving),kcalD:kcalDog(w.dist),...(wb?{sniff:wb.sniff,sniffN:wb.sniffN,happy:wb.happy,parks:parkRes.map(x=>x.n)}:{})};
   S.lastWalk={id,date:rec.date,dist:rec.dist,time:rec.time,xp:gained,pts:pts.length>400?pts.filter((_,i)=>i%Math.ceil(pts.length/400)===0):pts};
-  save(true);pushProfile();
+  save(true);pushProfile();try{dsAfterWalk(w)}catch(e){}
   W8(walksCol().path+'/'+id,()=>walksCol().doc(id).set(rec)).catch(()=>{});
   const prevAvg=S.totals.walks>1?(S.totals.km*1000-w.dist)/(S.totals.walks-1):w.dist;
   showSummary({rec,old,gained,lv,mult,hm,coins,coinBreak:w.manual?[]:cw.parts,parkRes,firstToday,misDone,newB,terr,photos:w.photos||[],pct:Math.round((w.dist/Math.max(1,prevAvg)-1)*100)});
@@ -4098,7 +4173,7 @@ function renderPack(){rollDay();const p=S.pet;
   $$('[data-pcoat]').forEach(b=>b.onclick=()=>{p.coat=+b.dataset.pcoat;p.custom=false;save();pushProfile();renderPack()});$('#pkCustom').onclick=()=>{p.custom=!p.custom;if(p.custom){const L=dogLook({...p,custom:false});p.fur=L.b;p.spot=L.d}save();pushProfile();renderPack()};
   $$('[data-fur]').forEach(b=>b.onclick=()=>{p.fur=b.dataset.fur;save();pushProfile();renderPack()});$$('[data-spot]').forEach(b=>b.onclick=()=>{p.spot=b.dataset.spot;save();pushProfile();renderPack()});
   $('#editPet').onclick=editPet;bindPetCard();bindDogsBox($('#s-pack'));$('#addVac').onclick=addVac;bindFicha();$('#addKg').onclick=addKg;
-  $$('[data-dv]').forEach(b=>b.onclick=()=>{S.vacc.splice(+b.dataset.dv,1);save();renderPack()});
+  $$('[data-dv]').forEach(b=>b.onclick=()=>{S.vacc.splice(+b.dataset.dv,1);S.vaccTs=Date.now();dsPushSoon();save();renderPack()});
   $('#wkOn').onclick=()=>{S.walker.on=!S.walker.on;if(!S.walker.on)S.walker.avail=false;save();pushProfile();renderPack()};
   if($('#wkPrice')){const upd=()=>{S.walker.price=Math.max(1000,+$('#wkPrice').value||6000);S.walker.zone=$('#wkZone').value.trim();S.walker.bio=$('#wkBio').value.trim();save();pushProfile()};['#wkPrice','#wkZone','#wkBio'].forEach(s=>$(s).onchange=upd);
    $('#wkAvail').onclick=async()=>{if(S.walker.avail){S.walker.avail=false;save();pushProfile();renderPack();return}const f=await getFix(10000);if(f.err){gpsFail(f.err);return}S.walker.avail=true;S.walker.lat=+f.lat.toFixed(3);S.walker.lng=+f.lng.toFixed(3);S.walker.ts=Date.now();save();pushProfile();renderPack();toast('Estás disponible en el mapa','walker','#2CE6A6')}}
@@ -4126,9 +4201,9 @@ function editPet(){const p=S.pet;let bid=p.bid||guessBreed(p.breed),sz=p.size,sx
   sh.querySelectorAll('[data-esex]').forEach(b=>b.onclick=()=>{sx=b.dataset.esex;sh.querySelectorAll('[data-esex]').forEach(x=>x.classList.toggle('on',x===b))});
   sh.querySelectorAll('[data-ebid]').forEach(b=>b.onclick=()=>{bid=b.dataset.ebid;sz=breedById(bid).size;sh.querySelectorAll('[data-ebid]').forEach(x=>x.classList.toggle('on',x===b));sh.querySelectorAll('[data-esz]').forEach(x=>x.classList.toggle('on',x.dataset.esz===sz))});
   sh.querySelectorAll('[data-esz]').forEach(b=>b.onclick=()=>{sz=b.dataset.esz;sh.querySelectorAll('[data-esz]').forEach(x=>x.classList.toggle('on',x===b))});
-  sh.querySelector('#eS').onclick=()=>{const n=$('#eN').value.trim();if(!n){toast('El nombre no puede quedar vacío','sos');return}const kg=$('#eK').value;if(kg&&kg!==String(p.kg)){S.weights.push({d:dkey(),kg:+kg})}const changed=bid!==p.bid;Object.assign(p,{name:n,sex:sx,bid,breed:breedById(bid).n,born:$('#eD').value,kg,size:sz,species:'perro',nat:$('#eNat').value});if(changed){p.coat=0;p.custom=false}save();pushProfile();closeSheet();renderPack()}})}
-function addVac(){sheet(`<div class="t1">VACUNA</div><div class="field"><label for="vN">Nombre</label><input class="inp" id="vN" list="vacs" maxlength="40" placeholder="Antirrábica"><datalist id="vacs">${['Antirrábica','Óctuple','Séxtuple','Triple felina','Leucemia felina','Antiparasitario interno','Antiparasitario externo','KC (tos de las perreras)'].map(v=>`<option value="${v}">`).join('')}</datalist></div><div class="g2"><div class="field"><label for="vD">Fecha</label><input class="inp" id="vD" type="date" max="${dkey()}" value="${dkey()}"></div><div class="field"><label for="vX">Próxima</label><input class="inp" id="vX" type="date"></div></div><button class="btn o" id="vS">Guardar</button>`,sh=>{sh.querySelector('#vS').onclick=()=>{const n=$('#vN').value.trim();if(!n){toast('Escribe el nombre de la vacuna','sos');return}S.vacc.push({n,date:$('#vD').value,next:$('#vX').value});S.vacc.sort((a,b)=>(a.next||'9')>(b.next||'9')?1:-1);save();closeSheet();renderPack()}})}
-function addKg(){sheet(`<div class="t1">PESO</div><div class="g2"><div class="field"><label for="kV">Kilos</label><input class="inp" id="kV" type="number" step="0.1" min="0.3" max="120" inputmode="decimal" value="${esc(S.pet.kg)}"></div><div class="field"><label for="kD">Fecha</label><input class="inp" id="kD" type="date" max="${dkey()}" value="${dkey()}"></div></div><button class="btn o" id="kS">Guardar</button>`,sh=>{sh.querySelector('#kS').onclick=()=>{const v=+$('#kV').value;if(!(v>0)){toast('Escribe un peso válido','sos');return}S.weights.push({d:$('#kD').value||dkey(),kg:v});S.weights.sort((a,b)=>a.d>b.d?1:-1);S.pet.kg=String(S.weights[S.weights.length-1].kg);save();closeSheet();renderPack()}})}
+  sh.querySelector('#eS').onclick=()=>{const n=$('#eN').value.trim();if(!n){toast('El nombre no puede quedar vacío','sos');return}const kg=$('#eK').value;if(kg&&kg!==String(p.kg)){S.weights.push({d:dkey(),kg:+kg})}const changed=bid!==p.bid;Object.assign(p,{name:n,sex:sx,bid,breed:breedById(bid).n,born:$('#eD').value,kg,size:sz,species:'perro',nat:$('#eNat').value});if(changed){p.coat=0;p.custom=false}p.its=Date.now();dsPushSoon();save();pushProfile();closeSheet();renderPack()}})}
+function addVac(){sheet(`<div class="t1">VACUNA</div><div class="field"><label for="vN">Nombre</label><input class="inp" id="vN" list="vacs" maxlength="40" placeholder="Antirrábica"><datalist id="vacs">${['Antirrábica','Óctuple','Séxtuple','Triple felina','Leucemia felina','Antiparasitario interno','Antiparasitario externo','KC (tos de las perreras)'].map(v=>`<option value="${v}">`).join('')}</datalist></div><div class="g2"><div class="field"><label for="vD">Fecha</label><input class="inp" id="vD" type="date" max="${dkey()}" value="${dkey()}"></div><div class="field"><label for="vX">Próxima</label><input class="inp" id="vX" type="date"></div></div><button class="btn o" id="vS">Guardar</button>`,sh=>{sh.querySelector('#vS').onclick=()=>{const n=$('#vN').value.trim();if(!n){toast('Escribe el nombre de la vacuna','sos');return}S.vacc.push({n,date:$('#vD').value,next:$('#vX').value});S.vacc.sort((a,b)=>(a.next||'9')>(b.next||'9')?1:-1);S.vaccTs=Date.now();dsPushSoon();save();closeSheet();renderPack()}})}
+function addKg(){sheet(`<div class="t1">PESO</div><div class="g2"><div class="field"><label for="kV">Kilos</label><input class="inp" id="kV" type="number" step="0.1" min="0.3" max="120" inputmode="decimal" value="${esc(S.pet.kg)}"></div><div class="field"><label for="kD">Fecha</label><input class="inp" id="kD" type="date" max="${dkey()}" value="${dkey()}"></div></div><button class="btn o" id="kS">Guardar</button>`,sh=>{sh.querySelector('#kS').onclick=()=>{const v=+$('#kV').value;if(!(v>0)){toast('Escribe un peso válido','sos');return}S.weights.push({d:$('#kD').value||dkey(),kg:v});S.weights.sort((a,b)=>a.d>b.d?1:-1);S.pet.kg=String(S.weights[S.weights.length-1].kg);S.vaccTs=Date.now();dsPushSoon();save();closeSheet();renderPack()}})}
 async function wipeMine(){try{for(const r of [...FR.out,...FR.in])await DB.doc('freq/'+r.id).delete().catch(()=>{});const s=await walksCol().get();for(const d of s.docs)await walksCol().doc(d.id).delete();await DB.doc(mainPath()).delete();await DB.doc('profiles/'+UID).delete();for(const p of SH.posts.filter(p=>p.uid===UID))await DB.doc('posts/'+p.id).delete()}catch(e){}
   clearActive();S=newState();toast('Datos borrados','trash');startOnboarding()}
 
@@ -5969,13 +6044,14 @@ function ensureDogs(){if(!S||!S.pet)return;if(!Array.isArray(S.dogs)||!S.dogs.le
 function setActiveDog(i){ensureDogs();if(!S.dogs[i])return;S.activeDog=i;S.pet=S.dogs[i];PLAN.crew=null;STORE_PREV=null;save();pushProfile();toast(`Ahora juegas con ${esc(S.pet.name)}`,'paw','#2CE6A6');render()}
 function dogsBoxHTML(){ensureDogs();const n=S.dogs.length;
   return `<div class="box"><div class="row between"><span class="t2">Tus perros</span><span class="tag d">${n} de ${MAX_DOGS}</span></div>
-  <div class="dogrow">${S.dogs.map((d,i)=>`<button class="dogslot ${i===S.activeDog?'on':''}" data-dog="${i}" aria-label="${esc(d.name||'Perro')}">${petHTML(d,56,{bob:i===S.activeDog})}<b>${natFlag(d)}${esc(d.name||'Sin nombre')}</b><span>Nv ${d.level} · ${esc((breedById(d.bid)||{n:d.breed||''}).n.split(' (')[0])}</span>${i===S.activeDog?'<em>Activo</em>':''}</button>`).join('')}${n<MAX_DOGS?`<button class="dogslot add" id="addDog"><span class="plus">+</span><b>Agregar</b><span>otro perro</span></button>`:''}</div>
-  <div class="mute small">${n>1?'Toca un perro para jugar con él. En cada paseo eliges quiénes salen y todos ganan XP.':'¿Tienes más de un perro? Agrega hasta 4 y paséalos juntos.'}</div></div>`}
-function bindDogsBox(root){(root||document).querySelectorAll('[data-dog]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dog;openDogMenu(i)});const a=(root||document).querySelector('#addDog');if(a)a.onclick=openAddDog}
+  <div class="dogrow">${S.dogs.map((d,i)=>`<button class="dogslot ${i===S.activeDog?'on':''}" data-dog="${i}" aria-label="${esc(d.name||'Perro')}">${petHTML(d,56,{bob:i===S.activeDog})}<b>${natFlag(d)}${esc(d.name||'Sin nombre')}${d.sid?' 👥':''}</b><span>Nv ${d.level} · ${esc((breedById(d.bid)||{n:d.breed||''}).n.split(' (')[0])}</span>${i===S.activeDog?'<em>Activo</em>':''}</button>`).join('')}${n<MAX_DOGS?`<button class="dogslot add" id="addDog"><span class="plus">+</span><b>Agregar</b><span>otro perro</span></button>`:''}</div>
+  <div class="mute small">${n>1?'Toca un perro para jugar con él. En cada paseo eliges quiénes salen y todos ganan XP.':'¿Tienes más de un perro? Agrega hasta 4 y paséalos juntos.'} Toca un perro y elige «Compartir» para sumar otro dueño.</div>
+  <button class="btn sm" id="dsJoin">👥 Unirme a un perro compartido</button></div>`}
+function bindDogsBox(root){(root||document).querySelectorAll('[data-dog]').forEach(b=>b.onclick=()=>{const i=+b.dataset.dog;openDogMenu(i)});const a=(root||document).querySelector('#addDog');if(a)a.onclick=openAddDog;const j=(root||document).querySelector('#dsJoin');if(j)j.onclick=openJoinDog}
 function openDogMenu(i){const d=S.dogs[i];let armed=false;
   sheet(`<div class="col" style="align-items:center;gap:8px;text-align:center">${petHTML(d,96,{bob:true})}<div class="t1">${esc((d.name||'').toUpperCase())}</div><div class="mute small">Nivel ${d.level} · Racha ${d.streak||0} días</div></div>
-  ${i===S.activeDog?'':`<button class="btn o big" id="dmUse">Jugar con ${esc(d.name)}</button>`}<button class="btn" id="dmAng">🌈 Despedir: cruzó el puente del arcoíris</button><button class="btn r" id="dmDel">Quitar de mi manada</button><button class="btn" id="dmNo">Cancelar</button>`,sh=>{
-  if(sh.querySelector('#dmUse'))sh.querySelector('#dmUse').onclick=()=>{closeSheet();setActiveDog(i)};sh.querySelector('#dmNo').onclick=closeSheet;sh.querySelector('#dmAng').onclick=()=>openFarewell(i);
+  ${i===S.activeDog?'':`<button class="btn o big" id="dmUse">Jugar con ${esc(d.name)}</button>`}<button class="btn" id="dmShare">👥 ${d.sid?'Dueños y código para compartir':'Compartir con otro dueño'}</button><button class="btn" id="dmAng">🌈 Despedir: cruzó el puente del arcoíris</button><button class="btn r" id="dmDel">Quitar de mi manada</button><button class="btn" id="dmNo">Cancelar</button>`,sh=>{
+  if(sh.querySelector('#dmUse'))sh.querySelector('#dmUse').onclick=()=>{closeSheet();setActiveDog(i)};sh.querySelector('#dmNo').onclick=closeSheet;sh.querySelector('#dmShare').onclick=()=>{closeSheet();openShareDog(i)};sh.querySelector('#dmAng').onclick=()=>openFarewell(i);
   sh.querySelector('#dmDel').onclick=e=>{if(!armed){armed=true;e.currentTarget.textContent=`Toca otra vez: se borra ${d.name} y su progreso`;return}S.dogs.splice(i,1);if(S.activeDog>i)S.activeDog--;S.pet=S.dogs[S.activeDog];save();closeSheet();toast(`${esc(d.name)} salió de tu manada`,'paw','#FFC93C');render()}})}
 function openAddDog(){ensureDogs();if(S.dogs.length>=MAX_DOGS){toast(`Puedes tener hasta ${MAX_DOGS} perros`,'paw','#FFC93C');return}
   const br0=breedById('quiltro');const p=Object.assign(newState().pet,{pid:newPid(),name:'',bid:br0.id,breed:br0.n,coat:0,custom:false,size:br0.size,acc:'bandana',level:1,xp:0,streak:0,best:0,last:'',happy:80});
