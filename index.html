@@ -3139,6 +3139,73 @@ function renderOB(){const p=S.pet,ob=$('#ob');p.sex=p.sex||'macho';const st=Math
   ob.scrollTop=0;
 }
 
+
+/* ================= AVENTURA: evento semanal, pase del mes, expedición, carta, resumen ================= */
+const EVT_TH=[
+ {id:'km',n:'Semana Caminante',d:'Suma 12 km caminando esta semana',goal:12,get:()=>+(S.wkCon&&S.wkCon.km||0)},
+ {id:'hex',n:'Semana Conquistadora',d:'Conquista 10 territorios esta semana',goal:10,get:()=>(S.wkCon&&S.wkCon.hex)||0},
+ {id:'it',n:'Semana Cazatesoros',d:'Atrapa 8 objetos esta semana',goal:8,get:()=>(S.wkCon&&S.wkCon.items)||0},
+ {id:'dias',n:'Semana Constante',d:'Pasea 5 días distintos esta semana',goal:5,get:()=>weekDaysWalked()}
+];
+function weekDaysWalked(){const t=new Date(),dow=(t.getDay()+6)%7;let n=0;for(let i=0;i<=dow;i++){const d=new Date(t);d.setDate(t.getDate()-i);if((S.days||{})[dkey(d)]>0)n++}return n}
+function monthDaysWalked(){const m=dkey().slice(0,7);return Object.keys(S.days||{}).filter(k=>k.startsWith(m)&&S.days[k]>0).length}
+const PASS_L=[[1,5],[2,5],[4,10],[6,10],[9,15],[12,15],[15,20],[18,20],[21,30],[25,60]];
+const STORY=[
+ [3,'El sendero del cerro','Al pie del Cerro San Cristóbal, olfateas las primeras huellas de la aventura. El aire huele a tierra mojada.',15],
+ [10,'Costanera al amanecer','La luz dorada recorre el río Mapocho. Alguien dejó un hueso escondido bajo un banco.',15],
+ [20,'Plaza de los gatos curiosos','Un grupo de gatos te observa desde un muro. Haces como que no los viste, pero la cola te delata.',20],
+ [35,'Parque de los murmullos','Los árboles susurran historias de otros perros que pasaron por aquí. Una ardilla promete no escaparse.',20],
+ [55,'El puente de las mil huellas','Cruzas un puente lleno de marcas de patitas. Algunas parecen muy antiguas.',25],
+ [80,'Valparaíso y sus escaleras','Subes cerros de colores con el mar abajo. Cada escalón huele a sal y a sopaipillas.',30],
+ [110,'Desierto florido','Tras la lluvia, el desierto se llena de flores. Tu sombra corre más rápido que tú.',35],
+ [150,'Lago y volcán','Un volcán nevado se refleja en el agua quieta. Aquí hasta los ladridos suenan a eco largo.',40],
+ [200,'Bosque de los alerces','Árboles gigantes más viejos que cualquier historia. Te sientes pequeño y valiente a la vez.',50],
+ [300,'Torres del fin del mundo','Llegas a las torres de granito. Lo lograste: el sendero entero está en tus patas.',100]
+];
+const CARTA_FR=['olfateé cada esquina como un detective','saludé a tres perros nuevos','encontré un palo perfecto','perseguí mi propia sombra','le ladré a una hoja que se movía','conocí a un pájaro muy descarado','sentí el pasto fresco en las patitas','hice amigos en la plaza','me detuve a oler flores','corrí un poquito sin que me vieras','dormiré como un lirio esta noche','fue el mejor paseo del día'];
+function evtNow(){const i=Math.floor(Date.now()/604800000)%EVT_TH.length;return EVT_TH[i]}
+function advInit(){const wk=weekKey(),m=dkey().slice(0,7);if(!S.evt||S.evt.wk!==wk)S.evt={wk,claimed:false};if(!S.pass||S.pass.m!==m)S.pass={m,c:[]};if(!S.story)S.story={c:[]}}
+function seasonInfo(){const m=new Date().getMonth()+1;if(m===12||m<=2)return['☀️','Verano: pasea temprano o al atardecer y lleva agua.'];if(m<=5)return['🍂','Otoño: días más cortos, ideal para salir con luz.'];if(m<=8)return['❄️','Invierno: abriga a tu perro y cuida sus patitas del frío.'];return['🌼','Primavera: buen mes para explorar parques floridos.']}
+function advReady(){advInit();let n=0;const ev=evtNow();if(!S.evt.claimed&&ev.get()>=ev.goal)n++;const d=monthDaysWalked();PASS_L.forEach((l,i)=>{if(d>=l[0]&&!S.pass.c.includes(i))n++});STORY.forEach((c,i)=>{if(S.totals.km>=c[0]&&!S.story.c.includes(i))n++});return n}
+function advBoxesHTML(){advInit();const ev=evtNow(),v=Math.min(ev.goal,ev.get()),done=v>=ev.goal,d=monthDaysWalked();
+  const nextCh=STORY.findIndex((c,i)=>!S.story.c.includes(i)&&S.totals.km<c[0]);
+  const readyCh=STORY.findIndex((c,i)=>S.totals.km>=c[0]&&!S.story.c.includes(i));
+  const lastCh=S.story.c.length?Math.max(...S.story.c):-1;
+  const fmt=n=>(+n).toFixed(1).replace('.',',');
+  return `<div class="box vio" style="gap:8px"><div class="row between"><span class="t2" style="color:var(--gold)">EVENTO DE LA SEMANA</span><span class="tag ${S.evt.claimed?'g':done?'o':'y'}">${S.evt.claimed?'CANJEADO ✓':done?'¡LISTO!':'+40 DogCoins'}</span></div>
+   <div><b>${ev.n}</b><div class="mute small">${ev.d}. Cambia cada lunes.</div></div>${segBar(v/ev.goal,done?'g':'o')}<div class="row between"><span class="lbl">${ev.id==='km'?fmt(v):v}/${ev.goal}</span>${done&&!S.evt.claimed?`<button class="btn sm o" data-adv="evt">Reclamar +40<i class="dc" aria-hidden="true"></i></button>`:''}</div></div>
+  <div class="box" style="gap:8px"><div class="row between"><span class="t2">PASE DEL MES</span><span class="lbl">${d}/25 días con paseo</span></div>
+   ${segBar(Math.min(1,d/25),'g')}
+   <div class="chips wrap">${PASS_L.map((l,i)=>{const got=S.pass.c.includes(i),rdy=d>=l[0]&&!got;return `<button class="chip ${rdy?'on':''}" data-adv="pass${i}" ${got||!rdy?'disabled':''} style="${got?'opacity:.55':''}">${got?'✓':'Día '+l[0]} · +${l[1]}</button>`}).join('')}</div>
+   <div class="mute small">Cada día distinto con paseo suma. Se reinicia el primer día del mes.</div></div>
+  <div class="box" style="gap:8px"><div class="row between"><span class="t2">EXPEDICIÓN DE HISTORIA</span><span class="lbl">${S.story.c.length}/${STORY.length} capítulos</span></div>
+   ${lastCh>=0?`<div class="mute small"><b style="color:var(--fg)">Cap. ${lastCh+1}: ${STORY[lastCh][1]}</b><br>${STORY[lastCh][2]}</div>`:'<div class="mute small">Cada kilómetro acumulado te lleva más lejos. ¡Camina para abrir el primer capítulo!</div>'}
+   ${readyCh>=0?`<button class="btn o" data-adv="story${readyCh}">Abrir capítulo ${readyCh+1}: ${STORY[readyCh][1]} (+${STORY[readyCh][3]}<i class="dc" aria-hidden="true"></i>)</button>`:''}
+   ${nextCh>=0?`<div class="row between"><span class="lbl">Próximo: ${STORY[nextCh][1]}</span><span class="lbl">${fmt(Math.min(S.totals.km,STORY[nextCh][0]))}/${STORY[nextCh][0]} km</span></div>${segBar(Math.min(1,S.totals.km/STORY[nextCh][0]),'o sm')}`:(S.story.c.length===STORY.length?'<div class="tag g">¡Expedición completa!</div>':'')}</div>`}
+function advClaim(k){advInit();let c=0,msg='';
+  if(k==='evt'){const ev=evtNow();if(S.evt.claimed||ev.get()<ev.goal)return;S.evt.claimed=true;c=40;addXp(300);msg=`¡${ev.n} completada! +40 DogCoins y +300 XP`}
+  else if(k.startsWith('pass')){const i=+k.slice(4),l=PASS_L[i];if(!l||S.pass.c.includes(i)||monthDaysWalked()<l[0])return;S.pass.c.push(i);c=l[1];msg=`Pase del mes: +${c} DogCoins`}
+  else if(k.startsWith('story')){const i=+k.slice(5),ch=STORY[i];if(!ch||S.story.c.includes(i)||S.totals.km<ch[0])return;S.story.c.push(i);c=ch[3];addXp(60);msg=`Capítulo ${i+1}: ${ch[1]} · +${c} DogCoins`}
+  else return;
+  S.coins=(S.coins||0)+c;save(true);try{pushProfile()}catch(e){}coinSfx();boom(70);toast(msg+'','star','#FFC93C');if(tab==='home')renderHome()}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-adv]');if(t&&S)advClaim(t.dataset.adv)});
+function cartaTxt(lw){const p=S.pet;let h=0;const s=(lw.date||'')+Math.round(lw.dist||0);for(const ch of s)h=(h*31+ch.charCodeAt(0))>>>0;return `${p.name}: «Hoy caminamos ${fmtKm(lw.dist)} km en ${fmtTime(lw.time)}. ${CARTA_FR[h%CARTA_FR.length].replace(/^./,x=>x.toUpperCase())}. ¡Gracias por el paseo!»`}
+async function shareText(t){try{if(navigator.share){await navigator.share({text:t+'\n\nPaseoPet · paseopet.site'});return}}catch(e){if(e&&e.name==='AbortError')return}try{await navigator.clipboard.writeText(t+'\n\nPaseoPet · paseopet.site');toast('Texto copiado para compartir','paw','#2CE6A6')}catch(e){toast('No se pudo compartir en este navegador','bell','#FFC93C')}}
+function healthDue(){const t0=new Date(dkey());return (S.vacc||[]).filter(v=>v.next).map(v=>({n:v.n,dl:Math.ceil((new Date(v.next)-t0)/86400000)})).filter(v=>v.dl<=7).sort((a,b)=>a.dl-b.dl)[0]||null}
+async function weeklyCard(){const p=S.pet,c=document.createElement('canvas');c.width=1080;c.height=1080;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,1080);g.addColorStop(0,'#2A1F6B');g.addColorStop(1,'#0E0A26');x.fillStyle=g;x.fillRect(0,0,1080,1080);
+  x.fillStyle='rgba(255,201,60,.12)';x.beginPath();x.arc(540,430,380,0,7);x.fill();
+  const im=new Image();im.src=petU(p);await new Promise(r=>{im.onload=r;im.onerror=r});x.imageSmoothingEnabled=false;const sz=360;x.drawImage(im,540-sz/2,170,sz,sz);
+  x.textAlign='center';x.fillStyle='#F6EAC8';x.font='700 64px sans-serif';x.fillText('Mi semana con '+p.name,540,120);
+  const wc=S.wkCon||{km:0,hex:0,items:0},dias=weekDaysWalked();
+  const st=[[(+wc.km||0).toFixed(1).replace('.',','),'km'],[dias,'días'],[wc.hex||0,'territorios'],[wc.items||0,'objetos']];
+  st.forEach((a,i)=>{const X=135+i*270;x.fillStyle='rgba(255,255,255,.08)';x.fillRect(X-115,640,230,190);x.fillStyle='#FFE27A';x.font='700 84px sans-serif';x.fillText(String(a[0]),X,745);x.fillStyle='#C9BDFF';x.font='600 32px sans-serif';x.fillText(a[1],X,795)});
+  x.fillStyle='#FFF6D8';x.font='600 40px sans-serif';x.fillText(`Racha de ${p.streak} días · Nivel ${p.level}`,540,920);
+  x.fillStyle='#2CE6A6';x.font='700 40px sans-serif';x.fillText('paseopet.site · @paseo.pet.cl',540,1010);
+  const blob=await new Promise(r=>c.toBlob(r,'image/png'));const f=new File([blob],'mi-semana-paseopet.png',{type:'image/png'});
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:'Mi semana en PaseoPet'});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mi-semana-paseopet.png';document.body.appendChild(a);a.click();a.remove();toast('Imagen descargada','paw','#2CE6A6')}
+
 /* ================= HOME ================= */
 function leagueRows(){const wk=weekKey();const arr=Object.entries(SH.profiles).filter(([id,p])=>p.weekKey===wk&&p.weekXp>0||id===UID).map(([id,p])=>({id,xp:id===UID?S.weekXp:p.weekXp,pet:id===UID?S.pet:p.pet}));if(!arr.find(a=>a.id===UID))arr.push({id:UID,xp:S.weekXp,pet:S.pet});return arr.sort((a,b)=>b.xp-a.xp)}
 let HOME_MORE=false;
@@ -3157,13 +3224,15 @@ function renderHome(){
   ${p.last!==dkey()&&hr>=19&&p.streak>0?`<div class="banner">${ico('fire').replace('<img','<img style="width:20px;height:20px;display:inline;vertical-align:middle"')} Tu racha de ${p.streak} días está en riesgo. Sal un rato antes de medianoche.</div>`:''}
   ${activeReq?`<button class="box hot row" id="trkCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Paseo con paseador</div><div class="mute small">${{pendiente:'Esperando respuesta',aceptada:'Aceptado',en_camino:'Paseador en camino',paseando:'Paseando ahora',entregada:'Entregado: califica'}[activeReq.status]}</div></div><span class="tag o">VER</span></button>`:''}
   ${jobs.length?`<button class="box vio row" id="jobCard" style="text-align:left">${ico('walker').replace('<img','<img style="width:36px;height:36px"')}<div class="grow"><div class="t2">Trabajos de paseador</div><div class="mute small">${jobs.length} activo${jobs.length>1?'s':''}</div></div><span class="tag">ABRIR</span></button>`:''}
+  ${(()=>{const h=healthDue();return h?`<button class="banner" id="healthBan" style="text-align:left;width:100%">💉 ${esc(h.n)}: ${h.dl<0?'vencida hace '+(-h.dl)+' día'+(h.dl<-1?'s':''):h.dl===0?'vence hoy':'vence en '+h.dl+' día'+(h.dl>1?'s':'')}. Toca para ver Salud.</button>`:''})()}
   ${petCardHTML({compact:true})}
-  ${remindBannerHTML()}<div class="box" style="gap:8px"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div>
+  ${remindBannerHTML()}<div class="box" style="gap:8px"><div class="row between"><span class="t2">Meta de hoy</span><span class="lbl">${Math.round(S.today.min)}/${p.goal} min</span></div>${segBar(S.today.min/p.goal,'g')}<div class="mute small">${seasonInfo()[0]} ${seasonInfo()[1]}</div><div class="mute small">${S.today.min>=p.goal?`¡Meta cumplida! ${esc(p.name)} está feliz.`:S.today.min?`Faltan ${Math.ceil(p.goal-S.today.min)} min.`:`Aún no salen hoy.`} ${S.today.km?'· '+S.today.km.toFixed(2).replace('.',',')+' km':''}</div>
     <button class="btn o big" id="goWalk" style="width:100%">${ico('play','#1A0A02')}¡SALIR A PASEAR!</button>
     <button class="btn sm" id="procStep3">${chestDone?'Cofre de hoy abierto':'Cofre y tienda'} · ${S.coins||0} DogCoins</button></div>
   <div class="box"><div class="row between"><span class="t2">Misiones de hoy</span><span class="lbl">Nivel ${(S.mis.t||0)+1}</span></div>
    ${MIS.map(m=>{const v=Math.min(m.goal,m.id==='km'?+(+S.mis.p[m.id]||0).toFixed(1):Math.floor(S.mis.p[m.id]||0)),d=S.mis.done[m.id];return `<div class="mission">${`<span class="mic">${ico16(d?'mStar':{min:'mBoot',hex:'mFlag',item:'mChest'}[m.id]||'mStar')}</span>`}<div class="col" style="gap:5px"><div>${m.t}</div>${segBar(v/m.goal,d?'g sm':'o sm')}</div><span class="lbl" style="color:${d?'var(--mint)':'#C9BDFF'};text-align:right">${d?'OK':v+'/'+m.goal}<br>+${m.xp} XP · <b style="color:var(--gold)">+${m.coins||15}<i class="dc" aria-hidden="true"></i></b></span></div>`}).join('')}</div>
-  <details class="acc" id="homeMore" ${HOME_MORE?'open':''}><summary><span class="t2">Más desafíos</span><span class="lbl">Etapas · Contrato · Liga #${pos}</span></summary>
+  <details class="acc" id="homeMore" ${HOME_MORE?'open':''}><summary><span class="t2">Eventos y desafíos</span>${advReady()?`<span class="tag g">${advReady()} por reclamar</span>`:`<span class="lbl">Evento · Pase · Historia · Liga #${pos}</span>`}</summary>
+  ${advBoxesHTML()}
   ${chainsBoxHTML()}
   ${(()=>{
     const wc=S.wkCon||{km:0,hex:0,items:0,claimed:false};
@@ -3189,8 +3258,10 @@ function renderHome(){
    ${top.map(r=>`<div class="lb ${r.id===UID?'me':''}" data-prof="${r.id}" role="button" tabindex="0"><span class="num" style="font-size:11px">${lg.indexOf(r)+1}</span><img class="spr" src="${petU(r.pet)}" alt=""><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.pet.name)}${r.id===UID?' (tú)':''}</span><span class="lbl" style="color:#C9BDFF">${r.xp} XP</span></div>`).join('')}
    <div class="mute small">${lg.length<2?(MODE==='local'?'La liga se llena con otras manadas en la app compartida.':'Comparte PaseoPet para competir con más manadas.'):'Se reinicia cada lunes.'}</div></div>
   </details>
-  ${lw?`<div class="box"><div class="row between"><span class="t2">Último paseo</span><span class="lbl">${lw.date===dkey()?'Hoy':lw.date}</span></div><canvas class="mapthumb" id="lastCv"></canvas><div class="g3"><div class="mini"><span class="num">${fmtKm(lw.dist)}</span><span class="lbl">Km</span></div><div class="mini"><span class="num">${fmtTime(lw.time)}</span><span class="lbl">Tiempo</span></div><div class="mini"><span class="num" style="color:#C9BDFF">+${lw.xp}</span><span class="lbl">XP</span></div></div></div>`:`<div class="box empty">${ico('boot')}<div class="t2">Sin paseos todavía</div><div class="mute small">Tu primer paseo da +25 XP extra.</div></div>`}`;
+  ${lw?`<div class="box"><div class="row between"><span class="t2">Último paseo</span><span class="lbl">${lw.date===dkey()?'Hoy':lw.date}</span></div><canvas class="mapthumb" id="lastCv"></canvas><div class="g3"><div class="mini"><span class="num">${fmtKm(lw.dist)}</span><span class="lbl">Km</span></div><div class="mini"><span class="num">${fmtTime(lw.time)}</span><span class="lbl">Tiempo</span></div><div class="mini"><span class="num" style="color:#C9BDFF">+${lw.xp}</span><span class="lbl">XP</span></div></div><div class="mute small">✉️ ${esc(cartaTxt(lw))}</div><button class="btn sm" id="cartaShare">Compartir carta de ${esc(p.name)}</button></div>`:`<div class="box empty">${ico('boot')}<div class="t2">Sin paseos todavía</div><div class="mute small">Tu primer paseo da +25 XP extra.</div></div>`}`;
   $('#goWalk').onclick=()=>go('walk');bindPetCard();
+  {const hb=$('#healthBan');if(hb)hb.onclick=()=>{PK_TAB='mas';go('pack')}}
+  {const cs=$('#cartaShare');if(cs&&lw)cs.onclick=()=>shareText(cartaTxt(lw))}
   {const hm=$('#homeMore');if(hm)hm.addEventListener('toggle',()=>{HOME_MORE=hm.open})}
   if($('#claimWkCon'))$('#claimWkCon').onclick=()=>{
     if(!S.wkCon||S.wkCon.claimed)return;
@@ -3717,6 +3788,7 @@ function renderPack(){rollDay();const p=S.pet;
    ${p.custom?`<div class="field"><label>Pelaje</label><div class="swatches">${FURS.map(c=>`<button data-fur="${c}" class="${p.fur===c?'on':''}" style="background:${c}" aria-label="Pelaje"></button>`).join('')}</div></div><div class="field"><label>Manchas y orejas</label><div class="swatches">${SPOTS.map(c=>`<button data-spot="${c}" class="${p.spot===c?'on':''}" style="background:${c}" aria-label="Manchas"></button>`).join('')}</div></div>`:''}</div>
   <div class="g3"><div class="mini"><span class="num">${S.totals.km.toFixed(1).replace('.',',')}</span><span class="lbl">Km total</span></div><div class="mini"><span class="num">${Math.round(S.totals.min/60)}h</span><span class="lbl">Paseando</span></div><div class="mini"><span class="num">${S.totals.walks}</span><span class="lbl">Paseos</span></div></div>
   <div class="box"><div class="row between"><span class="t2">Constancia</span><span class="tag o">Racha ${p.streak} · récord ${p.best}</span></div><div style="overflow-x:auto"><div class="heat">${cells.join('')}</div></div></div>
+  <div class="box"><div class="row between"><span class="t2">Resumen semanal</span><span class="lbl">Para compartir</span></div><div class="mute small">Una imagen con tus km, días, territorios y objetos de la semana.</div><button class="btn sm o" id="wkCardBtn">Crear imagen de mi semana</button></div>
   <div class="box"><div class="row between"><span class="t2">Expediciones</span><span class="lbl">${Object.keys(S.parks||{}).length} parques</span></div>${expeditionsHTML()}</div>
   <div class="box"><div class="row between"><span class="t2">Historial</span><span class="lbl">Últimos paseos</span></div><div class="col" id="histList"><div class="mute small">Cargando…</div></div></div>
   <div class="box"><div class="row between"><span class="t2">Medallas</span><span class="lbl">${S.badges.length}/${BADGES.length}</span></div>${medalsGridHTML()}</div>
@@ -3746,7 +3818,7 @@ function renderPack(){rollDay();const p=S.pet;
   $$('[data-acpt]').forEach(b=>b.onclick=()=>setReq(b.dataset.acpt,{status:'aceptada',acceptedTs:Date.now()}));
   $$('[data-rej]').forEach(b=>b.onclick=()=>setReq(b.dataset.rej,{status:'rechazada'}));
   $$('[data-job]').forEach(b=>b.onclick=()=>openJob(b.dataset.job));
-  $('#pkCoin').onclick=()=>go('store');
+  $('#pkCoin').onclick=()=>go('store');{const wb=$('#wkCardBtn');if(wb)wb.onclick=weeklyCard}
   $('#setBtn2').onclick=openSettings;bindMedals($('#s-pack'));$$('#s-pack [data-item]').forEach(b=>b.onclick=()=>openItem(b.dataset.item));
   loadHistory();
 }
