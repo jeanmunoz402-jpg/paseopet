@@ -1156,6 +1156,20 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .ee-next{font-size:12.5px;color:#C9BDFF}
 .ee-ok{width:100%;margin-top:4px}
 @media (prefers-reduced-motion:reduce){.ee-rays,.ee-glow,.ee-spin,.evoepic.shake{animation:none!important}}
+.parkhud{position:absolute;left:8px;right:8px;bottom:62px;z-index:6;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:16px;background:rgba(14,10,38,.9);color:#fff;box-shadow:inset 0 0 0 2px var(--pc,#2CE6A6),0 6px 16px rgba(0,0,0,.35);font-size:13px;line-height:1.25}
+.parkhud .ph-ic{flex:none;width:34px;height:34px;display:grid;place-items:center;font-size:22px;border-radius:50%;background:rgba(255,255,255,.08)}
+.parkhud .ph-arrow span{display:inline-block;color:var(--pc);font-size:20px;transition:transform .4s}
+.parkhud .ph-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.parkhud .ph-tx b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.parkhud .ph-tx span{color:#D9D0FF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.parkhud .ph-bar{height:7px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:3px}
+.parkhud .ph-bar i{display:block;height:100%;background:var(--pc);border-radius:5px;transition:width .5s}
+.parkhud .ph-need{flex:none;text-align:right;font-weight:800;font-size:16px;color:var(--pc)}
+.parkhud .ph-need small{display:block;font-size:10.5px;font-weight:600;color:#C9BDFF}
+.parkhud.cap{animation:phcap 1.4s ease-out}
+@keyframes phcap{0%{transform:scale(1.08);box-shadow:inset 0 0 0 3px #FFC93C,0 0 0 0 rgba(255,201,60,.9)}100%{transform:none;box-shadow:inset 0 0 0 2px var(--pc),0 0 0 26px rgba(255,201,60,0)}}
+#o-live.eco .parkhud{display:none}
+#parkHud:not([hidden])~.ringhint{bottom:136px}
 </style>
 
 <div class="app" id="app">
@@ -1195,7 +1209,7 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
         <button class="pill" id="lzin" aria-label="Acercar">+</button><button class="pill" id="lzout" aria-label="Alejar">−</button>
         <button class="pill" id="ecoBtn" aria-label="Modo ahorro de batería">AHORRO</button><button class="pill" id="lstyle" aria-label="Estilo del mapa">MAPA</button><button class="pill" id="minBtn" aria-label="Minimizar">▼</button>
       </div>
-      <div class="ringhint" id="ringHint" hidden></div><div class="radar-bar" id="radarBar"><span id="radarTxt">📡 ANILLO GPS 55M ACTIVO</span><span id="radarDist" style="color:var(--gold)">BUSCANDO TESOROS</span></div>
+      <div class="parkhud" id="parkHud" hidden></div><div class="ringhint" id="ringHint" hidden></div><div class="radar-bar" id="radarBar"><span id="radarTxt">📡 ANILLO GPS 55M ACTIVO</span><span id="radarDist" style="color:var(--gold)">BUSCANDO TESOROS</span></div>
       <div class="attr" style="bottom:6px">© OpenStreetMap contributors</div>
     </div>
     <div class="panel">
@@ -3020,6 +3034,11 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
   const cells=L.cells||{};
   for(const key in cells){const c=hexXY(key);if(c.x<x0-R_HEX||c.x>x1+R_HEX||c.y<y0-R_HEX||c.y>y1+R_HEX)continue;const col=ownerColor(cells[key].o);hpath(X(c.x),Y(c.y),R_HEX*k*.92);ctx.fillStyle=col+(sharp?(cells[key].o===UID?'30':'22'):(cells[key].o===UID?'4D':'33'));ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=lw(1.5);ctx.stroke()}
   const now=performance.now();
+  if(L.parks)for(const pk of L.parks){if(!pk.poly||pk.poly.length<3)continue;const m0=merc(pk.c.lat,pk.c.lng);if(m0.x<x0-1500||m0.x>x1+1500||m0.y<y0-1500||m0.y>y1+1500)continue;
+   const col=pk.st==='mine'?'#FF7A4D':pk.st==='rival'?'#FF4D6D':'#2CE6A6';ctx.beginPath();pk.poly.forEach(([la,ln],i)=>{const m=merc(la,ln);i?ctx.lineTo(X(m.x),Y(m.y)):ctx.moveTo(X(m.x),Y(m.y))});ctx.closePath();
+   const a=pk.here?((Math.floor(now/450)%2)?.38:.22):.16;ctx.fillStyle=col+Math.round(a*255).toString(16).padStart(2,'0');ctx.fill();ctx.setLineDash(pk.st==='free'?[5*u,4*u]:[]);ctx.strokeStyle=col;ctx.lineWidth=lw(pk.here?3:2);ctx.stroke();ctx.setLineDash([]);
+   if(pk.fx!=null){const cx=X(m0.x),cy=Y(m0.y);ctx.strokeStyle='rgba(255,201,60,'+(1-pk.fx).toFixed(2)+')';ctx.lineWidth=lw(4);ctx.beginPath();ctx.arc(cx,cy,(20+pk.fx*160)*u,0,7);ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,(8+pk.fx*90)*u,0,7);ctx.stroke()}
+   if(k*120>40*u&&!pk.here){const cx=X(m0.x),cy=Y(m0.y)+6*u,t=pk.n.length>22?pk.n.slice(0,21)+'…':pk.n,fs=Math.round(8*u);ctx.font=fs+'px "PP Titulo",monospace';const tw=ctx.measureText(t).width;ctx.fillStyle='rgba(14,10,38,.82)';ctx.fillRect(cx-tw/2-4*u,cy,tw+8*u,fs+6*u);ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(t,cx,cy+3*u);ctx.textAlign='left';ctx.textBaseline='alphabetic'}}
   if(L.targets)for(const t of L.targets){if(t.done)continue;const c=hexXY(t.k);hpath(X(c.x),Y(c.y),R_HEX*k*.92);ctx.strokeStyle=(Math.floor(now/400)%2)?'#FFC93C':'#FFFFFF';ctx.lineWidth=lw(2);ctx.stroke()}
   const line=(pts,col,w,dash)=>{if(!pts||pts.length<2)return;ctx.beginPath();pts.forEach((p,i)=>{const m=merc(p.lat,p.lng);i?ctx.lineTo(X(m.x),Y(m.y)):ctx.moveTo(X(m.x),Y(m.y))});ctx.setLineDash(dash?dash.map(v=>v*u):[]);ctx.lineCap=sharp?'round':'square';ctx.lineJoin=sharp?'round':'miter';ctx.strokeStyle=col;ctx.lineWidth=lw(w);ctx.stroke();ctx.setLineDash([])};
   if(L.guide)line(L.guide,light?'rgba(40,50,90,.6)':'rgba(200,210,240,.6)',2,[2,3]);
@@ -3482,6 +3501,35 @@ function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala Pas
   <button class="btn" id="apkCopy">Copiar enlace de descarga</button><button class="btn sm" id="apkNo">No mostrar más en Inicio</button>`,sh=>{
   sh.querySelector('#apkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(APK_URL);toast('Enlace copiado','paw','#2CE6A6')}catch(e){toast('No se pudo copiar','bell','#FFC93C')}};
   sh.querySelector('#apkNo').onclick=()=>{try{localStorage.setItem('pp_apk_x','1')}catch(e){}closeSheet();if(tab==='home'&&S&&S.onboarded)renderHome()}})}
+/* ===== PLAZAS EN EL GPS: captura en vivo ===== */
+async function livePkLoad(w){if(!w||!w.parks||!w.parks.length||w.pkLoaded)return;w.pkLoaded=true;w.pkDocs=w.pkDocs||{};if(MODE!=='firebase'||!DB)return;const wk=weekKey();
+ await Promise.all(w.parks.slice(0,14).map(async k=>{try{const s=await DB.doc('terr/pk_'+k.id+'_'+wk).get();w.pkDocs[k.id]=s.exists?s.data():null}catch(e){}}));if(WK===w){persistActive();markDirty();pkHud()}}
+function pkBrg(a,b){const t=Math.PI/180,y=Math.sin((b.lng-a.lng)*t)*Math.cos(b.lat*t),x=Math.cos(a.lat*t)*Math.sin(b.lat*t)-Math.sin(a.lat*t)*Math.cos(b.lat*t)*Math.cos((b.lng-a.lng)*t);return(Math.atan2(y,x)/t+360)%360}
+function pkInfo(k){const d=((WK&&WK.pkDocs)||{})[k.id]||null,L=parkLeader(d),base=(d&&d.m&&d.m[UID])||0,walk=((WK&&WK.parkM)||{})[k.id]||0,mine=base+walk;
+ const rival=!!(L.uid&&L.uid!==UID);const st=(L.uid===UID)||(!L.uid&&walk>=40)||(rival&&mine>L.m&&walk>=40)?'mine':rival?'rival':'free';
+ const need=st==='mine'?0:Math.max(40-walk,rival?L.m-mine+1:0,0);
+ const lname=L.uid?(L.uid===UID?'Tú':(((d&&d.p)||{})[L.uid]||{}).name||'Otro perro'):'';
+ return{d,st,base,walk,mine,leadM:L.m,leadUid:L.uid,lname,need}}
+function pkLive(k){if(!WK)return;WK.pkSt=WK.pkSt||{};const I=pkInfo(k),prev=WK.pkSt[k.id];
+ if(prev===undefined){WK.pkSt[k.id]=I.st;const n=esc(k.n);
+  toast(I.st==='mine'?`🌳 Entraste a ${n}: ¡es tuya! Sigue sumando metros para defenderla`:I.st==='rival'?`🌳 ${n}: líder ${esc(I.lname)} con ${Math.round(I.leadM)} m. Camina ${Math.ceil(I.need)} m aquí para capturarla`:`🌳 ${n} está libre. Camina ${Math.ceil(I.need)} m aquí para capturarla`,'corona','#2CE6A6');
+  try{say(I.st==='mine'?`Entraste a ${k.n}, tu plaza`:`Entraste a ${k.n}. Camina ${Math.ceil(I.need)} metros para capturarla`)}catch(e){}return}
+ if(prev!=='mine'&&I.st==='mine'){WK.pkSt[k.id]='mine';WK.pkFx={id:k.id,t:Date.now()};
+  try{vib('leader')}catch(e){}try{bark(2,.9)}catch(e){}try{boom(90)}catch(e){}
+  toast(`👑 ¡Capturaste ${esc(k.n)}! Se confirma al terminar el paseo`,'corona','#FFC93C');try{say(`¡Capturaste ${k.n}!`)}catch(e){}
+  const h=$('#parkHud');if(h){h.classList.remove('cap');void h.offsetWidth;h.classList.add('cap')}persistActive()}}
+function pkHud(){const el=$('#parkHud');if(!el)return;if(!WK||!WK.parks||!WK.parks.length||!WK.pos||S.eco){el.hidden=true;return}
+ const here=WK.parks.find(k=>inPoly(WK.pos,k));
+ if(here){const I=pkInfo(here),rival=I.st==='rival';const pct=I.st==='mine'?100:Math.max(4,Math.min(99,Math.round(100*(rival?I.mine/(I.leadM+1):I.walk/40))));
+  el.style.setProperty('--pc',I.st==='mine'?'#FF7A4D':rival?'#FF4D6D':'#2CE6A6');
+  el.innerHTML=`<div class="ph-ic">${I.st==='mine'?'👑':'🌳'}</div><div class="ph-tx"><b>${esc(here.n)}</b><span>${I.st==='mine'?'¡Es tuya esta semana! Cada metro la defiende':rival?`Líder: ${esc(I.lname)} · ${Math.round(I.leadM)} m · tú ${Math.round(I.mine)} m`:'Plaza libre: nadie la ha capturado'}</span><div class="ph-bar"><i style="width:${pct}%"></i></div></div><div class="ph-need">${I.st==='mine'?'✓':Math.ceil(I.need)+' m'}<small>${I.st==='mine'?'tuya':'para capturar'}</small></div>`;el.hidden=false;return}
+ const c=WK.parks.map(k=>({k,I:pkInfo(k),d:hav(WK.pos,k.c)})).filter(x=>x.I.st!=='mine'&&x.d<900).sort((a,b)=>a.d-b.d)[0];
+ if(!c){const mine=WK.parks.filter(k=>pkInfo(k).st==='mine').length;if(!mine){el.hidden=true;return}
+  el.style.setProperty('--pc','#FF7A4D');el.innerHTML=`<div class="ph-ic">👑</div><div class="ph-tx"><b>${mine} plaza${mine>1?'s':''} tuya${mine>1?'s':''} cerca</b><span>Pasa por ellas para defenderlas esta semana</span></div>`;el.hidden=false;return}
+ const br=pkBrg(WK.pos,c.k.c);el.style.setProperty('--pc',c.I.st==='rival'?'#FF4D6D':'#2CE6A6');
+ el.innerHTML=`<div class="ph-ic ph-arrow"><span style="transform:rotate(${Math.round(br-90)}deg)">➤</span></div><div class="ph-tx"><b>${esc(c.k.n)}</b><span>${c.I.st==='rival'?`Líder: ${esc(c.I.lname)} · ${Math.round(c.I.leadM)} m`:'¡Libre! Ve a capturarla'}</span></div><div class="ph-need">${c.d>=1000?(c.d/1000).toFixed(1).replace('.',',')+' km':Math.round(c.d)+' m'}<small>de distancia</small></div>`;el.hidden=false}
+function pkMapParks(){if(!WK||!WK.parks)return null;return WK.parks.map(k=>{const I=pkInfo(k);return{n:k.n,c:k.c,poly:k.poly,st:I.st,here:!!(WK.pos&&inPoly(WK.pos,k)),fx:WK.pkFx&&WK.pkFx.id===k.id&&Date.now()-WK.pkFx.t<2500?(Date.now()-WK.pkFx.t)/2500:null}})}
+function pkMapLeaders(){if(!WK||!WK.parks)return null;const out=[];for(const k of WK.parks){const I=pkInfo(k);if(I.st==='mine')out.push({lat:k.c.lat,lng:k.c.lng,pet:S.pet,me:true});else if(I.leadUid){const pt=((I.d&&I.d.p)||{})[I.leadUid];if(pt)out.push({lat:k.c.lat,lng:k.c.lng,pet:pt,me:false})}}return out}
 /* ===== EVOLUCIÓN ÉPICA (pantalla completa, al volver a Inicio) ===== */
 function evoQueue(oldL,newL){if(evoOf(newL).i>evoOf(oldL).i){const q=S.evoPending;S.evoPending={from:q?Math.min(q.from,oldL):oldL,to:newL,ts:Date.now()}}}
 function stageExtra(i){return i>=11?'😇 Halo y alas celestiales':i>=9?'🪽 Alas y corona':i===8?'👑 Capa y corona de Leyenda':i>=4?'🦸 Capa de '+EVO[i].n:i>=2?'🏅 Medalla de '+EVO[i].n:''}
@@ -3751,7 +3799,7 @@ function renderMapUI(){if(tab!=='map')return;
   $$('#mapBottom [data-w]').forEach(b=>b.onclick=()=>openWalker(b.dataset.w));
   $('#zme').innerHTML=ico('gps');$('#zstyle').innerHTML=ico('pin');$('#zstyle').onclick=openMapStyle;$('#attr1').hidden=tilesOff();
 }
-function drawMapTab(){const ws=MC.mode==='walk'?walkersList().map(w=>({lat:w.lat,lng:w.lng,c:petC(w.pet),color:'#2CE6A6',id:w.id})):null;drawWorld($('#mapCv'),MC,{grid:MC.mode==='terr',cells:MC.mode==='parks'?{}:SH.cells,leaders:MC.mode==='parks'?mapLeaders():null,pins:ws,me:MC.me,meAcc:MC.acc,home:S.home})}
+function drawMapTab(){const ws=MC.mode==='walk'?walkersList().map(w=>({lat:w.lat,lng:w.lng,c:petC(w.pet),color:'#2CE6A6',id:w.id})):null;drawWorld($('#mapCv'),MC,{grid:MC.mode==='terr',cells:MC.mode==='parks'?{}:SH.cells,leaders:MC.mode==='parks'?mapLeaders():null,parks:MC.mode==='parks'?PK.list.map(k=>{const L=parkLeader(SH.parkDocs&&SH.parkDocs[k.id]);return{n:k.n,c:k.c,poly:k.poly,st:L.uid===UID?'mine':L.uid?'rival':'free',here:false,fx:null}}):null,pins:ws,me:MC.me,meAcc:MC.acc,home:S.home})}
 (()=>{const cv=$('#mapCv');let drag=null,moved=0;
   cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};moved=0;cv.setPointerCapture(e.pointerId)});
   cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved+=Math.abs(dx)+Math.abs(dy);MC.x-=dx*MC.mpp;MC.y+=dy*MC.mpp;drag={x:e.clientX,y:e.clientY};markDirty()});
@@ -3870,7 +3918,7 @@ function onPoint(p){const m=merc(p.lat,p.lng),k=hexOf(m.x,m.y);watchChunks(p.lat
 }
 function walkXp(w){const conq=w.hexes.filter(k=>['new','steal'].includes(w.hexInfo[k])).length;const tPaso=1+((S&&S.talents&&S.talents.paso||0)*0.12)+((S&&S.pet&&S.pet.prestige||0)*0.15);const bXp=(S&&S.boosts&&S.boosts.xp2>0)?2:1;const raw=Math.floor(w.moving/60)+Math.floor(w.dist/1000*20)+conq*15+w.got.reduce((a,g)=>a+itemById(g).xp,0)+(w.bossBonus||0)+(w.targets&&w.targets.length&&w.targets.every(t=>t.done)?40:0);return Math.round(raw*tPaso*bXp)}
 function elapsed(){if(!WK)return 0;return((WK.paused?WK.pauseAt:Date.now())-WK.t0-WK.pausedMs)/1000}
-function updateLive(){if(!WK)return;const el=elapsed();$('#lTime').textContent=fmtTime(el);$('#lDist').textContent=fmtKm(WK.dist);$('#lPace').textContent=fmtPace(WK.moving,WK.dist);$('#lXp').textContent=walkXp(WK);$('#lHex').textContent=WK.hexes.filter(k=>['new','steal'].includes(WK.hexInfo[k])).length;$('#lItems').textContent=WK.got.length;$('#lKcal').textContent=Math.round((+S.pet.kg||10)*WK.dist/1000*1.1);
+function updateLive(){if(!WK)return;try{pkHud()}catch(e){}const el=elapsed();$('#lTime').textContent=fmtTime(el);$('#lDist').textContent=fmtKm(WK.dist);$('#lPace').textContent=fmtPace(WK.moving,WK.dist);$('#lXp').textContent=walkXp(WK);$('#lHex').textContent=WK.hexes.filter(k=>['new','steal'].includes(WK.hexInfo[k])).length;$('#lItems').textContent=WK.got.length;$('#lKcal').textContent=Math.round((+S.pet.kg||10)*WK.dist/1000*1.1);
   $('#liveState').textContent=WK.paused?'PAUSA':sniffing()>=10?'OLFATEANDO':WK.auto?'AUTO-PAUSA':WK.vehicle?'VEHÍCULO':'PASEANDO';$('#pauseBtn').textContent=WK.paused?'Seguir':'Pausa';
   {const rh=$('#ringHint');if(rh){const n=itemsInRing();rh.hidden=!n||!!S.eco;if(n)rh.textContent=n>1?`¡${n} OBJETOS EN TU ANILLO! TÓCALOS`:'¡OBJETO EN TU ANILLO! TÓCALO'}}
   const rTxt=$('#radarTxt'),rDist=$('#radarDist');
@@ -3885,7 +3933,7 @@ function updateLive(){if(!WK)return;const el=elapsed();$('#lTime').textContent=f
   }
 }
 function drawLive(){if(S.eco)return;if(!WK.pos){drawWorld($('#liveCv'),{...(()=>{const c=S.home||DEF_CENTER;return merc(c.lat,c.lng)})(),mpp:WK.cam.mpp},{});return}const m=merc(WK.pos.lat,WK.pos.lng);const cells={...SH.cells};for(const k of WK.hexes){if(['new','steal'].includes(WK.hexInfo[k]))cells[k]={o:UID,s:1}}
-  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home,angel:WK.angel?angelById(WK.angel):null})}
+  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home,angel:WK.angel?angelById(WK.angel):null,parks:pkMapParks(),leaders:pkMapLeaders()})}
 function renderEvBtns(){const cnt={};if(WK&&WK.events)for(const e of WK.events)cnt[e.t]=(cnt[e.t]||0)+1;$('#evBtns').innerHTML=EVS.map(([k,n])=>`<button data-ev="${k}" aria-label="${n}">${ico(k)}<span>${n}</span>${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`).join('');$$('#evBtns button').forEach(b=>b.onclick=()=>logEvent(b.dataset.ev))}
 async function logEvent(t){if(!WK)return;const pos=WK.pos||WK.last;if(!pos){toast('Esperando GPS para ubicar el evento','gps');return}
   const e={t,lat:+pos.lat.toFixed(6),lng:+pos.lng.toFixed(6),at:Math.round(elapsed())};
@@ -5730,7 +5778,7 @@ function pickOnStreets(segs,n,start,avoid=[]){const tot=segs.reduce((s,x)=>s+x.L
 async function spawnStreetItems(w,start){if(!start)return;const res=await streetSegments(start);if(WK!==w)return;
   if(res&&res.segs.length){const lure=(S&&S.boosts&&S.boosts.lure>0)?4:0;const pts=pickOnStreets(res.segs,5+Math.floor(Math.random()*3)+lure,start);w.items=pts.map(p=>({id:rollItem(),lat:p.lat,lng:p.lng,got:false}));w.itemMode='street';
     const bpt=pickOnStreets(res.segs,1,start,pts);if(bpt.length)w.boss={lat:bpt[0].lat,lng:bpt[0].lng,got:false,n:'Hito Dorado del Barrio'};
-    w.parks=res.parks;const near=res.parks.filter(k=>hav(start,k.c)<450).sort((a,b)=>hav(start,a.c)-hav(start,b.c)).slice(0,2).map(k=>({lat:k.c.lat,lng:k.c.lng,park:k.n}));
+    w.parks=res.parks;livePkLoad(w);const near=res.parks.filter(k=>hav(start,k.c)<450).sort((a,b)=>hav(start,a.c)-hav(start,b.c)).slice(0,2).map(k=>({lat:k.c.lat,lng:k.c.lng,park:k.n}));
     const extra=pickOnStreets(res.segs,3-near.length,start,pts.concat(near));w.spots=near.concat(extra).map(s=>({...s,done:false}));
     if(pts.length)toast(`${pts.length} objetos con niveles en las calles + Hito Dorado (★)`,'bag','#FFC93C');
     if(w.parks.length)toast(`Parques cerca: ${w.parks.slice(0,2).map(k=>esc(k.n)).join(', ')}. Pasea por ellos para ser Líder del Parque`,'corona','#FFC93C')}
@@ -5767,7 +5815,7 @@ function paceTrack(v,dt){if(dt>30||dt<=0)return;const kmh=v*3.6,[lo,hi]=paceRang
 function happyPct(w){const z=w.pz||{in:0,slow:0,fast:0},sn=w.sniffSec||0,tot=z.in+z.slow+z.fast+sn;if(tot<60)return 100;let h=100*(z.in+.7*z.slow+sn)/tot;if((w.minEnergy??100)<20)h=Math.min(h,60);return Math.max(0,Math.min(100,Math.round(h)))}
 function happyMult(h){return h>=85?1.2:h>=65?1:h>=45?.85:.7}
 /* ---- Parques ---- */
-function parkTrack(p,d){if(!WK.parks)return;for(const k of WK.parks)if(inPoly(p,k)){WK.parkM=WK.parkM||{};WK.parkM[k.id]=(WK.parkM[k.id]||0)+d;break}}
+function parkTrack(p,d){if(!WK.parks)return;for(const k of WK.parks)if(inPoly(p,k)){WK.parkM=WK.parkM||{};WK.parkM[k.id]=(WK.parkM[k.id]||0)+d;try{pkLive(k)}catch(e){}break}}
 function wellSnap(w){const sn=w.sn;let sniff=w.sniffSec||0;if(sn&&!sn.done){const dur=(Math.min(Date.now(),w.lastFixTs||Date.now())-sn.t)/1000;if(dur>=15)sniff+=Math.min(dur,300)}
   const parks=(w.parks||[]).filter(k=>(w.parkM||{})[k.id]>=40).map(k=>({id:k.id,n:k.n,c:k.c,m:Math.round(w.parkM[k.id])}));
   return{sniff:Math.round(sniff),sniffN:w.sniffN||0,sniffLoot:w.sniffLoot||[],happy:happyPct({...w,sniffSec:sniff}),minEnergy:Math.round(w.minEnergy??100),pz:w.pz||null,parks}}
