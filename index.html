@@ -3264,27 +3264,29 @@ function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
    save();closeSheet();if(tab==='pack')renderPack();fxReward();toast('Ficha guardada','paw','#2CE6A6')}})}
 function fxReward(){if(!S.fxGot&&fxPct()>=70){S.fxGot=1;S.coins=(S.coins||0)+40;save(true);try{pushProfile()}catch(e){}try{coinSfx()}catch(e){}setTimeout(()=>toast('Ficha al 70%: +40 DogCoins','star','#FFC93C'),900);if(tab==='pack')renderPack()}}
 /* ===== PUENTE CON LA APK DE ANDROID (avisos y GPS en segundo plano) ===== */
-let NPORT=null,NAT=false;
+let NPORT=null,NAT=false,NATI={};
 window.addEventListener('message',e=>{try{if(NPORT||!e.ports||!e.ports[0]||e.source)return;NPORT=e.ports[0];NPORT.onmessage=m=>natMsg(m.data);NAT=true;try{apkMark()}catch(x){}setTimeout(natSync,300)}catch(x){}});
 function natSend(o){try{if(NPORT)NPORT.postMessage(JSON.stringify(o))}catch(e){}}
 function natMsg(d){let o=null;try{o=typeof d==='string'?JSON.parse(d):d}catch(e){return}if(!o)return;
  if(o.t==='hello'){NAT=true;natSync()}
- else if(o.t==='pts')natPts(o.pts)}
+ else if(o.t==='pts')natPts(o.pts)
+ else if(o.t==='status'){NATI=o;if(!$('#s-settings')||$('#s-settings').hidden)return;try{if(tab==='settings')renderSettings()}catch(e){}}}
 function natPts(pts){if(!WK||!Array.isArray(pts)||!pts.length)return;let n=0;
  for(const q of pts){const[la,ln,ac,ts]=q;if(!(ts>(WK.fixTs||0)))continue;try{onFix({coords:{latitude:la,longitude:ln,accuracy:ac},timestamp:ts})}catch(e){}n++}
  if(n){persistActive();try{updateLive()}catch(e){}}}
 function natSchedule(){if(S.natOff||!S.onboarded)return[];const L=[],now=Date.now(),nm=(S.pet&&S.pet.name)||'tu perro';
  const at=(d,h,m)=>{const x=new Date(d);x.setHours(h,m||0,0,0);return x.getTime()};const add=(id,t,title,body)=>{if(t>now+60e3)L.push({id,at:t,title,body})};
- const walked=!!(S.days||{})[dkey()],st=(S.pet&&S.pet.streak)||0;
- for(let i=0;i<3;i++){const d=new Date();d.setDate(d.getDate()+i);if(i===0&&walked)continue;add('racha'+i,at(d,19,30),`🐾 ${nm} te espera`,st>1&&i===0?`Pasea hoy para no perder tu racha de ${st} días.`:'Un paseo corto hoy suma XP y DogCoins.')}
- const H=(S.vacc||[]).filter(v=>v.next).map(v=>[v.n,v.next]);const vn=(S.pet.fx||{}).vetNext;if(vn)H.push(['Control veterinario',vn]);
- H.slice(0,10).forEach(([n,dt],i)=>{const d=new Date(String(dt)+'T00:00');if(isNaN(d))return;const pv=new Date(d);pv.setDate(d.getDate()-1);add('sal'+i+'a',at(pv,10),`💉 Mañana: ${n}`,`Recuerda la cita de ${nm}.`);add('sal'+i+'b',at(d,9),`💉 Hoy: ${n}`,`Hoy toca ${n} para ${nm}.`)});
- {const d=new Date();d.setDate(d.getDate()+((8-d.getDay())%7||7));add('evt',at(d,9),'🎯 Nuevo evento semanal','Empezó el evento de la semana. ¡Sal a ganar DogCoins!')}
- {const d=new Date(),last=new Date(d.getFullYear(),d.getMonth()+1,0);add('pase',at(last,18),'🗓️ Último día del pase del mes','Hoy puedes sumar el último día y reclamar tus premios.')}
+ const walked=walkedToday(),st=(S.pet&&S.pet.streak)||0,R=remindCfg(),NC=S.natCfg||{};const [rh,rm]=String(R.t||'19:00').split(':').map(Number);
+ if(R.on)for(let i=0;i<3;i++){const d=new Date();d.setDate(d.getDate()+i);if(i===0&&walked)continue;add('racha'+i,at(d,rh,rm),'Hora de pasear 🐾',i===0&&st>1?`${nm} te espera. Pasea hoy para no perder tu racha de ${st} días.`:`${nm} está esperando su paseo de hoy.`)}
+ if(R.streak&&st>0&&!walked)add('peligro',at(new Date(),21,0),'Tu racha está en peligro 🔥',`La racha de ${st} día${st>1?'s':''} con ${nm} se pierde a medianoche. ¡Aún alcanzas!`);
+ if(NC.salud!==false){ const H=(S.vacc||[]).filter(v=>v.next).map(v=>[v.n,v.next]);const vn=(S.pet.fx||{}).vetNext;if(vn)H.push(['Control veterinario',vn]);
+ H.slice(0,10).forEach(([n,dt],i)=>{const d=new Date(String(dt)+'T00:00');if(isNaN(d))return;const pv=new Date(d);pv.setDate(d.getDate()-1);add('sal'+i+'a',at(pv,10),`💉 Mañana: ${n}`,`Recuerda la cita de ${nm}.`);add('sal'+i+'b',at(d,9),`💉 Hoy: ${n}`,`Hoy toca ${n} para ${nm}.`)})}
+ if(NC.evt!==false){const d=new Date();d.setDate(d.getDate()+((8-d.getDay())%7||7));add('evt',at(d,9),'🎯 Nuevo evento semanal','Empezó el evento de la semana. ¡Sal a ganar DogCoins!')}
+ if(NC.pase!==false){const d=new Date(),last=new Date(d.getFullYear(),d.getMonth()+1,0);add('pase',at(last,18),'🗓️ Último día del pase del mes','Hoy puedes sumar el último día y reclamar tus premios.')}
  return L}
 function natSync(){if(!NPORT)return;natSend({t:'sched',list:natSchedule()});natSend({t:'walk',on:!!WK,name:(S.pet&&S.pet.name)||''});if(WK)natSend({t:'pull',since:WK.fixTs||0})}
 function natWalk(on){if(!NPORT)return;natSend({t:'walk',on:!!on,name:(S.pet&&S.pet.name)||''})}
-document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
+document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){natSend({t:'status'});if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
 /* ===== APK de Android ===== */
 const APK_URL='https://github.com/jeanmunoz402-jpg/paseopet/releases/download/apk-latest/PaseoPet.apk';
 function inApk(){try{if(NAT||String(document.referrer||'').startsWith('android-app://')){try{sessionStorage.setItem('pp_twa','1')}catch(e){}apkMark();return true}return sessionStorage.getItem('pp_twa')==='1'}catch(e){return !!NAT}}
@@ -5084,12 +5086,11 @@ function renderSettings(){const p=S.pet;let acct='';
    <div class="setrow">${ico('bubble')}<span><b>Voz del entrenador</b><br><span class="mute small">Te dice la distancia y el ritmo en cada km</span></span><button class="sw ${S.voice!==false?'on':''}" id="stVoz" aria-label="Voz del entrenador"></button></div>
    <div class="setrow">${ico('play')}<span><b>Seguir en segundo plano</b><br><span class="mute small">Mantiene el paseo activo si cambias de app</span></span><button class="sw ${S.bgMode!==false?'on':''}" id="stBg" aria-label="Seguir en segundo plano"></button></div>
    <button class="setrow" id="stTest">${ico('paw')}<span><b>Probar ladrido</b><br><span class="mute small">Sube el volumen para escucharlo</span></span><span class="chev">►</span></button>
-   <button class="setrow" id="stNot">${ico('bell')}<span><b>Notificaciones del navegador</b><br><span class="mute small">${notif==='granted'?'Activadas':notif==='denied'?'Bloqueadas en el navegador':notif==='unsupported'?'No disponibles aquí':'Toca para activarlas'}</span></span><span class="chev">${notif==='granted'?'✓':'►'}</span></button></div>${remindSettingsHTML()}
+   ${inApk()?`<button class="setrow" id="stOsN">${ico('bell')}<span><b>Notificaciones del teléfono</b><br><span class="mute small">${NATI.notif===false?'Bloqueadas: toca para permitirlas':NATI.notif?'Permitidas en el teléfono':'Toca para revisar el permiso'}</span></span><span class="chev">${NATI.notif===false?'⚠':NATI.notif?'✓':'►'}</span></button>`:`<button class="setrow" id="stNot">${ico('bell')}<span><b>Notificaciones del navegador</b><br><span class="mute small">${notif==='granted'?'Activadas':notif==='denied'?'Bloqueadas en el navegador':notif==='unsupported'?'No disponibles aquí':'Toca para activarlas'}</span></span><span class="chev">${notif==='granted'?'✓':'►'}</span></button>`}</div>${remindSettingsHTML()}
   <div class="box"><span class="t2">Comunidad</span>
    <button class="setrow" id="stProf">${ico('paw')}<span><b>Mi perfil público</b><br><span class="mute small">Así te ven los demás</span></span><span class="chev">►</span></button>
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
    <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button>
-    ${NAT?`<button class="setrow" id="stNat">${ico('bell')}<span><b>Avisos en el teléfono</b><br><span class="mute small">${S.natOff?'Desactivados':'Racha, vacunas, evento semanal y pase del mes'}</span></span><span class="chev">${S.natOff?'OFF':'ON'}</span></button>`:''}
     ${isIOS()&&!isApp()?`<button class="setrow" id="stIos">${ico('star')}<span><b>Agregar la app a tu iPhone</b><br><span class="mute small">Ícono en tu inicio y pantalla completa</span></span><span class="chev">►</span></button>`:''}
     ${!inApk()&&!isIOS()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
   ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
@@ -5104,11 +5105,11 @@ function renderSettings(){const p=S.pet;let acct='';
   $('#stPriv').onclick=()=>{S.priv=!S.priv;save();renderSettings()};
   $('#stGoal').onchange=e=>{p.goal=Math.max(10,Math.min(180,+e.target.value||45));e.target.value=p.goal;save();toast('Meta diaria: '+p.goal+' min','star')};
   $('#stWx').onclick=()=>{S.wxNotify=S.wxNotify===false;save();if(S.wxNotify)askNotif();renderSettings()};
-  $('#stNot').onclick=async()=>{await askNotif();renderSettings()};bindRemindSettings();
+  if($('#stNot'))$('#stNot').onclick=async()=>{await askNotif();renderSettings()};if($('#stOsN'))$('#stOsN').onclick=()=>{natSend({t:'osnotif'});toast('Activa «Permitir notificaciones» y vuelve a PaseoPet','bell')};bindRemindSettings();
   $('#stSnd').onclick=()=>{S.sound=S.sound===false;save();renderSettings();if(S.sound)bark(2)};$('#stVoz').onclick=()=>{S.voice=S.voice===false;save();renderSettings();if(S.voice)say('Voz del entrenador activada')};
   $('#stBg').onclick=()=>{S.bgMode=S.bgMode===false;save();if(WK)bgKeepAlive(S.bgMode);renderSettings()};$('#stTest').onclick=()=>{audioCtx();bark(2);say(`Hola, soy ${S.pet.name}`)};
   const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isApp()){exitHint(true);return}if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
-  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stIos'))$('#stIos').onclick=openIos;if($('#stNat'))$('#stNat').onclick=()=>{S.natOff=!S.natOff;save();natSend({t:'sched',list:natSchedule()});renderSettings();toast(S.natOff?'Avisos desactivados':'Avisos activados','bell')};$('#stDon').onclick=openDonate;
+  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stIos'))$('#stIos').onclick=openIos;$('#stDon').onclick=openDonate;
   $('#stReset').onclick=async()=>{if(!setResetArm){setResetArm=true;renderSettings();setTimeout(()=>{setResetArm=false;if(tab==='settings')renderSettings()},3500);return}setResetArm=false;await wipeMine()}}
 let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:tab;go('settings')}
 /* ================= CLIMA ANIMADO ================= */
@@ -6280,7 +6281,7 @@ const swOK=()=>{try{return 'serviceWorker' in navigator&&!inClaude()&&window.sel
 function swInit(){if(!swOK())return;navigator.serviceWorker.register('sw.js').then(r=>{SWREG=r;swSync();regPeriodic()}).catch(()=>{});
   navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.pp==='tab'&&S&&S.onboarded){try{go(e.data.tab)}catch(x){}}})}
 async function regPeriodic(){try{if(!SWREG||!SWREG.periodicSync)return;const st=await navigator.permissions.query({name:'periodic-background-sync'});if(st.state==='granted')await SWREG.periodicSync.register('paseo-diario',{minInterval:6*3600e3})}catch(e){}}
-function swSync(){try{if(!SWREG||!S||!S.pet)return;const R=remindCfg();const w=SWREG.active||SWREG.waiting||SWREG.installing;w&&w.postMessage({pp:'cfg',cfg:{on:R.on,t:R.t,name:S.pet.name,streak:S.pet.streak||0,walked:walkedToday()?dkey():'',shown:(S.remSeen&&S.remSeen.d)||''}})}catch(e){}}
+function swSync(){try{if(!SWREG||!S||!S.pet)return;const R=remindCfg();const w=SWREG.active||SWREG.waiting||SWREG.installing;w&&w.postMessage({pp:'cfg',cfg:{on:R.on&&!inApk(),t:R.t,name:S.pet.name,streak:S.pet.streak||0,walked:walkedToday()?dkey():'',shown:(S.remSeen&&S.remSeen.d)||''}})}catch(e){}}
 async function pushNote(title,body,o={}){if(!(window.Notification&&Notification.permission==='granted'))return false;
   const opt={body,icon:'icon-192.png',badge:'icon-192.png',tag:o.tag||'paseopet',renotify:true,vibrate:o.vib||[120,60,120],data:{tab:o.tab||'home'}};
   try{let r=SWREG;if(!r&&swOK())r=await Promise.race([navigator.serviceWorker.ready,new Promise(x=>setTimeout(()=>x(null),1500))]);if(r&&r.showNotification){await r.showNotification(title,opt);return true}}catch(e){}
@@ -6291,8 +6292,8 @@ function remindCfg(){if(!S.remind)S.remind={on:true,t:'19:00',streak:true};retur
 function walkedToday(){return (S.days&&S.days[dkey()]>0)||(S.today&&S.today.min>=1)}
 function remindTick(){if(!S||!S.onboarded||!S.pet||WK)return;const R=remindCfg(),now=new Date(),k=dkey();S.remSeen=S.remSeen||{};
   const [hh,mm]=(R.t||'19:00').split(':').map(Number),after=now.getHours()*60+now.getMinutes()>=hh*60+mm,vis=document.visibilityState==='visible',nm=S.pet.name;
-  if(R.on&&after&&!walkedToday()&&S.remSeen.d!==k){S.remSeen.d=k;save();const m=`${nm} está esperando su paseo de hoy 🐾`;notify(m,'paw');if(vis){toast(m,'paw','#FFC93C');if(tab==='home')renderHome()}else pushNote('Hora de pasear',m,{tag:'diario',tab:'walk'})}
-  const st=S.pet.streak||0;if(R.streak&&st>0&&!walkedToday()&&now.getHours()>=21&&S.remSeen.s!==k){S.remSeen.s=k;save();const m=`Tu racha de ${st} día${st>1?'s':''} con ${nm} se pierde a medianoche. ¡Aún alcanzas!`;notify(m,'fuego');if(vis)toast(m,'fuego','#FF6B2C');else pushNote('Tu racha está en peligro 🔥',m,{tag:'racha',tab:'walk'})}
+  if(R.on&&after&&!walkedToday()&&S.remSeen.d!==k){S.remSeen.d=k;save();const m=`${nm} está esperando su paseo de hoy 🐾`;notify(m,'paw');if(vis){toast(m,'paw','#FFC93C');if(tab==='home')renderHome()}else if(!inApk())pushNote('Hora de pasear',m,{tag:'diario',tab:'walk'})}
+  const st=S.pet.streak||0;if(R.streak&&st>0&&!walkedToday()&&now.getHours()>=21&&S.remSeen.s!==k){S.remSeen.s=k;save();const m=`Tu racha de ${st} día${st>1?'s':''} con ${nm} se pierde a medianoche. ¡Aún alcanzas!`;notify(m,'fuego');if(vis)toast(m,'fuego','#FF6B2C');else if(!inApk())pushNote('Tu racha está en peligro 🔥',m,{tag:'racha',tab:'walk'})}
   swSync()}
 function remindBannerHTML(){if(!S.pet)return '';const R=remindCfg(),now=new Date();if(!R.on||walkedToday())return '';const [hh,mm]=(R.t||'19:00').split(':').map(Number);if(now.getHours()*60+now.getMinutes()<hh*60+mm)return '';
   const st=S.pet.streak||0;return `<div class="box remindbox"><div class="row" style="gap:10px;align-items:center">${petHTML(S.pet,52,{bob:true})}<div class="grow col" style="gap:3px"><b>${esc(S.pet.name)} te está esperando</b><span class="mute small">Todavía no salen a pasear hoy. ¡Un rato basta!</span></div><button class="btn sm o" data-gowalk="1">Pasear</button></div></div>`}
@@ -6303,11 +6304,20 @@ function remindSettingsHTML(){const R=remindCfg(),perm=window.Notification?Notif
   <div class="row between" style="gap:10px"><span class="small">Hora del aviso</span><input class="inp" type="time" id="rmT" value="${esc(R.t)}" style="max-width:130px"></div>
   <label class="setrow tgl"><span><b>Aviso de racha en peligro</b><br><span class="mute small">A las 21:00, si tu racha está por perderse.</span></span><input type="checkbox" id="rmSt" ${R.streak?'checked':''}></label>
   <label class="setrow tgl"><span><b>Consejos de cuidado al entrar</b><br><span class="mute small">Un consejo al azar para cuidar a tu perro cada vez que abres el juego.</span></span><input type="checkbox" id="rmTips" ${S.tipsOff?'':'checked'}></label><button class="btn" id="rmTipNow">🩺 Ver un consejo ahora</button><label class="setrow tgl"><span><b>Avisos durante el paseo</b><br><span class="mute small">Agua, ritmo, metas y hallazgos aunque tengas la pantalla apagada.</span></span><input type="checkbox" id="rmWk" ${S.walkNotes!==false?'checked':''}></label>
+  ${inApk()?`<label class="setrow tgl"><span><b>Vacunas y control veterinario</b><br><span class="mute small">El día antes y el mismo día.</span></span><input type="checkbox" id="rmSal" ${(S.natCfg||{}).salud!==false?'checked':''}></label>
+  <label class="setrow tgl"><span><b>Evento semanal</b><br><span class="mute small">Los lunes a las 9:00.</span></span><input type="checkbox" id="rmEvt" ${(S.natCfg||{}).evt!==false?'checked':''}></label>
+  <label class="setrow tgl"><span><b>Último día del pase del mes</b><br><span class="mute small">A las 18:00.</span></span><input type="checkbox" id="rmPase" ${(S.natCfg||{}).pase!==false?'checked':''}></label>
+  <label class="setrow tgl"><span><b>Avisos con la app cerrada</b><br><span class="mute small">Apágalo para silenciar todos los avisos del teléfono.</span></span><input type="checkbox" id="rmNat" ${S.natOff?'':'checked'}></label>
+  <label class="setrow tgl"><span><b>GPS en segundo plano</b><br><span class="mute small">Graba el paseo con la pantalla apagada. Muestra una notificación fija mientras la app está abierta. Se aplica al volver a abrir la app.</span></span><input type="checkbox" id="rmGps" ${NATI.bg===false?'':'checked'}></label>`:''}
   <button class="btn sm" id="rmTest">Probar un aviso</button>
-  <div class="mute small">${perm!=='granted'?'Activa las notificaciones arriba para recibir avisos fuera de la app. Mientras tanto los verás dentro del juego, en la campana 🔔.':isApp()?'Los avisos llegan mientras PaseoPet sigue abierta o en segundo plano. Si cierras la app por completo, el teléfono puede no mostrar el recordatorio diario.':'Consejo: instala PaseoPet en tu pantalla de inicio para que los avisos lleguen mejor. Si cierras la pestaña, no llegan.'}</div></div>`}
+  <div class="mute small">${inApk()?(NATI.notif===false?'⚠️ Tu teléfono tiene bloqueadas las notificaciones de PaseoPet. Tócalas arriba para permitirlas.':'Con la app instalada los avisos llegan aunque cierres PaseoPet o reinicies el teléfono.'):perm!=='granted'?'Activa las notificaciones arriba para recibir avisos fuera de la app. Mientras tanto los verás dentro del juego, en la campana 🔔.':isApp()?'Los avisos llegan mientras PaseoPet sigue abierta o en segundo plano. Si cierras la app por completo, el teléfono puede no mostrar el recordatorio diario.':'Consejo: instala PaseoPet en tu pantalla de inicio para que los avisos lleguen mejor. Si cierras la pestaña, no llegan.'}</div></div>`}
 function bindRemindSettings(){const R=remindCfg();const q=id=>document.getElementById(id);if(!q('rmOn'))return;
   q('rmOn').onchange=e=>{R.on=e.target.checked;save();swSync()};q('rmT').onchange=e=>{R.t=e.target.value||'19:00';S.remSeen&&(S.remSeen.d='');save();swSync()};
   q('rmSt').onchange=e=>{R.streak=e.target.checked;save()};q('rmWk').onchange=e=>{S.walkNotes=e.target.checked;save()};q('rmTips').onchange=e=>{S.tipsOff=!e.target.checked;save()};q('rmTipNow').onclick=()=>careTip();
+  const nat=()=>{save();natSend({t:'sched',list:natSchedule()})};const nc=k=>e=>{S.natCfg=S.natCfg||{};S.natCfg[k]=e.target.checked;nat()};
+  if(q('rmSal')){q('rmSal').onchange=nc('salud');q('rmEvt').onchange=nc('evt');q('rmPase').onchange=nc('pase');q('rmNat').onchange=e=>{S.natOff=!e.target.checked;nat()};q('rmGps').onchange=e=>{natSend({t:'cfg',bg:e.target.checked});toast(e.target.checked?'GPS en segundo plano activado: se aplica al volver a abrir la app':'GPS en segundo plano desactivado','gps')}}
+  if(inApk()){const o=q('rmOn').onchange,t=q('rmT').onchange;q('rmOn').onchange=e=>{o(e);nat()};q('rmT').onchange=e=>{t(e);nat()};q('rmSt').onchange=e=>{R.streak=e.target.checked;nat()};
+   q('rmTest').onclick=()=>{natSend({t:'test',title:'PaseoPet 🐾',body:`Así se verán los avisos de ${S.pet.name}.`});toast(NATI.notif===false?'Tu teléfono bloquea las notificaciones: permítelas arriba':'Aviso enviado. Revisa tus notificaciones.','bell','#FFC93C')};return}
   q('rmTest').onclick=async()=>{await askNotif();const ok=await pushNote('PaseoPet 🐾',`Así se verán los avisos de ${S.pet.name}.`,{tag:'prueba'});notify(`Aviso de prueba para ${S.pet.name}`,'bell');toast(ok?'Aviso enviado. Revisa tus notificaciones.':'Las notificaciones del sistema no están activas: el aviso quedó en la campana 🔔.','bell','#FFC93C')}}
 
 /* quiénes salen al paseo */

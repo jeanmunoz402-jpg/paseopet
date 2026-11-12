@@ -68,9 +68,13 @@ public class Notifs extends BroadcastReceiver {
             try { arm(c, new JSONArray(c.getSharedPreferences("pp", Context.MODE_PRIVATE).getString("sched", "[]"))); } catch (Exception ignored) {}
             return;
         }
+        show(c, i.getStringExtra("id"), i.getStringExtra("title"), i.getStringExtra("body"));
+    }
+
+    static void show(Context c, String id, String title, String body) {
         channels(c);
-        String title = i.getStringExtra("title"), body = i.getStringExtra("body"), id = i.getStringExtra("id");
         if (title == null || title.isEmpty()) return;
+        if (body == null) body = "";
         Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, "avisos") : new Notification.Builder(c);
         b.setSmallIcon(R.drawable.ic_stat).setContentTitle(title).setContentText(body)
          .setStyle(new Notification.BigTextStyle().bigText(body))

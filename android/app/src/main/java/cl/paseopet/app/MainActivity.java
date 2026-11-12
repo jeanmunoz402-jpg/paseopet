@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
     }
 
     private void start() {
-        WalkService.ensure(this);
+        if (Bridge.bgOn(this)) WalkService.ensure(this);
         String pkg = CustomTabsClient.getPackageName(this, null);
         if (pkg == null) { fallback(); return; }
         conn = new CustomTabsServiceConnection() {
@@ -81,7 +81,8 @@ public class MainActivity extends Activity {
                     @Override
                     public void onMessageChannelReady(Bundle extras) {
                         channel = true;
-                        send("{\"t\":\"hello\",\"v\":1}");
+                        send("{\"t\":\"hello\",\"v\":2}");
+                        send(Bridge.status(MainActivity.this));
                     }
                     @Override
                     public void onPostMessage(String message, Bundle extras) {
