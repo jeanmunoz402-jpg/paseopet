@@ -783,6 +783,15 @@ body{background:var(--bg)}
 .store-stage .pc-stage .aura{inset:auto;width:112px;height:112px;left:50%;top:50%;margin:-56px 0 0 -56px}
 .pcard .pc-stage{overflow:hidden;background:radial-gradient(circle at 50% 54%,rgba(46,35,108,.65) 0%,rgba(14,10,38,.45) 78%);box-shadow:inset 0 0 0 2px rgba(246,234,200,.22)}
 .pcard .pc-stage .aura{inset:auto;width:108px;height:108px;left:50%;top:50%;margin:-54px 0 0 -54px}
+.aura.aura-pres{opacity:1!important;inset:0;background:radial-gradient(circle,#FFF 0 12%,var(--pc) 34%,var(--pc2) 62%,transparent 78%);box-shadow:0 0 22px var(--pc),inset 0 0 14px #FFE29A;animation:aurap 1.2s steps(4) infinite}
+.aura.aura-pres::before{inset:-6px;background:repeating-conic-gradient(from 0deg,var(--pc) 0 8deg,transparent 8deg 36deg,#FFE29A 36deg 42deg,transparent 42deg 72deg);mask:radial-gradient(circle,transparent 46%,#000 50% 70%,transparent 74%);-webkit-mask:radial-gradient(circle,transparent 46%,#000 50% 70%,transparent 74%)}
+.aura-pres1{--pc:#D98A4A;--pc2:#5A3014}.aura-pres2{--pc:#D7DFF0;--pc2:#44506E}.aura-pres3{--pc:#FFC93C;--pc2:#7A4A0A}.aura-pres4{--pc:#7EE7FF;--pc2:#1E4C7A}
+.aura-pres5{--pc:#FF5CC8;--pc2:#5A35C2;animation:aurap 1.2s steps(4) infinite,presHue 5s linear infinite!important}
+@keyframes presHue{to{filter:hue-rotate(360deg)}}
+.pc-pres{position:absolute;inset:0;pointer-events:none;z-index:4;--pg:#D98A4A}
+.pc-pres.p2{--pg:#D7DFF0}.pc-pres.p3{--pg:#FFC93C}.pc-pres.p4{--pg:#7EE7FF}.pc-pres.p5{--pg:#FF5CC8}
+.pc-pres{box-shadow:inset 0 0 0 2px var(--pg),inset 0 0 0 4px #0E0A26,inset 0 0 16px var(--pg)}
+.pc-pres.p5{animation:presHue 5s linear infinite}
 .chipscroll{flex-wrap:nowrap!important;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
 .chipscroll .chip{flex:none;white-space:nowrap}
 #s-pack[data-pk="perros"]>[data-g]:not([data-g="perros"]),#s-pack[data-pk="estilo"]>[data-g]:not([data-g="estilo"]),#s-pack[data-pk="logros"]>[data-g]:not([data-g="logros"]),#s-pack[data-pk="act"]>[data-g]:not([data-g="act"]),#s-pack[data-pk="mas"]>[data-g]:not([data-g="mas"]){display:none!important}
@@ -2788,6 +2797,11 @@ const SKINS=[
 const AURAS=[
  {id:'default',n:'Aura de Nivel',r:'comun',tier:'corto',price:0,c:'#8A93AD',c2:'#1B243D',cls:'',d:'El resplandor natural según la etapa de evolución de tu perro.'},
  {id:'manada',n:'Aura Manada Unida',r:'epica',tier:'medio',price:0,inv:3,c:'#FF8FB8',c2:'#5A1E4A',cls:'aura-manada',d:'Exclusiva: solo se consigue invitando a 3 amigos que salgan a pasear.'},
+ {id:'pres1',n:'Aura Bronce de Prestigio',r:'legendaria',tier:'largo',price:0,pres:1,c:'#D98A4A',c2:'#5A3014',cls:'aura-pres aura-pres1',d:'Aura de Prestigio ★1: bronce forjado con anillo de brasas.'},
+ {id:'pres2',n:'Aura Plata de Prestigio',r:'legendaria',tier:'largo',price:0,pres:2,c:'#D7DFF0',c2:'#44506E',cls:'aura-pres aura-pres2',d:'Aura de Prestigio ★2: plata lunar con destellos fríos.'},
+ {id:'pres3',n:'Aura Oro de Prestigio',r:'legendaria',tier:'largo',price:0,pres:3,c:'#FFC93C',c2:'#7A4A0A',cls:'aura-pres aura-pres3',d:'Aura de Prestigio ★3: oro solar con corona de rayos.'},
+ {id:'pres4',n:'Aura Platino de Prestigio',r:'legendaria',tier:'largo',price:0,pres:4,c:'#7EE7FF',c2:'#1E4C7A',cls:'aura-pres aura-pres4',d:'Aura de Prestigio ★4: platino helado con cristales.'},
+ {id:'pres5',n:'Aura Cósmica de Prestigio',r:'legendaria',tier:'largo',price:0,pres:5,c:'#FF5CC8',c2:'#5A35C2',cls:'aura-pres aura-pres5',d:'Aura de Prestigio ★5: energía cósmica que cambia de color.'},
  {id:'esmeralda',n:'Aura Brisa Esmeralda',r:'comun',tier:'corto',price:160,c:'#2CE6A6',c2:'#0E3B2E',cls:'aura-esmeralda',d:'Degradado botánico esmeralda con anillo rúnico y esporas brillantes.'},
  {id:'llamarada',n:'Aura Llamarada Solar',r:'rara',tier:'medio',price:480,c:'#FF6B2C',c2:'#4A1C0A',cls:'aura-llamarada',d:'Corona solar giratoria con degradado ígneo y brasas ascendentes.'},
  {id:'relampago',n:'Aura Tormenta Eléctrica',r:'rara',tier:'medio',price:720,c:'#3C9DFF',c2:'#102C4E',cls:'aura-relampago',d:'Campo de plasma cian con arcos voltaicos y destellos eléctricos.'},
@@ -4150,9 +4164,9 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
   const sparkLv=isRgb?8:Math.max(e.spark,au.id!=='default'?(au.r==='legendaria'?6:au.r==='epica'?5:3):0);
   const tLeft=talentPtsLeft();
   return `<div class="pcard ${o.compact?'cmp ':''}evo${e.i} ${isRgb?'aura-card-rgb':''}" style="--ec:${au.id!=='default'?au.c:e.c};--ec2:${e.c2}">
-  <canvas class="pfx" data-spark="${sparkLv}" data-aura="${au.id}" aria-hidden="true"></canvas><div class="pc-frame f${e.i}" aria-hidden="true"></div>
+  <canvas class="pfx" data-spark="${sparkLv}" data-aura="${au.id}" aria-hidden="true"></canvas><div class="pc-frame f${e.i}" aria-hidden="true"></div>${p.prestige?`<div class="pc-pres p${p.prestige}" aria-hidden="true"></div>`:''}
   <div class="pc-in">
-   <div class="row between pc-top"><span class="evob">${evoTag(e.i,e.n.toUpperCase())}${p.prestige?` · P${p.prestige}`:''}</span><div class="row"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
+   <div class="row between pc-top"><span class="evob">${evoTag(e.i,e.n.toUpperCase())}${p.prestige?` · ${'★'.repeat(p.prestige)}`:''}</span><div class="row"><span class="fac-tag" style="--fc:${fac.c}">${fac.em} ${esc(fac.n.replace('Manada ',''))}</span>${sk.id!=='natural'?`<span class="rtag ${sk.r==='rgb'?'rgb':''}" style="--c:${sk.c}">${esc(sk.n.split(' ')[0])}</span>`:''}<span class="tag d">${esc(p.cls)}</span></div></div>
    <button class="pc-stage pc-hero ${bm.cls||''}" id="pcEvo" aria-label="Ver evoluciones de ${esc(p.name)}">
      <canvas class="pfx" data-spark="${Math.max(3,sparkLv)}" data-aura="${au.id}" aria-hidden="true"></canvas>
      <span class="pc-lv"><span>NIVEL</span><b>${p.level}</b></span><span class="pc-tap">Ver evolución ►</span><span class="pc-scene">${esc(bm.n)}</span>
@@ -4161,7 +4175,7 @@ function petCardHTML(o={}){const p=S.pet,e=evoOf(p.level),frac=Math.max(0,Math.m
    <div class="pc-id">
      <div class="pc-idrow"><div class="pcname">${esc(p.name)}</div><span class="pc-sex ${p.sex==='hembra'?'hembra':'macho'}" title="${p.sex==='hembra'?'Hembra':'Macho'}" aria-label="${p.sex==='hembra'?'Hembra':'Macho'}">${ico(p.sex==='hembra'?'hembra':'macho')}</span>${p.nat?`<span class="pc-nat" title="Nacionalidad">${flagOf(p.nat)} ${esc(natName(p.nat))}</span>`:''}</div>
      <div class="pc-sub">${esc(p.breed||'perro')}${p.kg?' · '+String(p.kg).replace('.',',')+' kg':''}${p.born?' · '+ageY(p.born):''}</div>
-     <div class="pc-chips">${p.title?`<span class="tag ceo">👑 ${esc(p.title)}</span>`:''}${angelChip()}<span class="tag g">📡 Alcance ${pickupRadius()} m</span>${S.boosts&&(S.boosts.radar||S.boosts.xp2||S.boosts.luck||S.boosts.lure)?`<span class="tag y">⚡ Potenciador activo</span>`:''}</div>
+     <div class="pc-chips">${p.prestige?`<span class="tag y">★ Prestigio ${p.prestige}</span>`:''}${p.title?`<span class="tag ceo">👑 ${esc(p.title)}</span>`:''}${angelChip()}<span class="tag g">📡 Alcance ${pickupRadius()} m</span>${S.boosts&&(S.boosts.radar||S.boosts.xp2||S.boosts.luck||S.boosts.lure)?`<span class="tag y">⚡ Potenciador activo</span>`:''}</div>
    </div>
    <div class="care-bar">
      <button type="button" class="care-btn" id="carePet">${ico('heart')}<span>Acariciar</span></button>
@@ -4267,6 +4281,7 @@ function openEvo(){const p=S.pet,e=evoOf(p.level),canPrest=p.level>=50&&(p.prest
   <div class="box vio" style="gap:6px">
     <div class="row between"><span class="t2" style="color:var(--gold)">ASCENSIÓN DE PRESTIGIO</span><span class="tag y">PRESTIGIO ${p.prestige||0}/5</span></div>
     <div class="mute small">Al llegar a <b>Nivel 50 (Leyenda)</b> puedes Ascender: reinicias a Nivel 1 conservando todas tus Skins, Auras, DogCoins y Colección, y ganas permanentemente <b>+15% XP, +5m de Anillo GPS y +2 Puntos de Talento</b>.</div>
+    <div class="small" style="color:#C9BDFF">Recompensas visuales: ★1 Aura Bronce · ★2 Plata · ★3 Oro · ★4 Platino · ★5 Cósmica, y un marco que se vuelve más brillante con cada estrella. Se equipan en la Tienda, pestaña Auras.</div>
     ${canPrest?`<button class="btn o" id="doPrestige">★ Ascender a Prestigio ${(p.prestige||0)+1} ★</button>`:`<div class="small" style="color:#C9BDFF">Actual: +${(p.prestige||0)*15}% XP · +${(p.prestige||0)*5}m Anillo GPS (Requiere Nivel 50)</div>`}
   </div>
   ${EVO.map((x,j)=>`<div class="box row ${j===e.i?'hot':''}" style="${j>e.i?'opacity:.5':''}"><img class="spr" src="${petU({...p,evo:j})}" alt="" style="width:56px;height:56px;${j>e.i?'filter:brightness(0)':''}"><div class="grow col" style="gap:4px"><b style="color:${x.c}">${evoTag(j,x.n)}</b><span class="mute small">Desde nivel ${x.lv}</span></div>${j<e.i?'<span class="tag g">OK</span>':j===e.i?'<span class="tag o">ACTUAL</span>':`<span class="tag d">NV ${x.lv}</span>`}</div>`).join('')}
@@ -4275,7 +4290,7 @@ function openEvo(){const p=S.pet,e=evoOf(p.level),canPrest=p.level>=50&&(p.prest
     const dp=sh.querySelector('#doPrestige');
     if(dp)dp.onclick=()=>{
       p.prestige=(p.prestige||0)+1;p.level=1;p.xp=0;save(true);pushProfile();closeSheet();boom(150);
-      toast(`¡ASCENSIÓN ÉPICA! ${esc(p.name)} ahora es Prestigio ★${p.prestige}`,'corona','#FFC93C');
+      toast(`¡ASCENSIÓN ÉPICA! ${esc(p.name)} ahora es Prestigio ★${p.prestige} y desbloqueó una nueva aura`,'corona','#FFC93C');
       render();
     };
   })}
@@ -5288,7 +5303,7 @@ function kcalHuman(dist,moving){const h=moving/3600;if(h<=0)return 0;const kmh=d
 function kcalDog(dist){return Math.round((+S.pet.kg||10)*dist/1000*1.1)}
 /* ---- tienda y DogCoins ---- */
 let STORE_TAB='auras',STORE_TIER='all',STORE_PREV=null,STORE_LIM=8;
-function owned(id){return id==='trail:clasico'||id===''||id==='natural'||id==='default'||id==='noche'||id==='skin:natural'||id==='aura:default'||id==='biome:noche'||(S.owned||[]).includes(id)}
+function owned(id){if(typeof id==='string'&&id.startsWith('aura:pres')&&S&&S.pet&&(S.pet.prestige||0)>=+id.slice(9))return true;return id==='trail:clasico'||id===''||id==='natural'||id==='default'||id==='noche'||id==='skin:natural'||id==='aura:default'||id==='biome:noche'||(S.owned||[]).includes(id)}
 function rTagHTML(r){
   if(r==='mitica'||r==='rgb')return `<span class="rtag rgb">★ ARCOIRIS RGB ★</span>`;
   if(r==='legendaria')return `<span class="rtag" style="background:var(--gold);color:#1A0A02">LEGENDARIA</span>`;
@@ -5335,7 +5350,7 @@ function openCoinGuide(){
   });
 }
 function buyCos(c){buyStoreItem('acc',c)}
-function buyStoreItem(kind,item){if(item&&item.inv&&!owned(kind+':'+item.id)){openInvite();return}
+function buyStoreItem(kind,item){if(item&&item.pres&&!owned(kind+':'+item.id)){toast(`Se desbloquea al ascender a Prestigio ★${item.pres}`,'corona','#FFC93C');return}if(item&&item.inv&&!owned(kind+':'+item.id)){openInvite();return}
   const key=kind==='trail'?'trail:'+item.id:kind==='skin'?'skin:'+item.id:kind==='aura'?'aura:'+item.id:kind==='biome'?'biome:'+item.id:item.id;
   const have=S.coins||0,rem=Math.max(0,item.price-have),walks=Math.ceil(rem/15);
   const testPet={...S.pet};
@@ -5415,12 +5430,12 @@ function renderStore(){
         </div>
         <div class="t2">${esc(a.n)}</div>
         <div class="mute" style="font-size:11px;line-height:1.25;min-height:28px">${esc(a.d)}</div>
-        ${!isOwn&&!a.inv?coinProgHTML(a.price):''}
+        ${!isOwn&&!a.inv&&!a.pres?coinProgHTML(a.price):''}
         <div class="row" style="gap:6px;width:100%;margin-top:auto">
           <button class="btn sm" data-prev-aura="${a.id}" style="flex:1">${isPrev?'Viendo':'Probar'}</button>
           ${isOwn
             ? `<button class="btn sm ${isEq?'g':'v'}" data-eq-aura="${a.id}" style="flex:1.3">${isEq?'Equipado ✓':'Equipar'}</button>`
-            : `<button class="btn sm o" data-buy-aura="${a.id}" style="flex:1.4;gap:4px">${a.inv?`🎁 Invita ${a.inv}`:`${DC}<span>${a.price}</span>`}</button>`}
+            : `<button class="btn sm o" data-buy-aura="${a.id}" style="flex:1.4;gap:4px">${a.pres?`★ Prestigio ${a.pres}`:a.inv?`🎁 Invita ${a.inv}`:`${DC}<span>${a.price}</span>`}</button>`}
         </div>
       </div>`;
     }).join('')}</div>`;
