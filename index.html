@@ -1203,6 +1203,10 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .nav .go.bark .nb img.pawgo{animation:pawBark .32s ease-out 2}
 @keyframes pawBark{0%{transform:scale(1)}40%{transform:scale(1.16) rotate(-6deg)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.nav .go .nb img.pawgo{animation:none!important}}
+.nav .go .nb{background:none!important;box-shadow:none!important;animation:none!important}
+.nav .go .nb::after{display:none!important}
+.nav .go.press .nb{box-shadow:none!important}
+.nav .go .nb img.pawgo{width:70px;height:70px;margin-top:-4px;filter:drop-shadow(0 3px 0 #0E0A26) drop-shadow(0 0 10px rgba(255,201,60,.75))}
 </style>
 
 <div class="app" id="app">
