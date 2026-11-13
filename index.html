@@ -3047,8 +3047,12 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
   if(L.parks)for(const pk of L.parks){if(!pk.poly||pk.poly.length<3)continue;const m0=merc(pk.c.lat,pk.c.lng);if(m0.x<x0-1500||m0.x>x1+1500||m0.y<y0-1500||m0.y>y1+1500)continue;
    const col=pk.st==='mine'?'#FF7A4D':pk.st==='rival'?'#FF4D6D':'#2CE6A6';ctx.beginPath();pk.poly.forEach(([la,ln],i)=>{const m=merc(la,ln);i?ctx.lineTo(X(m.x),Y(m.y)):ctx.moveTo(X(m.x),Y(m.y))});ctx.closePath();
    const a=pk.here?((Math.floor(now/450)%2)?.38:.22):.16;ctx.fillStyle=col+Math.round(a*255).toString(16).padStart(2,'0');ctx.fill();ctx.setLineDash(pk.st==='free'?[5*u,4*u]:[]);ctx.strokeStyle=col;ctx.lineWidth=lw(pk.here?3:2);ctx.stroke();ctx.setLineDash([]);
+   if(pk.gold){ctx.setLineDash([3*u,3*u]);ctx.lineDashOffset=-(now/60)%12;ctx.strokeStyle=(Math.floor(now/500)%2)?'#FFC93C':'#FFF3B0';ctx.lineWidth=lw(4);ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0}
    if(pk.fx!=null){const cx=X(m0.x),cy=Y(m0.y);ctx.strokeStyle='rgba(255,201,60,'+(1-pk.fx).toFixed(2)+')';ctx.lineWidth=lw(4);ctx.beginPath();ctx.arc(cx,cy,(20+pk.fx*160)*u,0,7);ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,(8+pk.fx*90)*u,0,7);ctx.stroke()}
-   if(k*120>40*u&&!pk.here){const cx=X(m0.x),cy=Y(m0.y)+6*u,t=pk.n.length>22?pk.n.slice(0,21)+'…':pk.n,fs=Math.round(8*u);ctx.font=fs+'px "PP Titulo",monospace';const tw=ctx.measureText(t).width;ctx.fillStyle='rgba(14,10,38,.82)';ctx.fillRect(cx-tw/2-4*u,cy,tw+8*u,fs+6*u);ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(t,cx,cy+3*u);ctx.textAlign='left';ctx.textBaseline='alphabetic'}}
+   if(k*120>40*u&&!pk.here){const cx=X(m0.x),cy=Y(m0.y)+6*u,t=(pk.gold?'⭐ ':'')+(pk.n.length>22?pk.n.slice(0,21)+'…':pk.n),fs=Math.round(8*u);ctx.font=fs+'px "PP Titulo",monospace';const tw=ctx.measureText(t).width;ctx.fillStyle='rgba(14,10,38,.82)';ctx.fillRect(cx-tw/2-4*u,cy,tw+8*u,fs+6*u);ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText(t,cx,cy+3*u);ctx.textAlign='left';ctx.textBaseline='alphabetic'}}
+  if(L.places)for(const pl of L.places){const T=PLT[pl.ty];if(!T)continue;const m=merc(pl.lat,pl.lng);if(m.x<x0-300||m.x>x1+300||m.y<y0-300||m.y>y1+300)continue;const cx=X(m.x),cy=Y(m.y),r=(pl.ty==='water'?8:10)*u;
+   ctx.fillStyle='#0E0A26';ctx.beginPath();ctx.arc(cx,cy-r-3*u,r+2*u,0,7);ctx.fill();ctx.fillStyle=T.c;ctx.beginPath();ctx.arc(cx,cy-r-3*u,r,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(cx-4*u,cy-6*u);ctx.lineTo(cx+4*u,cy-6*u);ctx.lineTo(cx,cy);ctx.closePath();ctx.fill();
+   ctx.font=Math.round(r*1.1)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(T.em,cx,cy-r-2*u);ctx.textAlign='left';ctx.textBaseline='alphabetic'}
   if(L.targets)for(const t of L.targets){if(t.done)continue;const c=hexXY(t.k);hpath(X(c.x),Y(c.y),R_HEX*k*.92);ctx.strokeStyle=(Math.floor(now/400)%2)?'#FFC93C':'#FFFFFF';ctx.lineWidth=lw(2);ctx.stroke()}
   const line=(pts,col,w,dash)=>{if(!pts||pts.length<2)return;ctx.beginPath();pts.forEach((p,i)=>{const m=merc(p.lat,p.lng);i?ctx.lineTo(X(m.x),Y(m.y)):ctx.moveTo(X(m.x),Y(m.y))});ctx.setLineDash(dash?dash.map(v=>v*u):[]);ctx.lineCap=sharp?'round':'square';ctx.lineJoin=sharp?'round':'miter';ctx.strokeStyle=col;ctx.lineWidth=lw(w);ctx.stroke();ctx.setLineDash([])};
   if(L.guide)line(L.guide,light?'rgba(40,50,90,.6)':'rgba(200,210,240,.6)',2,[2,3]);
@@ -3332,7 +3336,7 @@ function advBoxesHTML(){advInit();const ev=evtNow(),v=Math.min(ev.goal,ev.get())
   const readyCh=STORY.findIndex((c,i)=>S.totals.km>=c[0]&&!S.story.c.includes(i));
   const lastCh=S.story.c.length?Math.max(...S.story.c):-1;
   const fmt=n=>(+n).toFixed(1).replace('.',',');
-  return `<div class="box vio" style="gap:8px"><div class="row between"><span class="t2" style="color:var(--gold)">EVENTO DE LA SEMANA</span><span class="tag ${S.evt.claimed?'g':done?'o':'y'}">${S.evt.claimed?'CANJEADO ✓':done?'¡LISTO!':'+40 DogCoins'}</span></div>
+  return gameBoxesHTML()+`<div class="box vio" style="gap:8px"><div class="row between"><span class="t2" style="color:var(--gold)">EVENTO DE LA SEMANA</span><span class="tag ${S.evt.claimed?'g':done?'o':'y'}">${S.evt.claimed?'CANJEADO ✓':done?'¡LISTO!':'+40 DogCoins'}</span></div>
    <div><b>${ev.n}</b><div class="mute small">${ev.d}. Cambia cada lunes.</div></div>${segBar(v/ev.goal,done?'g':'o')}<div class="row between"><span class="lbl">${ev.id==='km'?fmt(v):v}/${ev.goal}</span>${done&&!S.evt.claimed?`<button class="btn sm o" data-adv="evt">Reclamar +40<i class="dc" aria-hidden="true"></i></button>`:''}</div></div>
   <div class="box" style="gap:8px"><div class="row between"><span class="t2">PASE DEL MES</span><span class="lbl">${d}/25 días con paseo</span></div>
    ${segBar(Math.min(1,d/25),'g')}
@@ -3375,6 +3379,7 @@ function fichaBoxHTML(){const p=S.pet,F=fxD(),pc=fxPct(),ag=ageInfo(p.born);
   <div style="height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden"><div style="height:100%;width:${pc}%;background:linear-gradient(90deg,#FFC93C,#FF7A4D)"></div></div>
   ${rows}
   <button class="btn o" id="fxCardBtn">Crear ficha de emergencia</button>
+  <button class="btn" id="vrBtn">📄 Informe para el veterinario</button>
   ${S.lostId?'<button class="btn g" id="lostFound">Ya apareció ✓ (cerrar aviso)</button>':'<button class="btn r" id="lostBtn">🚨 Mi mascota se perdió</button>'}
   <div class="mute small">🔒 Estos datos son privados: solo tú los ves. No se muestran en tu perfil ni en el ranking.${pc<70&&!S.fxGot?' Completa el 70% y gana 40 DogCoins.':''}</div></div>`}
 function openFx(id){const s=FX_SECS.find(x=>x.id===id),F=fxD();if(!s)return;
@@ -3519,6 +3524,146 @@ function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala Pas
   <button class="btn" id="apkCopy">Copiar enlace de descarga</button><button class="btn sm" id="apkNo">No mostrar más en Inicio</button>`,sh=>{
   sh.querySelector('#apkCopy').onclick=async()=>{try{await navigator.clipboard.writeText(APK_URL);toast('Enlace copiado','paw','#2CE6A6')}catch(e){toast('No se pudo copiar','bell','#FFC93C')}};
   sh.querySelector('#apkNo').onclick=()=>{try{localStorage.setItem('pp_apk_x','1')}catch(e){}closeSheet();if(tab==='home'&&S&&S.onboarded)renderHome()}})}
+/* ===== 1) MAPA PET-FRIENDLY ===== */
+const PLT={vet:{n:'Veterinaria',em:'🏥',c:'#FF5C7A'},water:{n:'Bebedero',em:'💧',c:'#3C9DFF'},dogpark:{n:'Parque para perros',em:'🐕',c:'#2CE6A6'},shop:{n:'Tienda de mascotas',em:'🛍️',c:'#FFC93C'},shelter:{n:'Refugio',em:'🏠',c:'#B48CFF'}};
+const PL={key:'',list:[],busy:false,f:'all',at:0};
+function plType(t){if(t.amenity==='veterinary')return'vet';if(t.amenity==='drinking_water')return'water';if(t.leisure==='dog_park')return'dogpark';if(t.amenity==='animal_shelter')return'shelter';if(/^(pet|pet_grooming)$/.test(t.shop||''))return'shop';return null}
+async function loadPlaces(c,force){if(!c||PL.busy)return PL.list;const key=(+c.lat).toFixed(2)+','+(+c.lng).toFixed(2);if(!force&&PL.key===key)return PL.list;PL.busy=true;
+ try{const L=(+c.lat).toFixed(5),G=(+c.lng).toFixed(5),r=2500;const j=await overpass(`[out:json][timeout:20];(nwr(around:${r},${L},${G})[amenity~"^(veterinary|drinking_water|animal_shelter)$"];nwr(around:${r},${L},${G})[leisure=dog_park];nwr(around:${r},${L},${G})[shop~"^(pet|pet_grooming)$"];);out center tags 120;`);
+  if(j){const out=[];for(const e of j.elements||[]){const t=e.tags||{},ty=plType(t);if(!ty)continue;const lat=e.lat!=null?e.lat:e.center&&e.center.lat,lng=e.lon!=null?e.lon:e.center&&e.center.lon;if(lat==null||lng==null)continue;
+    out.push({id:e.type[0]+e.id,ty,lat,lng,n:String(t.name||PLT[ty].n).slice(0,50),h:t.opening_hours||'',ph:t.phone||t['contact:phone']||'',addr:[t['addr:street'],t['addr:housenumber']].filter(Boolean).join(' '),urg:/24\/7/.test(t.opening_hours||'')||t.emergency==='yes'})}
+   PL.key=key;PL.list=out;PL.at=Date.now()}}catch(e){}finally{PL.busy=false}if(tab==='map'&&MC.mode==='places')renderMapUI();markDirty();return PL.list}
+function plCenter(){if(MC.me)return MC.me;try{return unmerc(MC.x,MC.y)}catch(e){return null}}
+function plVisible(){return PL.list.filter(p=>PL.f==='all'||p.ty===PL.f)}
+function plDist(d){return d>=1000?(d/1000).toFixed(1).replace('.',',')+' km':Math.round(d)+' m'}
+function openPlace(p){const T=PLT[p.ty],me=MC.me||lastFix,d=me?hav(me,p):null;
+ sheet(`<div class="row" style="gap:12px;align-items:center"><div style="font-size:34px">${T.em}</div><div class="col" style="gap:3px;min-width:0"><div class="t2">${esc(p.n)}</div><span class="mute small">${T.n}${d!=null?' · '+plDist(d):''}</span></div></div>
+  ${p.urg?'<span class="tag r">🚨 Urgencias / 24 h</span>':''}${p.addr?`<div class="small">📍 ${esc(p.addr)}</div>`:''}${p.h?`<div class="small">🕒 ${esc(p.h)}</div>`:''}
+  <a class="btn o big" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}" target="_blank" rel="noopener" style="text-decoration:none;display:flex;justify-content:center;align-items:center">Cómo llegar</a>
+  ${p.ph?`<a class="btn" href="tel:${esc(p.ph.replace(/[^\d+]/g,''))}" style="text-decoration:none;display:flex;justify-content:center;align-items:center">Llamar ${esc(p.ph)}</a>`:''}
+  <button class="btn" id="plSee">Ver en el mapa</button><div class="mute small">Datos de OpenStreetMap. Confirma el horario antes de ir.</div>`,sh=>{sh.querySelector('#plSee').onclick=()=>{closeSheet();const m=merc(p.lat,p.lng);MC.x=m.x;MC.y=m.y;markDirty()}})}
+function nearestWater(pos,max=500){if(!pos)return null;let bd=max,ok=false;for(const p of PL.list)if(p.ty==='water'){const d=hav(pos,p);if(d<bd){bd=d;ok=true}}return ok?Math.round(bd):null}
+/* ===== 2) GUERRA DE FACCIONES POR COMUNA ===== */
+const FW={doc:null,com:null,prev:null,at:0,busy:false};
+function slugOf(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)}
+async function comunaOf(c){if(!c)return null;const key=(+c.lat).toFixed(2)+','+(+c.lng).toFixed(2);S.comCache=S.comCache||{};if(S.comCache[key])return S.comCache[key];
+ try{const ac=window.AbortController?new AbortController():null;if(ac)setTimeout(()=>ac.abort(),8000);const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=es&lat=${(+c.lat).toFixed(4)}&lon=${(+c.lng).toFixed(4)}`,ac?{signal:ac.signal}:{});const j=await r.json();const a=j.address||{};
+  const n=a.city||a.town||a.village||a.municipality||a.suburb||a.county||'';if(!n)return null;const o={n:String(n).slice(0,40),s:slugOf(n)};S.comCache[key]=o;return o}catch(e){return null}}
+function weekEndTs(){const d=new Date(),day=(d.getDay()+6)%7,e=new Date(d);e.setDate(d.getDate()+(6-day));e.setHours(23,59,59,999);return e.getTime()}
+async function fwAfterWalk(w,terr,parkRes){if(MODE!=='firebase'||!DB||w.manual)return;const start=(w.trail&&w.trail[0])||lastFix;const com=await comunaOf(start);if(!com)return;
+ const caps=(parkRes||[]).filter(x=>x.newLead).length,pts=Math.max(1,Math.round((w.dist||0)/100)+((terr&&terr.taken)||0)*3+caps*15),f=S.pet.faction||'fuego',wk=weekKey(),path='terr/fw_'+com.s+'_'+wk;
+ try{await W8(path,async()=>{const s=await DB.doc(path).get();const d=s.exists?s.data():{};d.k='fw';d.n=com.n;d.f=d.f||{};d.c=d.c||{};d.f[f]=(d.f[f]||0)+pts;d.c[f]=(d.c[f]||0)+1;await DB.doc(path).set(d);FW.doc=d;FW.com=com})}catch(e){}
+ if(!(S.fw&&S.fw.wk===wk&&S.fw.s===com.s))S.fw={wk,s:com.s,n:com.n,pts:0,f};S.fw.pts+=pts;S.fw.f=f;save();setTimeout(()=>toast(`⚔️ +${pts} puntos para ${factionById(f).n} en ${com.n}`,'corona',factionById(f).c),3400)}
+async function fwLoad(force){if(MODE!=='firebase'||!DB||FW.busy)return;if(!force&&Date.now()-FW.at<120e3)return;FW.busy=true;FW.at=Date.now();
+ try{let com=S.fw&&S.fw.s?{s:S.fw.s,n:S.fw.n}:null;if(!com){const c=lastFix||S.home;com=c?await comunaOf(c):null}
+  if(com){const s=await DB.doc('terr/fw_'+com.s+'_'+weekKey()).get();FW.doc=s.exists?s.data():{n:com.n,f:{}};FW.com=com}
+  if(S.fw&&S.fw.wk&&S.fw.wk!==weekKey()&&!S.fw.done){const p=await DB.doc('terr/fw_'+S.fw.s+'_'+S.fw.wk).get();if(p.exists){const d=p.data(),win=Object.entries(d.f||{}).sort((a,b)=>b[1]-a[1])[0];FW.prev={n:S.fw.n,win:win?win[0]:null,mine:S.fw.f,pts:S.fw.pts}}else{S.fw.done=true;save()}}
+ }catch(e){}finally{FW.busy=false}if(tab==='home'&&S&&S.onboarded){try{renderHome()}catch(e){}}}
+function fwClaim(){if(!FW.prev||!S.fw||S.fw.done)return;const won=FW.prev.win===FW.prev.mine;S.fw.done=true;if(won){S.coins=(S.coins||0)+60;addXp(150);try{coinSfx()}catch(e){}toast('🏆 ¡Tu facción ganó! +60 DogCoins y +150 XP','star','#FFC93C')}FW.prev=null;save();if(tab==='home')renderHome()}
+function fwBoxHTML(){if(MODE!=='firebase')return '';const my=S.pet.faction||'fuego';let prev='';
+ if(FW.prev&&S.fw&&!S.fw.done){const won=FW.prev.win===FW.prev.mine,wf=factionById(FW.prev.win||my);prev=`<div class="box ${won?'hot':''}" style="gap:6px"><b>${won?'🏆 ¡Tu facción ganó en '+esc(FW.prev.n)+'!':'La semana pasada ganó '+wf.em+' '+esc(wf.n)+' en '+esc(FW.prev.n)}</b><span class="mute small">Aportaste ${FW.prev.pts} puntos.</span><button class="btn sm ${won?'o':''}" data-fw="claim">${won?'Reclamar +60 DogCoins':'Entendido'}</button></div>`}
+ const d=FW.doc,com=FW.com;if(!d||!com)return prev+`<div class="box" style="gap:6px"><span class="t2">⚔️ GUERRA DE FACCIONES</span><span class="mute small">${FW.busy?'Buscando tu comuna…':'Pasea para sumar puntos a tu facción en tu comuna. Cada lunes gana la que más puntos tenga.'}</span></div>`;
+ const tot=Math.max(1,...FACTIONS.map(f=>(d.f||{})[f.id]||0)),days=Math.max(1,Math.ceil((weekEndTs()-Date.now())/864e5));
+ return prev+`<div class="box" style="gap:8px"><div class="row between"><span class="t2">⚔️ GUERRA EN ${esc(String(com.n||'').toUpperCase())}</span><span class="lbl">${days<=1?'Termina hoy':'Quedan '+days+' días'}</span></div>
+  ${FACTIONS.map(f=>{const v=(d.f||{})[f.id]||0;return `<div class="row" style="gap:8px;align-items:center"><span style="width:124px;flex:none;font-size:13.5px;white-space:nowrap;${f.id===my?'font-weight:800;color:#fff':''}">${f.em} ${esc(f.n.replace('Manada ',''))}${f.id===my?' (tú)':''}</span><div style="flex:1;height:12px;border-radius:7px;background:rgba(255,255,255,.1);overflow:hidden"><div style="height:100%;width:${Math.round(100*v/tot)}%;background:${f.c};border-radius:7px"></div></div><b style="width:48px;text-align:right">${v}</b></div>`}).join('')}
+  <div class="mute small">Tú: ${S.fw&&S.fw.wk===weekKey()?S.fw.pts:0} puntos. Suman los km (1 punto cada 100 m), territorios (+3) y plazas capturadas (+15). Si gana tu facción: 60 DogCoins.</div></div>`}
+/* ===== 3) RETO DE PLAZAS Y PLAZA DORADA ===== */
+function pkwInit(){const wk=weekKey();if(!S.pkw||S.pkw.wk!==wk)S.pkw={wk,ids:[],claimed:false};return S.pkw}
+function goldPark(parks){if(!parks||!parks.length)return null;const day=dkey();let best=null,bh=Infinity;for(const k of parks){let h=7;const s=day+'|'+k.id;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;if(h<bh){bh=h;best=k}}return best}
+function pkAfterWalk(w,parkRes){const P=pkwInit(),wp=(w.well&&w.well.parks)||[];wp.forEach((k,i)=>{const r=(parkRes||[])[i];if(r&&r.lead&&!P.ids.includes(k.id))P.ids.push(k.id)});
+ const g=w.goldId,gm=g?((wp.find(k=>k.id===g)||{}).m||0):0;if(g&&gm>=100&&S.goldDay!==dkey()){S.goldDay=dkey();addXp(100);S.coins=(S.coins||0)+20;setTimeout(()=>toast('⭐ ¡Plaza dorada! +100 XP y +20 DogCoins','star','#FFC93C'),4200)}save()}
+function pkwClaim(){const P=pkwInit();if(P.claimed||P.ids.length<3)return;P.claimed=true;S.coins=(S.coins||0)+50;addXp(120);try{coinSfx()}catch(e){}toast('🌳 ¡Reto de plazas completo! +50 DogCoins','star','#FFC93C');save();if(tab==='home')renderHome()}
+function pkwBoxHTML(){const P=pkwInit(),n=Math.min(3,P.ids.length),done=n>=3;return `<div class="box" style="gap:8px"><div class="row between"><span class="t2">🌳 RETO DE PLAZAS</span><span class="tag ${P.claimed?'g':done?'o':'y'}">${P.claimed?'CANJEADO ✓':done?'¡LISTO!':'+50 DogCoins'}</span></div>
+  <div class="mute small">Sé líder de 3 plazas distintas esta semana. ⭐ Además, cada día hay una plaza dorada cerca de tu paseo: camina 100 m en ella y gana +100 XP.</div>${segBar(n/3,done?'g':'o')}
+  <div class="row between"><span class="lbl">${n}/3 plazas${S.goldDay===dkey()?' · ⭐ dorada de hoy lista':''}</span>${done&&!P.claimed?'<button class="btn sm o" data-pkw="claim">Reclamar +50</button>':''}</div></div>`}
+/* ===== 5) RETOS ENTRE AMIGOS ===== */
+const CH={list:[],at:0,busy:false};
+async function chLoad(force){if(MODE!=='firebase'||!DB||CH.busy)return;if(!force&&Date.now()-CH.at<60e3)return;CH.busy=true;CH.at=Date.now();let ch=false;
+ try{const [a,b]=await Promise.all([DB.collection('terr').where('a','==',UID).limit(25).get(),DB.collection('terr').where('b','==',UID).limit(25).get()]);
+  const m=new Map();[...a.docs,...b.docs].forEach(d=>{const v=d.data();if(v&&v.k==='ch')m.set(d.id,{id:d.id,...v})});const nl=[...m.values()].sort((x,y)=>y.ts-x.ts);ch=JSON.stringify(nl)!==JSON.stringify(CH.list);CH.list=nl;
+  S.chSeen=S.chSeen||[];CH.list.forEach(c=>{if(c.b===UID&&c.st==='pend'&&!S.chSeen.includes(c.id)){S.chSeen.push(c.id);notify(`⚔️ ${c.na} te retó: ¿quién camina más esta semana?`,'amigo')}});S.chSeen=S.chSeen.slice(-40)}catch(e){}finally{CH.busy=false}
+ if(!ch)return;if(tab==='feed'&&SOC.tab==='amigos')try{renderFeed()}catch(e){}if(tab==='home')try{renderHome()}catch(e){}}
+function chRes(c){const mine=(c.a===UID?c.ka:c.kb)||0,their=(c.a===UID?c.kb:c.ka)||0;return{mine,their,tie:Math.abs(mine-their)<0.005,win:mine>their+0.005}}
+async function chSet(c,patch){try{await DB.doc('terr/'+c.id).update(patch);for(const k in patch){if(k==='cl')c.cl=Object.assign({},c.cl||{},patch.cl);else c[k]=patch[k]}return true}catch(e){toast('No se pudo actualizar el reto. Revisa tu conexión.','sos');return false}}
+async function chCreate(fid,stake){if(stake>(S.coins||0)){toast('No tienes suficientes DogCoins','sos');return false}const me=((FBUSER&&FBUSER.displayName)||'').split(' ')[0]||'Alguien';
+ const doc={k:'ch',a:UID,b:fid,na:me,nb:personName(fid)||'Amigo',pa:S.pet.name||'',pb:(petOf(fid)||{}).name||'',stake,wk:weekKey(),st:'pend',ka:0,kb:0,ts:Date.now(),end:weekEndTs(),cl:{}};
+ try{const r=await DB.collection('terr').add(doc);S.coins=(S.coins||0)-stake;save();CH.list.unshift({id:r.id,...doc});toast(`⚔️ Reto enviado a ${doc.nb}`,'amigo','#FFC93C');return true}catch(e){toast('No se pudo enviar el reto','sos');return false}}
+async function chAccept(c){if(!c)return;if(c.stake>(S.coins||0)){toast(`Necesitas ${c.stake} DogCoins para aceptar`,'sos');return}if(await chSet(c,{st:'on',acc:Date.now()})){S.coins=(S.coins||0)-c.stake;save();toast('¡Reto aceptado! Gana quien camine más km hasta el domingo','amigo','#2CE6A6');chRefresh()}}
+async function chDecline(c){if(!c)return;if(await chSet(c,{st:'no'}))chRefresh()}
+async function chClaim(c){if(!c||(c.cl&&c.cl[UID]))return;const R=chRes(c),ended=Date.now()>c.end;let amt=0,msg='Reto cerrado';
+ if(c.st==='no'||(c.st==='pend'&&ended)){amt=c.a===UID?c.stake:0;msg=amt?`Recuperaste ${amt} DogCoins`:msg}
+ else if(c.st==='on'&&ended){if(R.tie){amt=c.stake;msg=amt?`Empate: recuperaste ${amt} DogCoins`:'¡Empate!'}else if(R.win){amt=c.stake*2;msg=amt?`🏆 ¡Ganaste ${amt} DogCoins!`:'🏆 ¡Ganaste el reto!'}else msg='Será para la próxima'}
+ else return;
+ if(await chSet(c,{cl:{[UID]:true}})){if(amt){S.coins=(S.coins||0)+amt;try{coinSfx()}catch(e){}}if(R.win&&c.st==='on')addXp(80);save();toast(msg,'star','#FFC93C');chRefresh()}}
+async function chAfterWalk(w){if(MODE!=='firebase'||!DB||w.manual)return;await chLoad(true);const km=(w.dist||0)/1000,now=Date.now(),t0=w.t0||now;
+ for(const c of CH.list){if(c.st!=='on'||now>c.end||t0<(c.acc||0))continue;const f=c.a===UID?'ka':'kb';try{const s=await DB.doc('terr/'+c.id).get();if(!s.exists)continue;const cur=+(((s.data()[f])||0)+km).toFixed(2);await DB.doc('terr/'+c.id).update({[f]:cur});c[f]=cur}catch(e){}}}
+function chRefresh(){if(tab==='feed')try{renderFeed()}catch(e){}if(tab==='home')try{renderHome()}catch(e){}}
+function chRowHTML(c){const vs=c.a===UID?c.nb:c.na,R=chRes(c),ended=Date.now()>c.end,st=c.st,f2=v=>v.toFixed(2).replace('.',',');let body='',act='';
+ if(st==='pend'&&c.b===UID&&!ended){body=`<span class="small">${esc(c.na)} te retó a caminar más km hasta el domingo${c.stake?` · apuesta ${c.stake} DogCoins`:''}</span>`;act=`<button class="btn sm o" data-cha="${c.id}">Aceptar</button><button class="btn sm" data-chd="${c.id}">No, gracias</button>`}
+ else if(st==='pend'&&c.a===UID&&!ended)body=`<span class="small mute">Esperando que ${esc(c.nb)} acepte${c.stake?` · ${c.stake} DogCoins`:''}</span>`;
+ else if(st==='no'||(st==='pend'&&ended)){body=`<span class="small mute">${st==='no'?esc(c.nb)+' no aceptó':'Nadie aceptó a tiempo'}</span>`;if(c.a===UID)act=`<button class="btn sm" data-chc="${c.id}">${c.stake?'Recuperar '+c.stake+' DogCoins':'Cerrar'}</button>`}
+ else if(st==='on'&&!ended)body=`<div class="small">Tú <b>${f2(R.mine)} km</b> · ${esc(vs)} <b>${f2(R.their)} km</b></div><div style="display:flex;gap:4px;height:9px"><div style="flex:${R.mine||.02};background:#FF7A4D;border-radius:5px"></div><div style="flex:${R.their||.02};background:#7EA6FF;border-radius:5px"></div></div><span class="mute small">Termina el domingo${c.stake?' · premio '+c.stake*2+' DogCoins':''}</span>`;
+ else if(st==='on'&&ended){body=`<span class="small"><b>${R.tie?'¡Empate!':R.win?'🏆 ¡Le ganaste a '+esc(vs)+'!':esc(vs)+' ganó esta vez'}</b> · ${f2(R.mine)} km contra ${f2(R.their)} km</span>`;act=`<button class="btn sm ${R.win||R.tie?'o':''}" data-chc="${c.id}">${R.win&&c.stake?'Cobrar '+c.stake*2+' DogCoins':R.tie&&c.stake?'Recuperar '+c.stake:'Cerrar'}</button>`}
+ return `<div class="box dark" style="gap:6px;padding:10px"><b>⚔️ Reto con ${esc(vs)}</b>${body}${act?`<div class="row" style="gap:6px;flex-wrap:wrap">${act}</div>`:''}</div>`}
+function chVisible(){return CH.list.filter(c=>!(c.cl&&c.cl[UID])&&!(c.st==='no'&&c.b===UID)&&!(c.st==='pend'&&c.b===UID&&Date.now()>c.end))}
+function retosHTML(){chLoad();const v=chVisible().slice(0,6);return `<div class="box" style="gap:8px"><div class="row between"><span class="t2">⚔️ RETOS ENTRE AMIGOS</span><button class="btn sm o" id="chNew">Nuevo reto</button></div>${v.length?v.map(chRowHTML).join(''):'<div class="mute small">Reta a un amigo: gana quien camine más km de aquí al domingo. Pueden apostar DogCoins.</div>'}</div>`}
+function chMiniHTML(){if(MODE!=='firebase')return '';const v=chVisible();if(!v.length)return '';const inc=v.filter(c=>c.st==='pend'&&c.b===UID).length,on=v.find(c=>c.st==='on'&&Date.now()<=c.end);
+ if(!inc&&!on){const done=v.filter(c=>Date.now()>c.end||c.st==='no').length;if(!done)return '';return `<button class="box hot" id="chGo" style="text-align:left;gap:4px"><b>⚔️ ${done} reto${done>1?'s':''} terminado${done>1?'s':''}</b><span class="mute small">Toca para ver el resultado y cobrar.</span></button>`}
+ if(inc)return `<button class="box hot" id="chGo" style="text-align:left;gap:4px"><b>⚔️ ¡Te retaron!</b><span class="mute small">${inc} reto${inc>1?'s':''} esperando tu respuesta. Toca para verlo.</span></button>`;
+ const R=chRes(on),vs=on.a===UID?on.nb:on.na;return `<button class="box" id="chGo" style="text-align:left;gap:4px"><b>⚔️ Reto con ${esc(vs)}: ${R.win?'vas ganando':R.tie?'van empatados':'vas perdiendo'}</b><span class="mute small">Tú ${R.mine.toFixed(1).replace('.',',')} km · ${esc(vs)} ${R.their.toFixed(1).replace('.',',')} km</span></button>`}
+function openChNew(){if(MODE!=='firebase'){toast('Entra con tu cuenta para retar a tus amigos','amigo');return}const fs=friendIds();
+ if(!fs.length){sheet(`<div class="t1">NUEVO RETO</div><div>Primero agrega amigos en Social › Amigos. Después podrás retarlos.</div><button class="btn" id="cX">Cerrar</button>`,sh=>sh.querySelector('#cX').onclick=closeSheet);return}
+ let fid=fs[0],stake=Math.min(10,S.coins||0);
+ sheet(`<div class="t1">NUEVO RETO</div><div class="mute small">Gana quien camine más km desde que acepte hasta el domingo a medianoche. Quien gana se lleva lo apostado por ambos.</div>
+  <div class="field"><label>¿A quién retas?</label><div class="col" style="gap:6px">${fs.map(u=>`<button class="setrow" data-chf="${u}" style="gap:10px"><img class="spr" src="${petU(petOf(u))}" alt="" style="width:32px;height:32px"><span><b>${esc(personName(u))}</b><br><span class="mute small">${esc((petOf(u)||{}).name||'')}</span></span><span class="chev">✓</span></button>`).join('')}</div></div>
+  <div class="field"><label>Apuesta (tienes ${S.coins||0} DogCoins)</label><div class="chips">${[0,10,25,50].map(v=>`<button class="chip" data-chs="${v}" ${v>(S.coins||0)?'disabled':''}>${v?v+' DogCoins':'Sin apuesta'}</button>`).join('')}</div></div>
+  <button class="btn o big" id="cGo">Enviar reto</button><button class="btn" id="cX">Cancelar</button>`,sh=>{
+  const paint=()=>{sh.querySelectorAll('[data-chf]').forEach(b=>{const on=b.dataset.chf===fid;b.style.boxShadow=on?'inset 0 0 0 2px #FF7A4D':'';b.querySelector('.chev').style.opacity=on?1:0});sh.querySelectorAll('[data-chs]').forEach(b=>b.classList.toggle('on',+b.dataset.chs===stake))};paint();
+  sh.querySelectorAll('[data-chf]').forEach(b=>b.onclick=()=>{fid=b.dataset.chf;paint()});sh.querySelectorAll('[data-chs]').forEach(b=>b.onclick=()=>{stake=+b.dataset.chs;paint()});
+  sh.querySelector('#cX').onclick=closeSheet;sh.querySelector('#cGo').onclick=async e=>{e.currentTarget.disabled=true;if(await chCreate(fid,stake)){closeSheet();chRefresh()}else e.currentTarget.disabled=false}})}
+{const _f=friendsHTML;friendsHTML=function(){return (MODE==='firebase'?retosHTML():'')+_f()}}
+/* cajas del juego en Inicio (Eventos y desafíos) */
+function gameBoxesHTML(){try{fwLoad();chLoad()}catch(e){}return chMiniHTML()+fwBoxHTML()+pkwBoxHTML()}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-cha],[data-chd],[data-chc],#chNew,#chGo,[data-fw],[data-pkw]');if(!t)return;const f=id=>CH.list.find(c=>c.id===id);
+ if(t.id==='chNew')openChNew();else if(t.id==='chGo'){SOC.tab='amigos';go('feed')}else if(t.dataset.cha)chAccept(f(t.dataset.cha));else if(t.dataset.chd)chDecline(f(t.dataset.chd));else if(t.dataset.chc)chClaim(f(t.dataset.chc));else if(t.dataset.fw)fwClaim();else if(t.dataset.pkw)pkwClaim()});
+/* ===== 4) INFORME PARA EL VETERINARIO ===== */
+function drawVetReport(cv,walks){const W=1080,p=S.pet,F=fxD();const tmp=document.createElement('canvas');tmp.width=W;tmp.height=3400;const x=tmp.getContext('2d');
+ const font=(s,w)=>x.font=`${w||600} ${s}px ${HDF}`;const txt=(s,X,Y,sz,c,w,al)=>{font(sz,w);x.textAlign=al||'left';x.fillStyle=c;x.fillText(s,X,Y)};
+ const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
+ const wrap=(s,X,Y,maxW,sz,c,lh)=>{font(sz,500);x.fillStyle=c;x.textAlign='left';const words=String(s).split(/\s+/);let line='',y=Y;for(const w of words){const t=line?line+' '+w:w;if(x.measureText(t).width>maxW&&line){x.fillText(line,X,y);y+=lh;line=w}else line=t}if(line){x.fillText(line,X,y);y+=lh}return y};
+ x.fillStyle='#F7F5FF';x.fillRect(0,0,W,3400);x.fillStyle='#2A1F6B';x.fillRect(0,0,W,150);txt('INFORME DE SALUD',60,78,46,'#FFFFFF',800);
+ const today=new Date(),from=new Date(Date.now()-30*864e5),fd=d=>d.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'});txt(`Últimos 30 días · ${fd(from)} al ${fd(today)}`,60,122,26,'#C9BDFF',600);
+ let y=190;const ax=60,sz=150;x.save();x.beginPath();x.arc(ax+sz/2,y+sz/2,sz/2,0,7);x.clip();x.fillStyle='#2A1F6B';x.fillRect(ax,y,sz,sz);const pc=petC(p,0);x.imageSmoothingEnabled=false;const sc=Math.max(1,Math.round(sz*1.1/pc.width)),dw=pc.width*sc;x.drawImage(pc,ax+(sz-dw)/2,y+sz-dw*.98,dw,dw);x.restore();x.imageSmoothingEnabled=true;
+ const ag=ageInfo(p.born);txt(p.name||'Mi perro',240,y+58,52,'#1A1440',800);txt([p.breed,p.sex,ag&&ag.t].filter(Boolean).join(' · '),240,y+102,28,'#5A5480',600);
+ txt([p.kg?'Peso: '+String(p.kg).replace('.',',')+' kg':'',F.ester==='si'?'Esterilizado':F.ester==='no'?'No esterilizado':'',F.chip?'Microchip '+F.chip:''].filter(Boolean).join(' · '),240,y+142,24,'#5A5480',500);
+ y+=200;
+ const card=(title,h)=>{rr(40,y,W-80,h,22);x.fillStyle='#FFFFFF';x.fill();x.strokeStyle='#E2DCFF';x.lineWidth=2;x.stroke();txt(title,70,y+50,30,'#FF6B2C',800);return y+80};
+ // actividad
+ const days={};let km=0,min=0;const ev={agua:0,pipi:0,popo:0,juego:0};walks.forEach(w=>{const d=w.date||'';days[d]=(days[d]||0)+(w.dist||0)/1000;km+=(w.dist||0)/1000;min+=(w.time||0)/60;(w.events||[]).forEach(e=>{if(e.t in ev)ev[e.t]++})});
+ let yy=card('Actividad',360);const st=[[String(walks.length),'paseos'],[km.toFixed(1).replace('.',','),'km en total'],[walks.length?Math.round(min/walks.length)+' min':'—','promedio por paseo'],[Object.keys(days).length+'/30','días con paseo']];
+ st.forEach((s,i)=>{const X=70+i*240;txt(s[0],X,yy+40,44,'#1A1440',800);txt(s[1],X,yy+76,22,'#5A5480',600)});
+ const bx=70,bw=W-140,bh=120,by=yy+100;const vals=[];for(let i=29;i>=0;i--){const d=new Date(Date.now()-i*864e5);vals.push(days[dkey(d)]||0)}const mx=Math.max(1,...vals);vals.forEach((v,i)=>{const w=bw/30-6,h=Math.max(3,bh*v/mx);x.fillStyle=v?'#FF8A4C':'#E8E4F8';x.fillRect(bx+i*bw/30,by+bh-h,w,h)});txt('km por día',bx,by+bh+30,20,'#8A84A8',600);
+ y+=380;
+ yy=card('Registros durante los paseos',210);[['💧 Agua',ev.agua],['🚽 Pipí',ev.pipi],['💩 Popó',ev.popo],['🎾 Juego',ev.juego]].forEach((r,i)=>{const X=70+i*240;txt(String(r[1]),X,yy+40,44,'#1A1440',800);txt(r[0],X,yy+78,24,'#5A5480',600)});
+ txt(walks.length?`Popó en ${walks.filter(w=>(w.events||[]).some(e=>e.t==='popo')).length} de ${walks.length} paseos registrados en la app.`:'Aún no hay paseos registrados en estos 30 días.',70,yy+118,22,'#8A84A8',500);y+=230;
+ // peso
+ const ws=(S.weights||[]).slice(-6);yy=card('Peso',ws.length?150:120);if(ws.length){txt(ws.map(w=>`${String(w.kg).replace('.',',')} kg (${String(w.d).slice(5).split('-').reverse().join('/')})`).join('   ·   '),70,yy+20,24,'#1A1440',600);if(ws.length>1){const dlt=ws[ws.length-1].kg-ws[0].kg;txt(`Cambio: ${dlt>0?'+':''}${dlt.toFixed(1).replace('.',',')} kg`,70,yy+58,22,'#5A5480',600)}}else txt('Sin registros de peso.',70,yy+20,24,'#8A84A8',500);y+=ws.length?170:140;
+ // vacunas
+ const vac=(S.vacc||[]).slice(0,8),vh=Math.max(1,vac.length+(F.vetNext?1:0));yy=card('Vacunas y controles',90+vh*40);let vy=yy+10;vac.forEach(v=>{txt(`${v.n}`,70,vy,24,'#1A1440',700);txt(`puesta ${v.date||'—'}${v.next?' · próxima '+v.next:''}`,430,vy,22,'#5A5480',500);vy+=40});if(F.vetNext){txt('Control veterinario',70,vy,24,'#1A1440',700);txt('próximo '+F.vetNext,430,vy,22,'#5A5480',500);vy+=40}if(!vac.length&&!F.vetNext)txt('Sin vacunas registradas.',70,vy,24,'#8A84A8',500);y+=110+vh*40;
+ // ficha
+ const rows=[['Alergias',F.alerg],['Condiciones',F.cond],['Medicamentos',F.meds],['Alimento',F.comida],['Veterinario',[F.vetN,F.vetC,F.vetT].filter(Boolean).join(' · ')]].filter(r=>r[1]);
+ const fy0=y;yy=y+100;const tmpY=yy;let ry=tmpY;rows.forEach(r=>{txt(r[0],70,ry,22,'#8A84A8',700);ry=wrap(r[1],300,ry,W-380,24,'#1A1440',32)+8});if(!rows.length){txt('Completa la ficha en Manada › Salud y más.',70,ry,24,'#8A84A8',500);ry+=40}
+ const fh=ry-fy0+10;const snap=x.getImageData(0,fy0,W,fh);rr(40,fy0,W-80,fh,22);x.fillStyle='#FFFFFF';x.fill();x.strokeStyle='#E2DCFF';x.lineWidth=2;x.stroke();txt('Salud y alimentación',70,fy0+50,30,'#FF6B2C',800);
+ ry=tmpY;rows.forEach(r=>{txt(r[0],70,ry,22,'#8A84A8',700);ry=wrap(r[1],300,ry,W-380,24,'#1A1440',32)+8});if(!rows.length)txt('Completa la ficha en Manada › Salud y más.',70,ry,24,'#8A84A8',500);
+ y=fy0+fh+34;txt('Generado con PaseoPet · paseopet.site',W/2,y+6,22,'#5A5480',700,'center');txt('Información registrada por el dueño. No reemplaza la evaluación veterinaria.',W/2,y+38,20,'#8A84A8',500,'center');y+=70;
+ cv.width=W;cv.height=y;cv.getContext('2d').drawImage(tmp,0,0)}
+function openVetReport(){sheet(`<div class="t1">INFORME PARA EL VETERINARIO</div><div class="mute small" id="vrMsg">Preparando los últimos 30 días…</div><canvas id="vrCv" style="width:100%;height:auto;border-radius:12px;background:#fff"></canvas><button class="btn o" id="vrShare" disabled>Compartir informe</button><button class="btn" id="vrSave" disabled>Guardar imagen</button>`,async sh=>{
+ let walks=[];try{const t0=Date.now()-30*864e5;const s=await walksCol().orderBy('ts','desc').limit(90).get();walks=s.docs.map(d=>d.data()).filter(w=>(w.ts||0)>=t0&&!w.manual)}catch(e){}
+ const cv=sh.querySelector('#vrCv');if(!cv)return;drawVetReport(cv,walks);const m=sh.querySelector('#vrMsg');if(m)m.textContent='Muéstralo en la consulta o envíalo a tu veterinario.';
+ const nm=`informe-${String(S.pet.name||'perro').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.png`,blob=()=>new Promise(r=>cv.toBlob(r,'image/png'));
+ const bs=sh.querySelector('#vrShare'),bv=sh.querySelector('#vrSave');bs.disabled=false;bv.disabled=false;
+ bv.onclick=async()=>{const b=await blob();if(b)saveBlob(b,nm)};
+ bs.onclick=async()=>{const b=await blob();if(!b)return;const f=new File([b],nm,{type:'image/png'});try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:'Informe de salud de '+S.pet.name});return}}catch(e){if(e&&e.name==='AbortError')return}saveBlob(b,nm)}})}
 /* ===== PLAZAS EN EL GPS: captura en vivo ===== */
 async function livePkLoad(w){if(!w||!w.parks||!w.parks.length||w.pkLoaded)return;w.pkLoaded=true;w.pkDocs=w.pkDocs||{};if(MODE!=='firebase'||!DB)return;const wk=weekKey();
  await Promise.all(w.parks.slice(0,14).map(async k=>{try{const s=await DB.doc('terr/pk_'+k.id+'_'+wk).get();w.pkDocs[k.id]=s.exists?s.data():null}catch(e){}}));if(WK===w){persistActive();markDirty();pkHud()}}
@@ -3540,13 +3685,14 @@ function pkHud(){const el=$('#parkHud');if(!el)return;if(!WK||!WK.parks||!WK.par
  const here=WK.parks.find(k=>inPoly(WK.pos,k));
  if(here){const I=pkInfo(here),rival=I.st==='rival';const pct=I.st==='mine'?100:Math.max(4,Math.min(99,Math.round(100*(rival?I.mine/(I.leadM+1):I.walk/40))));
   el.style.setProperty('--pc',I.st==='mine'?'#FF7A4D':rival?'#FF4D6D':'#2CE6A6');
-  el.innerHTML=`<div class="ph-ic">${I.st==='mine'?'👑':'🌳'}</div><div class="ph-tx"><b>${esc(here.n)}</b><span>${I.st==='mine'?'¡Es tuya esta semana! Cada metro la defiende':rival?`Líder: ${esc(I.lname)} · ${Math.round(I.leadM)} m · tú ${Math.round(I.mine)} m`:'Plaza libre: nadie la ha capturado'}</span><div class="ph-bar"><i style="width:${pct}%"></i></div></div><div class="ph-need">${I.st==='mine'?'✓':Math.ceil(I.need)+' m'}<small>${I.st==='mine'?'tuya':'para capturar'}</small></div>`;el.hidden=false;return}
- const c=WK.parks.map(k=>({k,I:pkInfo(k),d:hav(WK.pos,k.c)})).filter(x=>x.I.st!=='mine'&&x.d<900).sort((a,b)=>a.d-b.d)[0];
+  el.innerHTML=`<div class="ph-ic">${I.st==='mine'?'👑':'🌳'}</div><div class="ph-tx"><b>${here.id===WK.goldId?'⭐ ':''}${esc(here.n)}</b><span>${I.st==='mine'?'¡Es tuya esta semana! Cada metro la defiende':rival?`Líder: ${esc(I.lname)} · ${Math.round(I.leadM)} m · tú ${Math.round(I.mine)} m`:'Plaza libre: nadie la ha capturado'}</span><div class="ph-bar"><i style="width:${pct}%"></i></div></div><div class="ph-need">${I.st==='mine'?'✓':Math.ceil(I.need)+' m'}<small>${I.st==='mine'?'tuya':'para capturar'}</small></div>`;el.hidden=false;return}
+ const gk=WK.goldId&&S.goldDay!==dkey()&&((WK.parkM||{})[WK.goldId]||0)<100?WK.parks.find(k=>k.id===WK.goldId):null;const gc=gk&&hav(WK.pos,gk.c)<1200?{k:gk,I:pkInfo(gk),d:hav(WK.pos,gk.c),gold:true}:null;
+ const c=gc||WK.parks.map(k=>({k,I:pkInfo(k),d:hav(WK.pos,k.c)})).filter(x=>x.I.st!=='mine'&&x.d<900).sort((a,b)=>a.d-b.d)[0];
  if(!c){const mine=WK.parks.filter(k=>pkInfo(k).st==='mine').length;if(!mine){el.hidden=true;return}
   el.style.setProperty('--pc','#FF7A4D');el.innerHTML=`<div class="ph-ic">👑</div><div class="ph-tx"><b>${mine} plaza${mine>1?'s':''} tuya${mine>1?'s':''} cerca</b><span>Pasa por ellas para defenderlas esta semana</span></div>`;el.hidden=false;return}
  const br=pkBrg(WK.pos,c.k.c);el.style.setProperty('--pc',c.I.st==='rival'?'#FF4D6D':'#2CE6A6');
- el.innerHTML=`<div class="ph-ic ph-arrow"><span style="transform:rotate(${Math.round(br-90)}deg)">➤</span></div><div class="ph-tx"><b>${esc(c.k.n)}</b><span>${c.I.st==='rival'?`Líder: ${esc(c.I.lname)} · ${Math.round(c.I.leadM)} m`:'¡Libre! Ve a capturarla'}</span></div><div class="ph-need">${c.d>=1000?(c.d/1000).toFixed(1).replace('.',',')+' km':Math.round(c.d)+' m'}<small>de distancia</small></div>`;el.hidden=false}
-function pkMapParks(){if(!WK||!WK.parks)return null;return WK.parks.map(k=>{const I=pkInfo(k);return{n:k.n,c:k.c,poly:k.poly,st:I.st,here:!!(WK.pos&&inPoly(WK.pos,k)),fx:WK.pkFx&&WK.pkFx.id===k.id&&Date.now()-WK.pkFx.t<2500?(Date.now()-WK.pkFx.t)/2500:null}})}
+ el.innerHTML=`<div class="ph-ic ph-arrow"><span style="transform:rotate(${Math.round(br-90)}deg)">➤</span></div><div class="ph-tx"><b>${c.gold?'⭐ ':''}${esc(c.k.n)}</b><span>${c.gold?'Plaza dorada de hoy: camina 100 m en ella y gana +100 XP':c.I.st==='rival'?`Líder: ${esc(c.I.lname)} · ${Math.round(c.I.leadM)} m`:'¡Libre! Ve a capturarla'}</span></div><div class="ph-need">${c.d>=1000?(c.d/1000).toFixed(1).replace('.',',')+' km':Math.round(c.d)+' m'}<small>de distancia</small></div>`;el.hidden=false}
+function pkMapParks(){if(!WK||!WK.parks)return null;return WK.parks.map(k=>{const I=pkInfo(k);return{n:k.n,c:k.c,poly:k.poly,st:I.st,gold:k.id===WK.goldId,here:!!(WK.pos&&inPoly(WK.pos,k)),fx:WK.pkFx&&WK.pkFx.id===k.id&&Date.now()-WK.pkFx.t<2500?(Date.now()-WK.pkFx.t)/2500:null}})}
 function pkMapLeaders(){if(!WK||!WK.parks)return null;const out=[];for(const k of WK.parks){const I=pkInfo(k);if(I.st==='mine')out.push({lat:k.c.lat,lng:k.c.lng,pet:S.pet,me:true});else if(I.leadUid){const pt=((I.d&&I.d.p)||{})[I.leadUid];if(pt)out.push({lat:k.c.lat,lng:k.c.lng,pet:pt,me:false})}}return out}
 /* ===== EVOLUCIÓN ÉPICA (pantalla completa, al volver a Inicio) ===== */
 function evoQueue(oldL,newL){if(evoOf(newL).i>evoOf(oldL).i){const q=S.evoPending;S.evoPending={from:q?Math.min(q.from,oldL):oldL,to:newL,ts:Date.now()}}}
@@ -3658,7 +3804,7 @@ function openLost(){const F=fxD(),p=S.pet;
   sh.querySelector('#lsGo').onclick=async e=>{const w=sh.querySelector('#lsW').value.trim();if(!w){toast('Indica dónde lo viste por última vez','sos');return}e.currentTarget.disabled=true;
    const body={uid:UID,ts:Date.now(),type:'perdido',text:sh.querySelector('#lsM').value.trim().slice(0,200),lastSeen:w.slice(0,80),found:false,pet:{name:p.name,species:p.species,fur:p.fur,spot:p.spot,acc:p.acc,bid:p.bid||'',coat:p.coat|0,custom:!!p.custom,level:p.level,breed:p.breed},tel:O.tel?fxTel(F.oT):'',senas:O.senas?String(F.senas||'').slice(0,120):'',chip:O.chip?String(F.chip||''):''};
    try{const ref=await publishPost(body,null);S.lostId=ref.id;save();closeSheet();SOC.tab='feed';SOC.filter='todos';go('feed');toast('Aviso publicado. Compártelo para que llegue más lejos','megafono','#FF5C7A')}catch(err){e.currentTarget.disabled=false;if(!(err&&err.code==='limit'))toast('No se pudo publicar el aviso. Intenta de nuevo','sos')}}})}
-function bindFicha(){$$('#s-pack [data-fx]').forEach(b=>b.onclick=()=>openFx(b.dataset.fx));const lb=$('#lostBtn');if(lb)lb.onclick=openLost;const lf=$('#lostFound');if(lf)lf.onclick=()=>lostFound(S.lostId);const c=$('#fxCardBtn');if(c)c.onclick=openFxCard}
+function bindFicha(){$$('#s-pack [data-fx]').forEach(b=>b.onclick=()=>openFx(b.dataset.fx));const lb=$('#lostBtn');if(lb)lb.onclick=openLost;const lf=$('#lostFound');if(lf)lf.onclick=()=>lostFound(S.lostId);const c=$('#fxCardBtn');if(c)c.onclick=openFxCard;const vr=$('#vrBtn');if(vr)vr.onclick=openVetReport}
 function drawFxCard(cv,o){const p=S.pet,F=fxD(),W=1080,H=1350;cv.width=W;cv.height=H;const x=cv.getContext('2d');x.imageSmoothingEnabled=true;
  const font=(sz,w)=>x.font=`${w||700} ${sz}px ${HDF}`;
  const rr=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()};
@@ -3801,7 +3947,7 @@ function renderMap(){if(!MC.init){MC.init=true;const c=S.home||lastFix||DEF_CENT
 async function locateMap(center=true){const f=await getFix(10000);if(f.err){if(center)gpsFail(f.err,()=>locateMap(true));return}MC.me=f;MC.acc=f.acc;const m=merc(f.lat,f.lng);MC.x=m.x;MC.y=m.y;watchChunks(f.lat,f.lng);markDirty();renderMapUI()}
 function walkersList(){const now=Date.now();return Object.entries(SH.profiles).filter(([id,p])=>id!==UID&&p.walker&&p.walker.on&&p.walker.avail&&p.walker.lat&&now-p.walker.ts<3*3600e3).map(([id,p])=>({id,...p.walker,pet:p.pet}))}
 function renderMapUI(){if(tab!=='map')return;
-  const modes=[['terr','Territorios'],['parks','Parques'],['walk','Paseadores'],['rank','Ranking']];if(MC.mode==='parks')loadMapParks();
+  const modes=[['terr','Territorios'],['parks','Parques'],['places','Lugares'],['walk','Paseadores'],['rank','Ranking']];if(MC.mode==='parks')loadMapParks();
   $('#mapChips').innerHTML=modes.map(m=>`<button class="chip ${MC.mode===m[0]?'on':''}" data-m="${m[0]}">${m[1]}</button>`).join('');
   $$('#mapChips button').forEach(b=>b.onclick=()=>{if(b.dataset.m==='rank'){openRanking();return}MC.mode=b.dataset.m;renderMapUI();markDirty()});
   const mine=Object.values(SH.cells).filter(c=>c.o===UID).length,others=Object.values(SH.cells).filter(c=>c.o!==UID).length;
@@ -3811,17 +3957,24 @@ function renderMapUI(){if(tab!=='map')return;
    $('#mapBottom').innerHTML=ls.map(x=>{const pet=x.L.uid?(x.L.uid===UID?S.pet:(x.d.p||{})[x.L.uid]||{name:'Mascota'}):null;return `<button class="box wcard" data-pk="${x.k.id}"><div class="row">${pet?petHTML(pet,48):`<div style="width:48px;height:48px;display:grid;place-items:center">${ico('corona')}</div>`}<div class="col" style="gap:3px;min-width:0"><div class="t2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.k.n)}</div><div class="mute small">${pet?`Líder: ${esc(pet.name)} · ${fmtKm(x.L.m)} km`:'Sin líder esta semana: ¡reclámalo!'}</div><div class="small" style="color:var(--orange)">${x.mine?'Tú: '+fmtKm(x.mine)+' km':'Aún no lo caminas'}</div></div></div></button>`}).join('');
    $$('#mapBottom [data-pk]').forEach(b=>b.onclick=()=>{const k=PK.list.find(z=>z.id===b.dataset.pk);if(k){const m=merc(k.c.lat,k.c.lng);MC.x=m.x;MC.y=m.y;markDirty()}});
    $('#zme').innerHTML=ico('gps');$('#zstyle').innerHTML=ico('pin');$('#zstyle').onclick=openMapStyle;$('#attr1').hidden=tilesOff();return}
+  if(MC.mode==='places'){const c=plCenter();if(c)loadPlaces(c);const fs=[['all','Todos'],['vet','🏥 Veterinarias'],['water','💧 Bebederos'],['dogpark','🐕 Parques perros'],['shop','🛍️ Tiendas'],['shelter','🏠 Refugios']];
+   const ls=plVisible().map(q=>({q,d:c?hav(c,q):0})).sort((a,b)=>(b.q.urg-a.q.urg)*0||a.d-b.d).slice(0,30);
+   $('#mapInfo').innerHTML=`<div class="t2">Lugares para tu perro</div><div class="chips chipscroll">${fs.map(([k,n])=>`<button class="chip ${PL.f===k?'on':''}" data-plf="${k}">${n}</button>`).join('')}</div><div class="mute small">${PL.busy?'Buscando lugares cercanos…':PL.list.length?`${ls.length} lugar${ls.length===1?'':'es'} a menos de 2,5 km. Mueve el mapa para buscar en otra zona.`:'No encontramos lugares en esta zona. Mueve el mapa para buscar en otra.'}</div>`;
+   $('#mapBottom').innerHTML=ls.map(({q,d})=>`<button class="box wcard" data-plc="${q.id}"><div class="row"><div style="width:48px;height:48px;flex:none;display:grid;place-items:center;font-size:26px;border-radius:12px;background:${PLT[q.ty].c}22;box-shadow:inset 0 0 0 2px ${PLT[q.ty].c}">${PLT[q.ty].em}</div><div class="col" style="gap:3px;min-width:0"><div class="t2" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(q.n)}</div><div class="mute small">${PLT[q.ty].n}${c?' · '+plDist(d):''}</div>${q.urg?'<div class="small" style="color:#FF5C7A">🚨 Urgencias / 24 h</div>':q.h?`<div class="small mute" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🕒 ${esc(q.h)}</div>`:''}</div></div></button>`).join('');
+   $$('#mapInfo [data-plf]').forEach(b=>b.onclick=()=>{PL.f=b.dataset.plf;renderMapUI();markDirty()});
+   $$('#mapBottom [data-plc]').forEach(b=>b.onclick=()=>{const q=PL.list.find(z=>z.id===b.dataset.plc);if(q)openPlace(q)});
+   $('#zme').innerHTML=ico('gps');$('#zstyle').innerHTML=ico('pin');$('#zstyle').onclick=openMapStyle;$('#attr1').hidden=tilesOff();return}
   $('#mapInfo').innerHTML=MC.mode==='terr'?`<div class="row between"><div class="col" style="gap:4px"><span class="lbl">Tuyos en la zona</span><span class="num" style="color:var(--orange);font-size:18px">${mine}</span></div><div class="col" style="gap:4px;text-align:right"><span class="lbl">De otras manadas</span><span class="num" style="font-size:18px">${others}</span></div></div><div class="mute small">Pasa por un hexágono para reclamarlo. Si es de otra mascota, lo debilitas hasta robarlo.</div>`
    :`<div class="t2">${ws.length?ws.length+' paseador'+(ws.length>1?'es':'')+' disponible'+(ws.length>1?'s':''):'Sin paseadores disponibles'}</div><div class="mute small">${ws.length?'Toca uno para ver su perfil y solicitar.':'Cuando alguien active su modo paseador aparecerá aquí. Tú también puedes ofrecer paseos desde Manada.'}</div>`;
   $('#mapBottom').innerHTML=MC.mode==='walk'?ws.map(w=>{const d=MC.me?hav(MC.me,w):null;return `<button class="box wcard" data-w="${w.id}"><div class="row">${petHTML(w.pet,48)}<div class="col" style="gap:3px;min-width:0"><div class="t2">${esc(personName(w.id))}</div><div class="mute small">${w.rating?'★ '+w.rating.toFixed(1)+' · ':''}${w.jobs||0} paseos${d!=null?' · '+(d/1000).toFixed(1).replace('.',',')+' km':''}</div><div class="num" style="color:var(--orange);font-size:11px">${clp(w.price)}/30 min</div></div></div></button>`}).join(''):'';
   $$('#mapBottom [data-w]').forEach(b=>b.onclick=()=>openWalker(b.dataset.w));
   $('#zme').innerHTML=ico('gps');$('#zstyle').innerHTML=ico('pin');$('#zstyle').onclick=openMapStyle;$('#attr1').hidden=tilesOff();
 }
-function drawMapTab(){const ws=MC.mode==='walk'?walkersList().map(w=>({lat:w.lat,lng:w.lng,c:petC(w.pet),color:'#2CE6A6',id:w.id})):null;drawWorld($('#mapCv'),MC,{grid:MC.mode==='terr',cells:MC.mode==='parks'?{}:SH.cells,leaders:MC.mode==='parks'?mapLeaders():null,parks:MC.mode==='parks'?PK.list.map(k=>{const L=parkLeader(SH.parkDocs&&SH.parkDocs[k.id]);return{n:k.n,c:k.c,poly:k.poly,st:L.uid===UID?'mine':L.uid?'rival':'free',here:false,fx:null}}):null,pins:ws,me:MC.me,meAcc:MC.acc,home:S.home})}
+function drawMapTab(){const ws=MC.mode==='walk'?walkersList().map(w=>({lat:w.lat,lng:w.lng,c:petC(w.pet),color:'#2CE6A6',id:w.id})):null;drawWorld($('#mapCv'),MC,{grid:MC.mode==='terr',cells:MC.mode==='parks'?{}:SH.cells,leaders:MC.mode==='parks'?mapLeaders():null,parks:MC.mode==='parks'?PK.list.map(k=>{const L=parkLeader(SH.parkDocs&&SH.parkDocs[k.id]);return{n:k.n,c:k.c,poly:k.poly,st:L.uid===UID?'mine':L.uid?'rival':'free',here:false,fx:null}}):null,pins:ws,places:MC.mode==='places'?plVisible():null,me:MC.me,meAcc:MC.acc,home:S.home})}
 (()=>{const cv=$('#mapCv');let drag=null,moved=0;
   cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};moved=0;cv.setPointerCapture(e.pointerId)});
   cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;moved+=Math.abs(dx)+Math.abs(dy);MC.x-=dx*MC.mpp;MC.y+=dy*MC.mpp;drag={x:e.clientX,y:e.clientY};markDirty()});
-  cv.addEventListener('pointerup',e=>{drag=null;const c=unmerc(MC.x,MC.y);watchChunks(c.lat,c.lng);if(moved<6&&MC.mode==='walk'){const r=cv.getBoundingClientRect();const wx=MC.x+(e.clientX-r.left-r.width/2)*MC.mpp,wy=MC.y-(e.clientY-r.top-r.height/2)*MC.mpp;const hit=walkersList().find(w=>{const m=merc(w.lat,w.lng);return Math.hypot(m.x-wx,m.y-wy)/MC.mpp<34});if(hit)openWalker(hit.id)}});
+  cv.addEventListener('pointerup',e=>{drag=null;const c=unmerc(MC.x,MC.y);watchChunks(c.lat,c.lng);if(MC.mode==='places')loadPlaces(c);if(moved<6&&MC.mode==='walk'){const r=cv.getBoundingClientRect();const wx=MC.x+(e.clientX-r.left-r.width/2)*MC.mpp,wy=MC.y-(e.clientY-r.top-r.height/2)*MC.mpp;const hit=walkersList().find(w=>{const m=merc(w.lat,w.lng);return Math.hypot(m.x-wx,m.y-wy)/MC.mpp<34});if(hit)openWalker(hit.id)}});
   cv.addEventListener('wheel',e=>{e.preventDefault();const sh=mapStyle().sharp;MC.mpp=snapMpp(Math.max(.3,Math.min(40,MC.mpp*(e.deltaY<0?(sh?.5:.85):(sh?2:1.18)))));markDirty()},{passive:false});
   $('#zin').onclick=()=>{MC.mpp=snapMpp(Math.max(.3,MC.mpp/(mapStyle().sharp?2:1.4)));markDirty()};$('#zout').onclick=()=>{MC.mpp=snapMpp(Math.min(40,MC.mpp*(mapStyle().sharp?2:1.4)));markDirty()};$('#zme').onclick=()=>locateMap(true)})();
 function openRanking(){const cnt={};for(const k in SH.cells){const o=SH.cells[k].o;cnt[o]=(cnt[o]||0)+1}const rows=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
@@ -3951,7 +4104,7 @@ function updateLive(){if(!WK)return;try{pkHud()}catch(e){}const el=elapsed();$('
   }
 }
 function drawLive(){if(S.eco)return;if(!WK.pos){drawWorld($('#liveCv'),{...(()=>{const c=S.home||DEF_CENTER;return merc(c.lat,c.lng)})(),mpp:WK.cam.mpp},{});return}const m=merc(WK.pos.lat,WK.pos.lng);const cells={...SH.cells};for(const k of WK.hexes){if(['new','steal'].includes(WK.hexInfo[k]))cells[k]={o:UID,s:1}}
-  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home,angel:WK.angel?angelById(WK.angel):null,parks:pkMapParks(),leaders:pkMapLeaders()})}
+  drawWorld($('#liveCv'),{x:m.x,y:m.y-40*WK.cam.mpp,mpp:WK.cam.mpp},{cells,trail:WK.trail,trailStyle:S.pet.trail||'clasico',crewPets:(WK.crew||[]).filter(pid=>pid!==S.pet.pid).map(pid=>(S.dogs||[]).find(d=>d.pid===pid)).filter(Boolean),items:WK.items,boss:WK.boss,spots:WK.spots,events:WK.events,me:WK.pos,meAcc:WK.acc,guide:WK.guide&&WK.guide.map(ll),targets:WK.targets,home:S.home,angel:WK.angel?angelById(WK.angel):null,parks:pkMapParks(),leaders:pkMapLeaders(),places:WK.pos&&PL.list.length?PL.list.filter(q=>q.ty!=='shop'&&hav(WK.pos,q)<1500):null})}
 function renderEvBtns(){const cnt={};if(WK&&WK.events)for(const e of WK.events)cnt[e.t]=(cnt[e.t]||0)+1;$('#evBtns').innerHTML=EVS.map(([k,n])=>`<button data-ev="${k}" aria-label="${n}">${ico(k)}<span>${n}</span>${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`).join('');$$('#evBtns button').forEach(b=>b.onclick=()=>logEvent(b.dataset.ev))}
 async function logEvent(t){if(!WK)return;const pos=WK.pos||WK.last;if(!pos){toast('Esperando GPS para ubicar el evento','gps');return}
   const e={t,lat:+pos.lat.toFixed(6),lng:+pos.lng.toFixed(6),at:Math.round(elapsed())};
@@ -3982,7 +4135,7 @@ function endWalk(){if(!WK)return;const w=WK;
   if(w.dist<50){sheet(`<div class="t1">¿DESCARTAR?</div><div>El paseo fue muy corto (${fmtKm(w.dist)} km). Para guardarlo necesitas al menos 50 metros.</div><button class="btn r" id="dk">Descartar</button><button class="btn" id="dc">Seguir paseando</button>`,sh=>{sh.querySelector('#dk').onclick=()=>{stopWatch();bgKeepAlive(false);WK=null;clearActive();$('#o-live').hidden=true;closeSheet();updateFloat()};sh.querySelector('#dc').onclick=()=>{closeSheet();$('#o-live').hidden=false;if(watchId==null)startWatch()}});return}
   const time=Math.round(elapsed());
   stopWatch();bgKeepAlive(false);try{wakeLock&&wakeLock.release()}catch(e){}WK=null;clearActive();$('#o-live').hidden=true;updateFloat();
-  finalize({crew:w.crew,angel:w.angel||null,well:wellSnap(w),dist:w.dist,time,moving:w.moving,trail:w.trail,hexes:w.hexes,hexInfo:w.hexInfo,got:w.got,bossBonus:w.bossBonus||0,events:w.events,splits:w.splits,hour:w.hour,targets:w.targets,photos:w.photos||[],t0:w.t0,date:dkey(new Date(w.t0))})}
+  finalize({crew:w.crew,angel:w.angel||null,goldId:w.goldId||null,well:wellSnap(w),dist:w.dist,time,moving:w.moving,trail:w.trail,hexes:w.hexes,hexInfo:w.hexInfo,got:w.got,bossBonus:w.bossBonus||0,events:w.events,splits:w.splits,hour:w.hour,targets:w.targets,photos:w.photos||[],t0:w.t0,date:dkey(new Date(w.t0))})}
 
 /* ================= FINALIZE + SUMMARY ================= */
 async function finalize(w){
@@ -4020,7 +4173,7 @@ async function finalize(w){
   const id='w'+(w.t0||Date.now());
   const rec={id,date:w.date,ts:w.t0||Date.now(),dist:Math.round(w.dist),time:Math.round(w.time),moving:Math.round(w.moving),xp:gained,hexes:terr.taken,stolen:terr.stolen.length,items:w.got||[],events:(w.events||[]).map(e=>({t:e.t,lat:e.lat,lng:e.lng})),pts,splits:(w.splits||[]).map(Math.round),manual:!!w.manual,diary:'',coins,kcalH:kcalHuman(w.dist,w.moving),kcalD:kcalDog(w.dist),...(wb?{sniff:wb.sniff,sniffN:wb.sniffN,happy:wb.happy,parks:parkRes.map(x=>x.n)}:{})};
   S.lastWalk={id,date:rec.date,dist:rec.dist,time:rec.time,xp:gained,pts:pts.length>400?pts.filter((_,i)=>i%Math.ceil(pts.length/400)===0):pts};
-  save(true);pushProfile();try{dsAfterWalk(w)}catch(e){}
+  save(true);pushProfile();try{dsAfterWalk(w)}catch(e){}try{fwAfterWalk(w,terr,parkRes).catch(()=>{})}catch(e){}try{pkAfterWalk(w,parkRes)}catch(e){}try{chAfterWalk(w).catch(()=>{})}catch(e){}
   W8(walksCol().path+'/'+id,()=>walksCol().doc(id).set(rec)).catch(()=>{});
   const prevAvg=S.totals.walks>1?(S.totals.km*1000-w.dist)/(S.totals.walks-1):w.dist;
   showSummary({rec,old,gained,lv,mult,hm,coins,coinBreak:w.manual?[]:cw.parts,parkRes,firstToday,misDone,newB,terr,photos:w.photos||[],pct:Math.round((w.dist/Math.max(1,prevAvg)-1)*100)});
@@ -5796,7 +5949,7 @@ function pickOnStreets(segs,n,start,avoid=[]){const tot=segs.reduce((s,x)=>s+x.L
 async function spawnStreetItems(w,start){if(!start)return;const res=await streetSegments(start);if(WK!==w)return;
   if(res&&res.segs.length){const lure=(S&&S.boosts&&S.boosts.lure>0)?4:0;const pts=pickOnStreets(res.segs,5+Math.floor(Math.random()*3)+lure,start);w.items=pts.map(p=>({id:rollItem(),lat:p.lat,lng:p.lng,got:false}));w.itemMode='street';
     const bpt=pickOnStreets(res.segs,1,start,pts);if(bpt.length)w.boss={lat:bpt[0].lat,lng:bpt[0].lng,got:false,n:'Hito Dorado del Barrio'};
-    w.parks=res.parks;livePkLoad(w);const near=res.parks.filter(k=>hav(start,k.c)<450).sort((a,b)=>hav(start,a.c)-hav(start,b.c)).slice(0,2).map(k=>({lat:k.c.lat,lng:k.c.lng,park:k.n}));
+    w.parks=res.parks;w.goldId=(goldPark(res.parks)||{}).id||null;livePkLoad(w);loadPlaces(start).catch(()=>{});const near=res.parks.filter(k=>hav(start,k.c)<450).sort((a,b)=>hav(start,a.c)-hav(start,b.c)).slice(0,2).map(k=>({lat:k.c.lat,lng:k.c.lng,park:k.n}));
     const extra=pickOnStreets(res.segs,3-near.length,start,pts.concat(near));w.spots=near.concat(extra).map(s=>({...s,done:false}));
     if(pts.length)toast(`${pts.length} objetos con niveles en las calles + Hito Dorado (★)`,'bag','#FFC93C');
     if(w.parks.length)toast(`Parques cerca: ${w.parks.slice(0,2).map(k=>esc(k.n)).join(', ')}. Pasea por ellos para ser Líder del Parque`,'corona','#FFC93C')}
@@ -5859,7 +6012,7 @@ setInterval(()=>{if(!WK||WK.paused)return;const el=elapsed();
   if(s>=15&&!WK.sn.told){WK.sn.told=true;toast('Parada de olfateo: quédense aquí cerca de un minuto','paw','#4FD18B')}
   if(s>=SNIFF_S&&!WK.sn.done)sniffDone();
   if(WK.sn&&!WK.sn.done)WK.sn.last=WK.lastFixTs;
-  const next=WK.nextWater||1200;if(el>=next){WK.nextWater=el+1200;const lastW=[...WK.events].reverse().find(e=>e.t==='agua');if(!lastW||el-lastW.at>900){waterSfx();vib('water');toast(`Hora de darle agua a ${esc(S.pet.name)}. Toca la gota para registrarlo`,'agua','#7EA6FF');bgNote('Hora del agua 💧',`Dale agua a ${S.pet.name}.`,'agua');say(`Hora de hidratar a ${S.pet.name}`);alertNotify('PaseoPet · Hidratación',`Han pasado 20 minutos: ofrécele agua a ${S.pet.name}`,'pp-water')}}
+  const next=WK.nextWater||1200;if(el>=next){WK.nextWater=el+1200;const lastW=[...WK.events].reverse().find(e=>e.t==='agua');if(!lastW||el-lastW.at>900){waterSfx();vib('water');toast(`Hora de darle agua a ${esc(S.pet.name)}. Toca la gota para registrarlo${(()=>{const n=nearestWater(WK.pos);return n!=null?' · 💧 bebedero a '+n+' m':''})()}`,'agua','#7EA6FF');bgNote('Hora del agua 💧',`Dale agua a ${S.pet.name}.`,'agua');say(`Hora de hidratar a ${S.pet.name}`);alertNotify('PaseoPet · Hidratación',`Han pasado 20 minutos: ofrécele agua a ${S.pet.name}`,'pp-water')}}
   updateVitals()},1000);
 function updateVitals(){if(!WK)return;const h=happyPct(WK),e=Math.round(WK.energy??100);const a=$('#lHappy'),b=$('#lEnergy');if(!a)return;a.style.width=h+'%';$('#lHappyN').textContent=h+'%';b.style.width=e+'%';$('#lEnergyN').textContent=e+'%';
   const [lo,hi]=paceRange();$('#lPaceHint').textContent=WK.kmh!=null&&Date.now()-WK.lastMoveTs<15000?`Ahora ${fmtKmh(WK.kmh)} km/h · ideal ${fmtKmh(lo)}–${fmtKmh(hi)}`:`Ritmo ideal ${fmtKmh(lo)}–${fmtKmh(hi)} km/h`;
