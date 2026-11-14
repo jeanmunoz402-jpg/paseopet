@@ -2,7 +2,11 @@ name: APK
 on:
   workflow_dispatch:
   push:
-    paths: ['android/**', '.github/workflows/apk.yml']
+    branches: [main]
+    paths-ignore: ['landing/**', '**.md']
+concurrency:
+  group: apk
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:
@@ -10,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
       - uses: gradle/actions/setup-gradle@v3
@@ -33,5 +38,20 @@ jobs:
           cp android/app/build/outputs/apk/release/app-release.apk PaseoPet.apk
           SHA=$(keytool -list -v -keystore android/app/release.jks -storepass paseopet-ks | grep 'SHA256:' | head -1 | sed 's/.*SHA256: //')
           echo "SHA256 de la firma: $SHA" | tee -a "$GITHUB_STEP_SUMMARY"
+          N=${{ github.run_number }}
+          # «Nativa» = última compilación que cambió la parte de Android. La app solo pide
+          # reinstalar cuando esta sube; los cambios de la web llegan solos a la APK.
+          PREV=$(gh release view apk-latest --json body -q .body 2>/dev/null || true)
+          PSHA=$(echo "$PREV" | grep -o 'Commit: [0-9a-f]\{7,40\}' | head -1 | cut -d' ' -f2)
+          PNAT=$(echo "$PREV" | grep -o 'Nativa [0-9]*' | head -1 | cut -d' ' -f2)
+          PCOMP=$(echo "$PREV" | grep -o 'Compilación [0-9]*' | head -1 | cut -d' ' -f2)
+          NAT=$N
+          if [ -n "$PSHA" ] && [ -n "$PNAT" ] && git cat-file -e "$PSHA^{commit}" 2>/dev/null; then
+            if [ -z "$(git diff --name-only "$PSHA" HEAD -- android)" ]; then NAT=$PNAT; fi
+          elif [ -n "$PCOMP" ] && [ -z "$(git diff --name-only HEAD~1 HEAD -- android)" ]; then
+            NAT=$PCOMP
+          fi
+          TITLE=$(git log -1 --pretty=%s | tr -d '"')
+          echo "Compilación $N · Nativa $NAT · $TITLE" | tee -a "$GITHUB_STEP_SUMMARY"
           gh release delete apk-latest --yes --cleanup-tag 2>/dev/null || true
-          gh release create apk-latest PaseoPet.apk --title "PaseoPet APK" --notes "APK de PaseoPet para instalar directo en Android. Compilación ${{ github.run_number }}. SHA256 de la firma: $SHA"
+          gh release create apk-latest PaseoPet.apk --title "PaseoPet APK 1.0.$N" --notes "APK de PaseoPet para instalar directo en Android. Compilación $N. Nativa $NAT. Commit: ${GITHUB_SHA:0:12}. Último cambio: $TITLE. SHA256 de la firma: $SHA"

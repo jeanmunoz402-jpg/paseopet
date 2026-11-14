@@ -1293,6 +1293,8 @@ html.rotP{overflow:hidden}html.rotP body{position:fixed;top:0;left:0;transform-o
 .cr-kg>div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .cr-kg i{width:100%;background:var(--mint);display:block}
 .cr-kg .lbl{font-size:9px}
+
+.novbar{position:fixed;left:12px;right:12px;bottom:calc(112px + env(safe-area-inset-bottom,0px));z-index:70;max-width:416px;margin:0 auto;text-align:left;background:#241D58!important;color:#F3EEFF!important;opacity:1!important;box-shadow:inset 0 0 0 3px var(--gold),6px 6px 0 rgba(0,0,0,.55)!important;padding:12px 14px!important}
 </style>
 
 <div class="app" id="app">
@@ -3624,10 +3626,34 @@ function natSync(){if(!NPORT)return;natSend({t:'sched',list:natSchedule()});natS
 function natWalk(on){if(!NPORT)return;natSend({t:'walk',on:!!on,name:(S.pet&&S.pet.name)||''})}
 document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){natSend({t:'status'});if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
 /* ===== APK de Android ===== */
+
+/* ===== Novedades y versión: cada cambio publicado queda registrado (historial de GitHub) ===== */
+const NOV={l:null,load:'',t0:Date.now(),asked:false};
+async function novFetch(force){try{const c=JSON.parse(localStorage.getItem('pp_nov')||'null');if(c&&c.l&&Date.now()-c.t<(force?5:10)*60e3)return c.l}catch(e){}
+  try{const r=await fetch('https://api.github.com/repos/jeanmunoz402-jpg/paseopet/commits?sha=main&per_page=25',{cache:'no-store'});if(!r.ok)return null;const j=await r.json();
+    const l=(Array.isArray(j)?j:[]).map(c=>({s:String(c.sha||'').slice(0,7),t:String((c.commit&&c.commit.message)||'').split('\n')[0].trim(),d:(c.commit&&c.commit.committer&&c.commit.committer.date)||''})).filter(x=>x.t&&!/^Merge /.test(x.t));
+    try{localStorage.setItem('pp_nov',JSON.stringify({t:Date.now(),l}))}catch(e){}return l}catch(e){return null}}
+function novDate(d){try{return new Date(d).toLocaleDateString('es-CL',{day:'numeric',month:'short'})}catch(e){return''}}
+function novListHTML(l){return l.map(x=>`<div class="listrow"><div class="col" style="gap:2px"><b>${esc(x.t)}</b><span class="mute small">${esc(novDate(x.d))}</span></div></div>`).join('')}
+function openNovedades(){const l=NOV.l||[];sheet(`<div class="t1">NOVEDADES</div><div class="small">Todo lo que cambia en PaseoPet queda registrado aquí. Los cambios llegan solos a la web y a la app de Android.</div>
+  <div class="box dark small" style="gap:4px">${inApk()&&NATI.vn?`<span>App de Android: versión <b>${esc(NATI.vn)}</b>${UPD.latest&&+NATI.vc<UPD.latest?' · <b style="color:var(--gold)">hay una más nueva</b>':' · al día'}</span>`:''}<span>Versión del juego: <b>${esc(NOV.load||'—')}</b>${l[0]?` del ${esc(novDate(l[0].d))}`:''}</span></div>
+  ${l.length?novListHTML(l.slice(0,20)):'<div class="mute small">No se pudo cargar el historial. Revisa tu conexión.</div>'}<button class="btn" id="nvC">Cerrar</button>`,sh=>{sh.querySelector('#nvC').onclick=closeSheet;if(l[0]){S.novSeen=l[0].s;save()}})}
+async function novCheck(){const l=await novFetch();if(!l||!l.length)return;NOV.l=l;if(!NOV.load)NOV.load=l[0].s;
+  if(!S||!S.onboarded)return;if(!S.novSeen){S.novSeen=l[0].s;save();return}
+  if(S.novSeen===l[0].s||WK||NOV.asked)return;const i=l.findIndex(x=>x.s===S.novSeen);const nw=(i<0?l.slice(0,6):l.slice(0,i)).slice(0,6);if(!nw.length)return;
+  for(let k=0;k<40;k++){if($('#sheetWrap').hidden&&!WK&&!(S.evoPending)&&!$('.evoepic'))break;await sleep(1500)}if(NOV.asked||WK)return;NOV.asked=true;AUTO_POP++;
+  sheet(`<div class="t1" style="color:var(--gold)">NOVEDADES EN PASEOPET</div><div class="small">Desde tu última visita:</div>${novListHTML(nw)}<button class="btn o" id="nvOk">¡Genial!</button><button class="btn" id="nvAll">Ver todo el historial</button>`,sh=>{
+    sh.querySelector('#nvOk').onclick=()=>{S.novSeen=l[0].s;save();closeSheet()};sh.querySelector('#nvAll').onclick=()=>{closeSheet();setTimeout(openNovedades,80)}})}
+/* si la app quedó abierta (APK o pestaña) y se publicó algo nuevo, ofrece cargarlo */
+async function novFresh(){if(document.visibilityState!=='visible'||WK||!NOV.load||Date.now()-NOV.t0<90e3)return;const l=await novFetch(true);if(!l||!l[0]||l[0].s===NOV.load)return;NOV.l=l;
+  if($('#novBar'))return;const b=document.createElement('button');b.id='novBar';b.className='banner novbar';b.innerHTML='<i class="pe pe-spark"></i> Hay una versión nueva de PaseoPet. Toca para cargarla.';
+  b.onclick=()=>{try{save(true)}catch(e){}setTimeout(()=>location.replace(location.pathname+'?v='+l[0].s),250)};document.body.appendChild(b)}
+document.addEventListener('visibilitychange',()=>{try{novFresh()}catch(e){}});setInterval(()=>{try{novFresh()}catch(e){}},15*60e3);
+setTimeout(()=>{try{novCheck()}catch(e){}},6000);
 /* ===== Actualización del APK ===== */
 const UPD={latest:0,st:'',shown:false,checking:false,waitPerm:false};
 async function apkLatest(){try{const c=JSON.parse(localStorage.getItem('pp_apk_latest')||'null');if(c&&c.n&&Date.now()-c.t<3*3600e3)return c.n}catch(e){}
-  try{const r=await fetch('https://api.github.com/repos/jeanmunoz402-jpg/paseopet/releases/tags/apk-latest',{headers:{Accept:'application/vnd.github+json'}});if(!r.ok)return 0;const j=await r.json();const m=/Compilaci[oó]n (\d+)/.exec(String(j.body||'')+' '+String(j.name||''));const n=m?+m[1]:0;try{localStorage.setItem('pp_apk_latest',JSON.stringify({n,t:Date.now()}))}catch(e){}return n}catch(e){return 0}}
+  try{const r=await fetch('https://api.github.com/repos/jeanmunoz402-jpg/paseopet/releases/tags/apk-latest',{cache:'no-store'});if(!r.ok)return 0;const j=await r.json();const bd=String(j.body||'')+' '+String(j.name||''),m=/Nativa (\d+)/.exec(bd)||/Compilaci[oó]n (\d+)/.exec(bd);const n=m?+m[1]:0;try{localStorage.setItem('pp_apk_latest',JSON.stringify({n,t:Date.now()}))}catch(e){}return n}catch(e){return 0}}
 async function apkUpdCheck(){if(!NAT||UPD.checking||UPD.shown)return;UPD.checking=true;const n=await apkLatest();UPD.checking=false;UPD.latest=n;const vc=+NATI.vc||0;if(!n||(vc&&vc>=n))return;
   let snz=0;try{snz=+localStorage.getItem('pp_upd_snz')||0}catch(e){}if(Date.now()<snz)return;UPD.shown=true;
   for(let i=0;i<40;i++){if(S&&S.onboarded&&$('#sheetWrap').hidden&&!$('#o-casa:not([hidden])'))break;await sleep(1500)}apkUpdSheet()}
@@ -6163,7 +6189,8 @@ function renderSettings(){const p=S.pet;let acct='';
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
    <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button>
     ${isIOS()&&!isApp()?`<button class="setrow" id="stIos">${ico('star')}<span><b>Agregar la app a tu iPhone</b><br><span class="mute small">Ícono en tu inicio y pantalla completa</span></span><span class="chev">►</span></button>`:''}
-    <button class="setrow" id="stGift">${ico('star')}<span><b>Canjear código</b><br><span class="mute small">Si te regalaron un código, úsalo aquí</span></span><span class="chev">►</span></button>
+    <button class="setrow" id="stNov">${ico('star')}<span><b>Novedades y versión</b><br><span class="mute small">Todo lo nuevo en PaseoPet${inApk()&&NATI.vn?' · app '+esc(NATI.vn):''}</span></span><span class="chev">►</span></button>
+     <button class="setrow" id="stGift">${ico('star')}<span><b>Canjear código</b><br><span class="mute small">Si te regalaron un código, úsalo aquí</span></span><span class="chev">►</span></button>
      ${!inApk()&&!isIOS()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
   ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
   <div class="box"><span class="t2">Datos</span><div class="mute small">${MODE==='local'?'Tus datos se guardan solo en este navegador.':'Tu historial, salud y casa son privados. Tu perro, nivel, publicaciones y territorios los ve la comunidad.'}</div>
@@ -6181,7 +6208,7 @@ function renderSettings(){const p=S.pet;let acct='';
   $('#stSnd').onclick=()=>{S.sound=S.sound===false;save();renderSettings();if(S.sound)bark(2)};$('#stVoz').onclick=()=>{S.voice=S.voice===false;save();renderSettings();if(S.voice)say('Voz del entrenador activada')};
   $('#stBg').onclick=()=>{S.bgMode=S.bgMode===false;save();if(WK)bgKeepAlive(S.bgMode);renderSettings()};$('#stTest').onclick=()=>{audioCtx();bark(2);say(`Hola, soy ${S.pet.name}`)};
   const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isApp()){exitHint(true);return}if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
-  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stGift'))$('#stGift').onclick=openGift;if($('#stIos'))$('#stIos').onclick=openIos;$('#stDon').onclick=openDonate;
+  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stGift'))$('#stGift').onclick=openGift;if($('#stNov'))$('#stNov').onclick=async()=>{if(!NOV.l){NOV.l=await novFetch()}openNovedades()};if($('#stIos'))$('#stIos').onclick=openIos;$('#stDon').onclick=openDonate;
   $('#stReset').onclick=async()=>{if(!setResetArm){setResetArm=true;renderSettings();setTimeout(()=>{setResetArm=false;if(tab==='settings')renderSettings()},3500);return}setResetArm=false;await wipeMine()}}
 let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:tab;go('settings')}
 /* ================= CLIMA ANIMADO ================= */
