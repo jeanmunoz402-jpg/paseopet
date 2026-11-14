@@ -3630,6 +3630,20 @@ function openIos(){sheet(`<div class="t1">APP PARA IPHONE</div><div>Agrega Paseo
   <div class="box dark"><span class="t2">Cómo agregarla</span><div class="small">1. Abre <b>paseopet.site</b> en <b>Safari</b>.<br>2. Toca el botón <b>Compartir</b> (el cuadrado con la flecha hacia arriba).<br>3. Elige <b>«Agregar a inicio»</b> y luego <b>«Agregar»</b>.<br>4. Abre PaseoPet desde el nuevo ícono.</div></div>
   <div class="mute small">Si entras con Google, tu perro y tu progreso siguen ahí. En iPhone los avisos y el GPS con la pantalla apagada aún no están disponibles: deja la pantalla encendida durante el paseo.</div>
   <button class="btn o" id="iosHas">Ya la agregué</button><button class="btn" id="iosX">Cerrar</button>`,sh=>{sh.querySelector('#iosX').onclick=closeSheet;sh.querySelector('#iosHas').onclick=()=>{try{localStorage.setItem('pp_ios_has','1')}catch(e){}closeSheet();toast('¡Listo! Ábrela desde el ícono de tu inicio','paw','#2CE6A6');if(tab==='home'&&S&&S.onboarded)renderHome()}})}
+
+/* ===== Códigos de regalo (solo se guarda la huella SHA-256; cada código se canjea una vez por cuenta) ===== */
+const GIFT_CODES={'a59abd59490ec9fe03f24b3a9b14dc3cfe7c585a3327f0bd819869e8e358d173':{coins:9999,n:'Regalo de DogCoins'}};
+async function giftHash(c){const b=new TextEncoder().encode('paseopet:'+c);const d=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function openGift(){sheet(`<div class="t1">CANJEAR CÓDIGO</div><div class="small">Si te dieron un código de regalo, escríbelo aquí.</div>
+  <div class="field"><label for="gfCode">Código</label><input id="gfCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ej: ABC-1234-WXYZ" style="text-transform:uppercase"></div>
+  <div class="small" id="gfMsg" role="status"></div><div class="g2"><button class="btn o" id="gfGo">Canjear</button><button class="btn" id="gfClose">Cerrar</button></div>`,sh=>{
+  const inp=sh.querySelector('#gfCode'),msg=sh.querySelector('#gfMsg'),bt=sh.querySelector('#gfGo');sh.querySelector('#gfClose').onclick=closeSheet;setTimeout(()=>{try{inp.focus()}catch(e){}},200);
+  const go=async()=>{const c=String(inp.value||'').trim().toUpperCase().replace(/\s+/g,'');if(c.length<4){msg.textContent='Escribe el código completo.';return}
+    bt.disabled=true;bt.textContent='Revisando…';let h='';try{h=await giftHash(c)}catch(e){}bt.disabled=false;bt.textContent='Canjear';
+    const g=GIFT_CODES[h];if(!g){msg.style.color='var(--red)';msg.textContent='Ese código no existe. Revisa que esté bien escrito.';return}
+    S.gifts=S.gifts||[];if(S.gifts.includes(h)){msg.style.color='var(--gold)';msg.textContent='Este código ya lo canjeaste en tu cuenta.';return}
+    S.gifts.push(h);S.coins=(S.coins||0)+g.coins;save(true);try{coinSfx()}catch(e){}closeSheet();toast(`¡Código canjeado! +${g.coins.toLocaleString('es-CL')} DogCoins`,'moneda','#FFC93C');try{render()}catch(e){}};
+  bt.onclick=go;inp.onkeydown=e=>{if(e.key==='Enter')go()}})}
 function apkHidden(){try{return localStorage.getItem('pp_apk_x')==='1'}catch(e){return false}}
 function openApk(){sheet(`<div class="t1">APP PARA ANDROID</div><div>Instala PaseoPet como una app más de tu teléfono: abre a pantalla completa y se actualiza sola.</div>
   <a class="btn o big" id="apkGo" href="${APK_URL}" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Descargar PaseoPet (APK)</a>
@@ -5966,7 +5980,8 @@ function renderSettings(){const p=S.pet;let acct='';
    ${MODE!=='local'?`<button class="setrow" id="stCode">${ico('amigo')}<span><b>Mi código de amigo</b><br><span class="mute small">${myCode()}</span></span><span class="chev">►</span></button>`:''}
    <button class="setrow" id="stDon">${ico('heart')}<span><b>Apoyar PaseoPet</b><br><span class="mute small">Donación voluntaria</span></span><span class="chev">►</span></button>
     ${isIOS()&&!isApp()?`<button class="setrow" id="stIos">${ico('star')}<span><b>Agregar la app a tu iPhone</b><br><span class="mute small">Ícono en tu inicio y pantalla completa</span></span><span class="chev">►</span></button>`:''}
-    ${!inApk()&&!isIOS()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
+    <button class="setrow" id="stGift">${ico('star')}<span><b>Canjear código</b><br><span class="mute small">Si te regalaron un código, úsalo aquí</span></span><span class="chev">►</span></button>
+     ${!inApk()&&!isIOS()?`<button class="setrow" id="stApk">${ico('star')}<span><b>Descargar la app para Android</b><br><span class="mute small">${isAndroid()?'Pantalla completa, avisos y GPS en segundo plano':'Copia el enlace y ábrelo en tu Android'}</span></span><span class="chev">►</span></button>`:''}</div>
   ${fsEnabled()||embedInfo().framed&&!inClaude()?`<div class="box"><span class="t2">Pantalla</span><button class="setrow" id="stFs">${ico('star')}<span><b>${isApp()?'Cómo salir de la app':isFull()?'Salir de pantalla completa':'Pantalla completa'}</b><br><span class="mute small">${isApp()?'Sales sin cerrar tu sesión':isFull()?'Volver a ver la barra del navegador':'Usa toda la pantalla del teléfono'}</span></span><span class="chev">►</span></button></div>`:''}
   <div class="box"><span class="t2">Datos</span><div class="mute small">${MODE==='local'?'Tus datos se guardan solo en este navegador.':'Tu historial, salud y casa son privados. Tu perro, nivel, publicaciones y territorios los ve la comunidad.'}</div>
    <button class="btn r" id="stReset">${setResetArm?'Toca otra vez: se borra todo':'Borrar todos mis datos'}</button></div>
@@ -5983,7 +5998,7 @@ function renderSettings(){const p=S.pet;let acct='';
   $('#stSnd').onclick=()=>{S.sound=S.sound===false;save();renderSettings();if(S.sound)bark(2)};$('#stVoz').onclick=()=>{S.voice=S.voice===false;save();renderSettings();if(S.voice)say('Voz del entrenador activada')};
   $('#stBg').onclick=()=>{S.bgMode=S.bgMode===false;save();if(WK)bgKeepAlive(S.bgMode);renderSettings()};$('#stTest').onclick=()=>{audioCtx();bark(2);say(`Hola, soy ${S.pet.name}`)};
   const fsb=$('#stFs');if(fsb)fsb.onclick=()=>{if(isApp()){exitHint(true);return}if(isFull()){exitFullscreen();setTimeout(renderSettings,300)}else goFullscreen().then(r=>{if(r==='tab')toast('Abrimos PaseoPet en una pestaña nueva','star');setTimeout(renderSettings,300)})};
-  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stIos'))$('#stIos').onclick=openIos;$('#stDon').onclick=openDonate;
+  $('#stProf').onclick=()=>openProfile(UID);const sc=$('#stCode');if(sc)sc.onclick=shareMyCode;if($('#stApk'))$('#stApk').onclick=openApk;if($('#stGift'))$('#stGift').onclick=openGift;if($('#stIos'))$('#stIos').onclick=openIos;$('#stDon').onclick=openDonate;
   $('#stReset').onclick=async()=>{if(!setResetArm){setResetArm=true;renderSettings();setTimeout(()=>{setResetArm=false;if(tab==='settings')renderSettings()},3500);return}setResetArm=false;await wipeMine()}}
 let SET_BACK='home';function openSettings(){SET_BACK=tab==='settings'?SET_BACK:tab;go('settings')}
 /* ================= CLIMA ANIMADO ================= */
