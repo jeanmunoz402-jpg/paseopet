@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
@@ -48,9 +47,10 @@ public class MainActivity extends Activity {
             need.add(Manifest.permission.ACCESS_FINE_LOCATION);
             need.add(Manifest.permission.ACCESS_COARSE_LOCATION);
         }
-        SharedPreferences p = getSharedPreferences("pp", MODE_PRIVATE);
-        if (Build.VERSION.SDK_INT >= 23 && !need.isEmpty() && !p.getBoolean("asked", false)) {
-            p.edit().putBoolean("asked", true).apply();
+        // Pide los permisos cada vez que falten (Android deja de mostrar el diálogo
+        // tras dos rechazos, así que no molesta; antes se pedía una sola vez en la vida
+        // y un "No permitir" inicial dejaba el GPS muerto para siempre).
+        if (Build.VERSION.SDK_INT >= 23 && !need.isEmpty()) {
             requestPermissions(need.toArray(new String[0]), 1);
         } else {
             start();
