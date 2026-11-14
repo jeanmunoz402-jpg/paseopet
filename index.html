@@ -1,4 +1,4 @@
-<div id="rotLock" role="alert" aria-live="polite"><div class="ph"></div><b>GIRA TU TELÉFONO</b><span>PaseoPet se juega en vertical. Pon el teléfono derecho para seguir.</span></div><meta charset="utf-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PaseoPet</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -1264,16 +1264,7 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .casa-card{display:flex;align-items:center;gap:10px;text-align:left;width:100%}
 .casa-card canvas{image-rendering:pixelated;width:66px;height:78px;flex:none;box-shadow:0 0 0 2px #0E0A26}
 
-#rotLock{display:none}
-@media (orientation:landscape) and (max-height:540px) and (pointer:coarse){
-#rotLock{display:flex;position:fixed;inset:0;z-index:2147483000;background:#17123A;color:#F3EEFF;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;text-align:center}
-#rotLock .ph{width:34px;height:58px;box-shadow:inset 0 0 0 4px #FFC93C,inset 0 -10px 0 4px #FFC93C;position:relative;animation:rotPh 1.6s steps(4) infinite}
-#rotLock .ph:after{content:"";position:absolute;left:13px;bottom:3px;width:8px;height:3px;background:#17123A}
-#rotLock b{font-family:"PP Pix","Courier New",monospace;font-size:13px;letter-spacing:.04em;color:#FFC93C}
-#rotLock span{font-size:15px;max-width:320px;color:#C9BDFF}
-}
-@keyframes rotPh{0%,30%{transform:rotate(-90deg)}70%,100%{transform:rotate(0)}}
-@media (prefers-reduced-motion:reduce){#rotLock .ph{animation:none}}
+html.rotP{overflow:hidden}html.rotP body{position:fixed;top:0;left:0;transform-origin:0 0;box-sizing:border-box;overflow:hidden}
 </style>
 
 <div class="app" id="app">
@@ -6195,8 +6186,28 @@ const isApp=()=>{try{return matchMedia('(display-mode: standalone)').matches||na
 function exitHint(force){if(!isApp())return;if(!force&&S&&S.exitHint)return;if(!force)AUTO_POP++;if(S){S.exitHint=1;save()}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);sheet(`<div class="t1">CÓMO SALIR DE LA APP</div><div>${ios?'Desliza hacia arriba desde el borde inferior de la pantalla (o toca el botón de inicio).':'Usa el gesto o el botón de inicio de tu teléfono, o el botón Atrás.'}</div><div class="banner small">Tu sesión queda guardada: la próxima vez que abras PaseoPet entras directo, sin volver a iniciar sesión.</div><div class="mute small">Si estás paseando, el paseo sigue midiendo en segundo plano. Para soltarlo por completo, toca Terminar.</div><button class="btn o" id="exOk">Entendido</button>`,sh=>{sh.querySelector('#exOk').onclick=closeSheet})}
 
 /* ===== Siempre vertical ===== */
-;(function(){function lockP(){try{const st=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||document.fullscreenElement;if(st&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(()=>{})}catch(e){}}
-lockP();addEventListener('pointerdown',lockP,{once:true,passive:true});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lockP()})})();
+/* La APK y la app instalada bloquean la orientación. En el navegador eso no se puede,
+   así que si el teléfono queda horizontal la app se gira al revés y se ve igual que en vertical. */
+const ROT={a:0};
+;(function(){
+  const dW=Object.getOwnPropertyDescriptor(window,'innerWidth'),dH=Object.getOwnPropertyDescriptor(window,'innerHeight');
+  const iw=()=>dW&&dW.get?dW.get.call(window):document.documentElement.clientWidth,ih=()=>dH&&dH.get?dH.get.call(window):document.documentElement.clientHeight;
+  const coarse=()=>{try{return matchMedia('(pointer:coarse)').matches}catch(e){return false}};
+  function lockP(){try{const st=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||document.fullscreenElement;if(st&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(()=>{})}catch(e){}}
+  function apply(){let a=0;if(coarse()&&iw()>ih()){let ang=0;try{ang=screen.orientation&&typeof screen.orientation.angle==='number'?screen.orientation.angle:(+window.orientation||0)}catch(e){}ang=((ang%360)+360)%360;a=ang===270?90:-90}
+    const b=document.body;if(!b)return;const R=document.documentElement;
+    if(!a){if(ROT.a){ROT.a=0;R.classList.remove('rotP');b.style.width=b.style.height=b.style.transform='';}return}
+    ROT.a=a;R.classList.add('rotP');const S=ih(),L=iw();b.style.width=S+'px';b.style.height=L+'px';b.style.transform=a===-90?`translateY(${S}px) rotate(-90deg)`:`translateX(${L}px) rotate(90deg)`}
+  try{const g=Element.prototype.getBoundingClientRect;Element.prototype.getBoundingClientRect=function(){const r=g.call(this);if(!ROT.a)return r;
+    return ROT.a===-90?new DOMRect(ih()-r.bottom,r.left,r.height,r.width):new DOMRect(r.top,iw()-r.right,r.height,r.width)}}catch(e){}
+  for(const P of [window.MouseEvent&&MouseEvent.prototype,window.Touch&&Touch.prototype]){if(!P)continue;try{const dx=Object.getOwnPropertyDescriptor(P,'clientX'),dy=Object.getOwnPropertyDescriptor(P,'clientY');if(!dx||!dy||!dx.get)continue;
+    Object.defineProperty(P,'clientX',{configurable:true,enumerable:true,get(){const X=dx.get.call(this),Y=dy.get.call(this);return !ROT.a?X:ROT.a===-90?ih()-Y:Y}});
+    Object.defineProperty(P,'clientY',{configurable:true,enumerable:true,get(){const X=dx.get.call(this);return !ROT.a?dy.get.call(this):ROT.a===-90?X:iw()-X}})}catch(e){}}
+  try{if(dW&&dW.get&&dW.configurable)Object.defineProperty(window,'innerWidth',{configurable:true,get(){return ROT.a?ih():iw()}});if(dH&&dH.get&&dH.configurable)Object.defineProperty(window,'innerHeight',{configurable:true,get(){return ROT.a?iw():ih()}})}catch(e){}
+  const go=()=>{apply();lockP()};
+  addEventListener('resize',go);addEventListener('orientationchange',()=>setTimeout(go,60));try{screen.orientation&&screen.orientation.addEventListener('change',()=>setTimeout(go,60))}catch(e){}
+  if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
+  addEventListener('pointerdown',lockP,{once:true,passive:true});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')go()})})();
 function goFullscreen(){const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;
   if(rq&&fsEnabled()&&!isFull()){try{const r=rq.call(el,{navigationUI:'hide'});return Promise.resolve(r).then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{})}catch(e){}return 'fs'}).catch(()=>fsFallback())}catch(e){return Promise.resolve(fsFallback())}}
   if(isFull())return Promise.resolve('fs');return Promise.resolve(fsFallback())}
