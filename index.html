@@ -1,4 +1,4 @@
-<meta charset="utf-8">
+<div id="rotLock" role="alert" aria-live="polite"><div class="ph"></div><b>GIRA TU TELÉFONO</b><span>PaseoPet se juega en vertical. Pon el teléfono derecho para seguir.</span></div><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PaseoPet</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -1263,6 +1263,17 @@ body{font-synthesis:none;-webkit-font-smoothing:none}
 .cz-it.lock{opacity:.8}
 .casa-card{display:flex;align-items:center;gap:10px;text-align:left;width:100%}
 .casa-card canvas{image-rendering:pixelated;width:66px;height:78px;flex:none;box-shadow:0 0 0 2px #0E0A26}
+
+#rotLock{display:none}
+@media (orientation:landscape) and (max-height:540px) and (pointer:coarse){
+#rotLock{display:flex;position:fixed;inset:0;z-index:2147483000;background:#17123A;color:#F3EEFF;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;text-align:center}
+#rotLock .ph{width:34px;height:58px;box-shadow:inset 0 0 0 4px #FFC93C,inset 0 -10px 0 4px #FFC93C;position:relative;animation:rotPh 1.6s steps(4) infinite}
+#rotLock .ph:after{content:"";position:absolute;left:13px;bottom:3px;width:8px;height:3px;background:#17123A}
+#rotLock b{font-family:"PP Pix","Courier New",monospace;font-size:13px;letter-spacing:.04em;color:#FFC93C}
+#rotLock span{font-size:15px;max-width:320px;color:#C9BDFF}
+}
+@keyframes rotPh{0%,30%{transform:rotate(-90deg)}70%,100%{transform:rotate(0)}}
+@media (prefers-reduced-motion:reduce){#rotLock .ph{animation:none}}
 </style>
 
 <div class="app" id="app">
@@ -6161,6 +6172,10 @@ const fsEnabled=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnab
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
 const isApp=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true||(matchMedia('(display-mode: fullscreen)').matches&&!document.fullscreenElement&&!document.webkitFullscreenElement)}catch(e){return false}};
 function exitHint(force){if(!isApp())return;if(!force&&S&&S.exitHint)return;if(!force)AUTO_POP++;if(S){S.exitHint=1;save()}const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);sheet(`<div class="t1">CÓMO SALIR DE LA APP</div><div>${ios?'Desliza hacia arriba desde el borde inferior de la pantalla (o toca el botón de inicio).':'Usa el gesto o el botón de inicio de tu teléfono, o el botón Atrás.'}</div><div class="banner small">Tu sesión queda guardada: la próxima vez que abras PaseoPet entras directo, sin volver a iniciar sesión.</div><div class="mute small">Si estás paseando, el paseo sigue midiendo en segundo plano. Para soltarlo por completo, toca Terminar.</div><button class="btn o" id="exOk">Entendido</button>`,sh=>{sh.querySelector('#exOk').onclick=closeSheet})}
+
+/* ===== Siempre vertical ===== */
+;(function(){function lockP(){try{const st=matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||document.fullscreenElement;if(st&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait').catch(()=>{})}catch(e){}}
+lockP();addEventListener('pointerdown',lockP,{once:true,passive:true});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')lockP()})})();
 function goFullscreen(){const el=document.documentElement,rq=el.requestFullscreen||el.webkitRequestFullscreen;
   if(rq&&fsEnabled()&&!isFull()){try{const r=rq.call(el,{navigationUI:'hide'});return Promise.resolve(r).then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{})}catch(e){}return 'fs'}).catch(()=>fsFallback())}catch(e){return Promise.resolve(fsFallback())}}
   if(isFull())return Promise.resolve('fs');return Promise.resolve(fsFallback())}

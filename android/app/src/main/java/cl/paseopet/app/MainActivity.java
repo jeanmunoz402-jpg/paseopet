@@ -16,6 +16,7 @@ import androidx.browser.customtabs.CustomTabsClient;
 import androidx.browser.customtabs.CustomTabsService;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
+import androidx.browser.trusted.ScreenOrientation;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 
 import java.util.ArrayList;
@@ -106,7 +107,8 @@ public class MainActivity extends Activity {
         int navy = Color.parseColor("#17123A");
         CustomTabColorSchemeParams col = new CustomTabColorSchemeParams.Builder()
                 .setToolbarColor(navy).setNavigationBarColor(navy).build();
-        TrustedWebActivityIntentBuilder bld = new TrustedWebActivityIntentBuilder(target).setDefaultColorSchemeParams(col);
+        TrustedWebActivityIntentBuilder bld = new TrustedWebActivityIntentBuilder(target).setDefaultColorSchemeParams(col)
+                .setScreenOrientation(ScreenOrientation.PORTRAIT);
         if (session != null) bld.build(session).launchTrustedWebActivity(this);
         else { startActivity(new Intent(Intent.ACTION_VIEW, target)); }
     }
