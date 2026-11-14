@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void onMessageChannelReady(Bundle extras) {
                         channel = true;
-                        send("{\"t\":\"hello\",\"v\":2}");
+                        send("{\"t\":\"hello\",\"v\":3}");
                         send(Bridge.status(MainActivity.this));
                     }
                     @Override

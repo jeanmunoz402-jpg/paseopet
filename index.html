@@ -3588,7 +3588,8 @@ function natSend(o){try{if(NPORT)NPORT.postMessage(JSON.stringify(o))}catch(e){}
 function natMsg(d){let o=null;try{o=typeof d==='string'?JSON.parse(d):d}catch(e){return}if(!o)return;
  if(o.t==='hello'){NAT=true;natSync();GPS_MSG.denied='La app no tiene permiso de ubicación. Toca «Permisos de la app» y en Permisos → Ubicación elige “Permitir solo con la app en uso”.';GPS_MSG.unavailable='La Ubicación del teléfono está apagada o sin señal. Enciéndela (con “Precisión de ubicación de Google”) y sal a un lugar abierto.'}
  else if(o.t==='pts')natPts(o.pts)
- else if(o.t==='status'){NATI=o;try{if((o.loc===false||o.gps===false)&&!APK_GPS_WARN&&(tab==='walk'||WK)&&$('#sheetWrap').hidden){APK_GPS_WARN=true;gpsFail(o.loc===false?'denied':'unavailable')}}catch(e){}if(!$('#s-settings')||$('#s-settings').hidden)return;try{if(tab==='settings')renderSettings()}catch(e){}}}
+ else if(o.t==='upd')apkUpdMsg(o.st)
+  else if(o.t==='status'){NATI=o;try{if(!UPD.shown)apkUpdCheck()}catch(e){}try{if((o.loc===false||o.gps===false)&&!APK_GPS_WARN&&(tab==='walk'||WK)&&$('#sheetWrap').hidden){APK_GPS_WARN=true;gpsFail(o.loc===false?'denied':'unavailable')}}catch(e){}if(!$('#s-settings')||$('#s-settings').hidden)return;try{if(tab==='settings')renderSettings()}catch(e){}}}
 function natPts(pts){if(!WK||!Array.isArray(pts)||!pts.length)return;let n=0;
  for(const q of pts){const[la,ln,ac,ts]=q;if(!(ts>(WK.fixTs||0)))continue;try{onFix({coords:{latitude:la,longitude:ln,accuracy:ac},timestamp:ts})}catch(e){}n++}
  if(n){persistActive();try{updateLive()}catch(e){}}}
@@ -3606,6 +3607,26 @@ function natSync(){if(!NPORT)return;natSend({t:'sched',list:natSchedule()});natS
 function natWalk(on){if(!NPORT)return;natSend({t:'walk',on:!!on,name:(S.pet&&S.pet.name)||''})}
 document.addEventListener('visibilitychange',()=>{if(!NPORT)return;if(document.visibilityState==='visible'){natSend({t:'status'});if(WK)natSend({t:'pull',since:WK.fixTs||0})}else natSend({t:'sched',list:natSchedule()})});
 /* ===== APK de Android ===== */
+/* ===== Actualización del APK ===== */
+const UPD={latest:0,st:'',shown:false,checking:false,waitPerm:false};
+async function apkLatest(){try{const c=JSON.parse(localStorage.getItem('pp_apk_latest')||'null');if(c&&c.n&&Date.now()-c.t<3*3600e3)return c.n}catch(e){}
+  try{const r=await fetch('https://api.github.com/repos/jeanmunoz402-jpg/paseopet/releases/tags/apk-latest',{headers:{Accept:'application/vnd.github+json'}});if(!r.ok)return 0;const j=await r.json();const m=/Compilaci[oó]n (\d+)/.exec(String(j.body||'')+' '+String(j.name||''));const n=m?+m[1]:0;try{localStorage.setItem('pp_apk_latest',JSON.stringify({n,t:Date.now()}))}catch(e){}return n}catch(e){return 0}}
+async function apkUpdCheck(){if(!NAT||UPD.checking||UPD.shown)return;UPD.checking=true;const n=await apkLatest();UPD.checking=false;UPD.latest=n;const vc=+NATI.vc||0;if(!n||(vc&&vc>=n))return;
+  let snz=0;try{snz=+localStorage.getItem('pp_upd_snz')||0}catch(e){}if(Date.now()<snz)return;UPD.shown=true;
+  for(let i=0;i<40;i++){if(S&&S.onboarded&&$('#sheetWrap').hidden&&!$('#o-casa:not([hidden])'))break;await sleep(1500)}apkUpdSheet()}
+const UPD_TXT={dl:'Descargando la versión nueva… Puedes ver el avance en las notificaciones.',ready:'Se abrió el instalador. Toca «Actualizar» para terminar. PaseoPet se cerrará y volverá actualizada.',perm:'Android pide permiso para instalar. Activa «Permitir de esta fuente» y vuelve a PaseoPet: la instalación sigue sola.',err:'No se pudo descargar. Revisa tu conexión e inténtalo otra vez.',gone:'Vuelve a tocar «Actualizar ahora».'};
+function apkUpdSheet(){const auto=!!NATI.upd,cur=NATI.vn?`Tienes la versión ${esc(NATI.vn)}. `:'';
+  sheet(`<div class="t1" style="color:var(--gold)">ACTUALIZA TU APP</div>
+  <div>${cur}Hay una versión nueva de la app PaseoPet${UPD.latest?` (1.0.${UPD.latest})`:''} con las últimas mejoras y arreglos. Actualízala para que todo funcione bien.</div>
+  ${auto?`<button class="btn o big" id="updGo">Actualizar ahora</button><div class="box dark small" id="updSt">Se descarga y se abre el instalador de Android. Solo tienes que tocar «Actualizar».</div>`
+  :`<a class="btn o big" id="updGo" href="${APK_URL}" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center">Descargar actualización</a><div class="box dark small" style="gap:4px"><b>Cómo instalarla</b><span>1. Toca «Descargar actualización».</span><span>2. Abre el archivo PaseoPet.apk que se descargó.</span><span>3. Toca «Actualizar». No pierdes tu progreso.</span></div><div class="mute small">Desde esta versión, las próximas se instalan con un solo toque.</div>`}
+  <button class="btn" id="updLater">Más tarde</button>`,sh=>{
+  sh.querySelector('#updLater').onclick=()=>{try{localStorage.setItem('pp_upd_snz',String(Date.now()+12*3600e3))}catch(e){}closeSheet()};
+  if(auto)sh.querySelector('#updGo').onclick=e=>{e.currentTarget.disabled=true;e.currentTarget.textContent='Descargando…';natSend({t:'update',url:APK_URL});UPD.st='dl';const st=sh.querySelector('#updSt');if(st)st.textContent=UPD_TXT.dl}})}
+function apkUpdMsg(st){UPD.st=st;UPD.waitPerm=st==='perm';const el=$('#updSt');if(el)el.textContent=UPD_TXT[st]||'';const b=$('#updGo');if(b&&(st==='err'||st==='gone'||st==='perm')){b.disabled=false;b.textContent=st==='perm'?'Actualizar ahora':'Reintentar'}
+  if(!el&&(st==='ready'||st==='err'))toast(st==='ready'?'Toca «Actualizar» en el instalador':'No se pudo descargar la actualización',st==='ready'?'bell':'gps','#FFC93C')}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&UPD.waitPerm&&NPORT){UPD.waitPerm=false;natSend({t:'updresume'})}});
+
 const APK_URL='https://github.com/jeanmunoz402-jpg/paseopet/releases/download/apk-latest/PaseoPet.apk';
 function inApk(){try{if(NAT||String(document.referrer||'').startsWith('android-app://')){try{sessionStorage.setItem('pp_twa','1')}catch(e){}apkMark();return true}return sessionStorage.getItem('pp_twa')==='1'}catch(e){return !!NAT}}
 function isAndroid(){try{return /Android/i.test(navigator.userAgent)}catch(e){return false}}

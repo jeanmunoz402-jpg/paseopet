@@ -41,6 +41,12 @@ final class Bridge {
             o.put("notif", notif);
             o.put("loc", WalkService.hasLoc(c));
             o.put("gps", gpsOn(c));
+            try {
+                android.content.pm.PackageInfo pi = c.getPackageManager().getPackageInfo(c.getPackageName(), 0);
+                o.put("vc", Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode);
+                o.put("vn", pi.versionName);
+            } catch (Exception ignored) {}
+            o.put("upd", true);
             o.put("bg", bgOn(c));
             o.put("svc", WalkService.inst != null);
             return o.toString();
@@ -78,6 +84,11 @@ final class Bridge {
                 Notifs.show(c, "prueba", o.optString("title", "PaseoPet 🐾"), o.optString("body", "Así se verán tus avisos."));
             } else if ("osnotif".equals(t)) {
                 openNotifSettings(c);
+            } else if ("update".equals(t)) {
+                String url = o.optString("url", "");
+                if (url.startsWith("https://github.com/jeanmunoz402-jpg/paseopet/releases/")) Updater.start(c, url);
+            } else if ("updresume".equals(t)) {
+                Updater.resume(c);
             } else if ("osloc".equals(t)) {
                 // Abre los ajustes para arreglar el GPS: "gps" = Ubicación del teléfono
                 // apagada; cualquier otro valor = permiso de ubicación de la app.
