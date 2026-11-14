@@ -4177,10 +4177,11 @@ function evoEpic(){const q=S.evoPending;if(!q)return;S.evoPending=null;save();
  ov.querySelector('.ee-skip').onclick=reveal;
  ov.querySelector('.ee-ok').onclick=()=>{P.stop();ov.classList.add('out');setTimeout(()=>ov.remove(),380);try{if(tab==='home')renderHome()}catch(e){}}}
 /* ===== Ventana emergente: instalar la APK ===== */
-function apkHas(){try{return localStorage.getItem('pp_apk_has')==='1'}catch(e){return false}}
-function apkMark(){try{localStorage.setItem('pp_apk_has','1')}catch(e){}}
+function apkHas(){try{if(inApk())return true;const t=+localStorage.getItem('pp_apk_has')||0;return t>1e12&&Date.now()-t<2*864e5}catch(e){return false}}
+function apkUnmark(){try{localStorage.removeItem('pp_apk_has')}catch(e){}}
+function apkMark(){try{localStorage.setItem('pp_apk_has',String(Date.now()))}catch(e){}}
 let APK_DET=null;
-function apkDetect(){if(APK_DET)return APK_DET;APK_DET=(async()=>{try{if(navigator.getInstalledRelatedApps){const l=await navigator.getInstalledRelatedApps();if((l||[]).some(a=>a&&a.id==='cl.paseopet.app'))apkMark()}}catch(e){}})();return APK_DET}
+function apkDetect(){if(APK_DET)return APK_DET;APK_DET=(async()=>{try{if(navigator.getInstalledRelatedApps&&!inApk()){const l=await navigator.getInstalledRelatedApps();if((l||[]).some(a=>a&&a.id==='cl.paseopet.app'))apkMark();else apkUnmark()}}catch(e){}})();return APK_DET}
 let APK_POP_DONE=false;
 function apkPopMaybe(){if(APK_POP_DONE)return;APK_POP_DONE=true;let tries=0,calm=0;
  const tick=async()=>{tries++;await apkDetect();try{
