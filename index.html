@@ -2864,7 +2864,7 @@ function dogGrid4(L,acc,ev,frame,skin){const N=DOG_N,HX=-3;
   for(let x=9;x<17;x++){const y=(x%3===0?5:4)+hy;if(['b','d'].includes(S2[y]&&S2[y][x]))S2[y][x]=S2[y][x]+'h'}
   return S2}
 const stripC=new Map();
-function petStripU(p){const {k}=dogKey(p,0);if(stripC.has(k))return stripC.get(k);const c=document.createElement('canvas');const fw=petC(p,0).width;c.width=fw*DOG_IDLE.length;c.height=fw;const x=c.getContext('2d');x.imageSmoothingEnabled=false;DOG_IDLE.forEach((f,i)=>x.drawImage(petC(p,f),i*fw,0));const u=c.toDataURL();stripC.set(k,u);return u}
+function petStripU(p){const {k}=dogKey(p,0);if(stripC.has(k))return stripC.get(k);const c=document.createElement('canvas');const fw=petC(p,0).width;c.width=fw*DOG_IDLE.length;c.height=fw;const x=c.getContext('2d');x.imageSmoothingEnabled=false;DOG_IDLE.forEach((f,i)=>x.drawImage(petC(p,f),i*fw,0));const u=c.toDataURL();stripC.set(k,u);return sk16Mark(u,p)}
 
 function dogPalette(L,ev,skin,frame){
   let b=L.b,w=L.w,d=L.d,eye=L.br.eye||'#5CC8FF',out='#1A1020';
@@ -2882,7 +2882,7 @@ function dogPalette(L,ev,skin,frame){
   if(L.pat==='solid'&&L.br.id==='quiltro')base.m=shade(b,.3);
   return base}
 
-function dogKey(p,frame){p=p||{};const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;const sk=p.skin||'natural';const L=dogLook(p);return{L,ev,sk,k:[L.br.id,L.b,L.w,L.d,L.pat,p.acc||'',sk+(p._classic||p.custom?'~c':''),ev,frame].join('|')}}
+function dogKey(p,frame){p=p||{};const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;const sk=p.skin||'natural';const L=dogLook(p);return{L,ev,sk,k:[L.br.id,L.b,L.w,L.d,L.pat,p.acc||'',sk+(p._classic?'~c':''),ev,frame].join('|')}}
 /* ================= SKIN 16-BIT (64x64): perros redibujados en estilo Super Nintendo =================
    Hojas por raza y pelaje en /skins16/{raza}-{pelaje}.png con 11 cuadros:
    0-3 quieto (respira) · 4 parpadeo · 5-6 dormido · 7-10 feliz con lengua.
@@ -2892,7 +2892,7 @@ const SK16_F={0:0,1:4,2:2,3:3,4:7,5:1,6:8,7:9};          // cuadros del juego ->
 const SK16_DY=[0,0,1,1,0,2,3,0,-1,0,-1];                  // cabeceo de cada cuadro (para los accesorios)
 function sk16Key(p){const br=breedById(p.bid)||breedById(guessBreed(p.breed));const ci=p.custom?0:Math.max(0,Math.min(br.coats.length-1,p.coat|0));return br.id+'-'+ci}
 function sk16Img(key){let im=SK16.img[key];if(im)return im.complete&&im.naturalWidth?im:null;
-  im=new Image();SK16.img[key]=im;im.onload=()=>{clearTimeout(SK16.t);SK16.t=setTimeout(()=>{[...sprC.keys()].forEach(k=>{if(String(k).includes('|pixel16|')||String(k).includes('|natural|'))sprC.delete(k)});try{urlC.clear();stripC.clear()}catch(e){}try{render()}catch(e){}},120)};
+  im=new Image();SK16.img[key]=im;im.onload=()=>{clearTimeout(SK16.t);SK16.t=setTimeout(()=>{[...sprC.entries()].forEach(([k,v])=>{if((v&&v._dog&&!String(k).includes('~c'))||String(k).startsWith('ang'))sprC.delete(k)});try{urlC.clear();stripC.clear()}catch(e){}try{sk16Refresh()}catch(e){}try{render()}catch(e){}},120)};
   im.onerror=()=>{SK16.img[key]=null};im.src='skins16/'+key+'.png';return null}
 function sk16Geo(p,fi){const br=breedById(p.bid)||breedById(guessBreed(p.breed));const size=br.size||'mediano';const hcy0={'pequeño':22,'mediano':20,'grande':19}[size]||20;
   const hrx=({'pequeño':17.5,'mediano':16.5,'grande':16}[size]||16.5)+((br.fluff||0)>=2?1.2:0);return{br,size,hcx:32,hcy:hcy0+(SK16_DY[fi]||0),hrx,ey:hcy0+(SK16_DY[fi]||0)-1-(br.muz==='long'?1:0)}}
@@ -2924,11 +2924,49 @@ function sk16Front(p,g,fi,ev,frame){const acc=p.acc||'';const {hcx,hcy,ey}=g;con
     if(acc==='flor'){const fx=hcx+11,fy=hcy-11;[[0,-3],[3,0],[0,3],[-3,0]].forEach(([a,b])=>E(fx+a,fy+b,2,2,'#FF8FB0'));E(fx,fy,1.6,1.6,'#FFD24F');R(fx-1,fy-1,1,1,'#FFF3B4')}
     if(crown){const cy=hcy-15;T([[hcx-8,cy+5],[hcx-8,cy-2],[hcx-4,cy+1],[hcx,cy-5],[hcx+4,cy+1],[hcx+8,cy-2],[hcx+8,cy+5]],'#FFD24F');R(hcx-8,cy+3,17,3,'#DD9F22');R(hcx-1,cy+3,2,2,'#FF3B5C');R(hcx-6,cy+3,2,2,'#3C9DFF');R(hcx+4,cy+3,2,2,'#4FD18B');R(hcx-7,cy,1,3,'#FFF3B4')}
     if(halo){const cy=hcy-19;for(let X=hcx-10;X<=hcx+10;X++){const dx=(X-hcx)/10.5,h=Math.sqrt(Math.max(0,1-dx*dx))*2.6;R(X,Math.round(cy-h),1,1,'#FFF3B4');R(X,Math.round(cy+h),1,1,'#FFD24F')}}})}
+/* imágenes del perro que se mostraron antes de que llegara su dibujo 16-bit: se reemplazan al llegar */
+const SK16P=new Map();
+function sk16Ready(p){try{if(!p||p._classic)return true;return !!sk16Img(sk16Key(p))}catch(e){return true}}
+function sk16Mark(u,p){if(!sk16Ready(p))SK16P.set(u,p);return u}
+function sk16Refresh(){if(!SK16P.size)return;document.querySelectorAll('img').forEach(im=>{const p=SK16P.get(im.getAttribute('src'));if(p){try{im.src=p.__ang?angelU(p.__ang,p.frame):im.classList.contains('pstrip')?petStripU(p):petU(p)}catch(e){}}});SK16P.clear()}
+/* color HSL */
+function hx2hsl(h){const n=parseInt(String(h).slice(1),16);return rgb2hsl(n>>16,n>>8&255,n&255)}
+function rgb2hsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let h=0,s=0;if(mx!==mn){const d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return{h,s,l}}
+function hsl2rgb(h,s,l){if(!s)return[l*255,l*255,l*255];const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t=(t%1+1)%1;return t<1/6?p+(q-p)*6*t:t<1/2?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3)*255,f(h)*255,f(h-1/3)*255]}
+const hueD=(a,b)=>{const d=Math.abs(a-b)%1;return Math.min(d,1-d)};
+/* rampas de las skins de la tienda, aplicadas como mapa de luz sobre el pelaje 16-bit */
+const SK16_SKIN={
+ oro:{r:['#4A2A08','#7A4E10','#B9761A','#DD9F22','#FFD24F','#FFF3B4'],eye:'#FF3B5C',fx:'spark'},
+ cyber:{r:['#0B1020','#141C33','#22304F','#33466E','#4F6799','#7D93BD'],eye:'#00F5D4',fx:'circuit'},
+ espectral:{r:['#063A36','#0B6B5E','#14A08A','#2CE6A6','#8CFFD9','#E0FFF4'],eye:'#FFFFFF',fx:'ghost'},
+ magma:{r:['#0C0608','#1E0E12','#2E1518','#45201F','#5E2B26','#7A3A30'],eye:'#FFD24F',fx:'lava'},
+ celestial:{r:['#120A3A','#24156A','#3B1F8A','#6A3BD0','#9C84FF','#E0D4FF'],eye:'#FFFFFF',fx:'stars'},
+ arcoiris:{r:null,eye:'#FFFFFF',fx:'rgb'}};
+function sk16Frame(p,im,fi,frame){const ck='f|'+sk16Key(p)+'|'+fi+'|'+(p.skin||'')+'|'+(p.custom?p.fur+'|'+(p.spot||''):'')+'|'+(SK16_SKIN[p.skin]?frame:'');if(sprC.has(ck))return sprC.get(ck);
+  const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');x.drawImage(im,fi*64,0,64,64,0,0,64,64);
+  const sk=SK16_SKIN[p.skin],cus=p.custom&&p.fur;if(!sk&&!cus){sprC.set(ck,c);return c}
+  const br=breedById(p.bid)||breedById(guessBreed(p.breed)),c0=br.coats[0],hb=hx2hsl(c0[1]),hd=hx2hsl(c0[3]),fb=cus?hx2hsl(p.fur):null,fd=cus&&p.spot?hx2hsl(p.spot):null;
+  const d=x.getImageData(0,0,64,64),D=d.data;const ramp=sk&&sk.r?sk.r.map(h=>{const n=parseInt(h.slice(1),16);return[n>>16,n>>8&255,n&255]}):null;
+  const isEye=(i)=>{const X=(i/4)%64,Y=(i/4)/64|0;return Y>8&&Y<34&&X>18&&X<46};
+  for(let i=0;i<D.length;i+=4){if(D[i+3]<40)continue;const h=rgb2hsl(D[i],D[i+1],D[i+2]);
+    const tongue=h.s>.45&&(h.h>.9||h.h<.02)&&h.l>.45,collar=h.s>.55&&h.h>.93&&h.l<.5,outline=h.l<.13;
+    if(outline||tongue||collar){if(sk&&outline&&h.l<.1&&isEye(i)&&D[i]+D[i+1]+D[i+2]<70){}continue}
+    if(cus){const furish=hb.s<.12?(h.s<.2&&h.l<.85):(hueD(h.h,hb.h)<.09&&h.s>.12);if(furish){const dark=fd&&h.l<(hb.l+hd.l)/2;const t=dark?fd:fb,ref=dark?hd:hb;const L=Math.max(.05,Math.min(.95,h.l*t.l/Math.max(.08,ref.l)));const rgb=hsl2rgb(t.h,Math.min(1,t.s*(h.s/Math.max(.1,hb.s))*.9+t.s*.1),L);D[i]=rgb[0];D[i+1]=rgb[1];D[i+2]=rgb[2]}}
+    if(sk){const X=(i/4)%64,Y=(i/4)/64|0;const lum=(.3*D[i]+.59*D[i+1]+.11*D[i+2])/255;let rgb;
+      if(sk.fx==='rgb'){rgb=hsl2rgb(((Y+X*.5)/64+frame*.06)%1,.85,Math.max(.25,Math.min(.85,lum*.9+.1)))}
+      else{const t=Math.max(0,Math.min(.999,(lum-.12)/.8))*(ramp.length);const k=Math.floor(t),fr=t-k,B=[[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];const j=Math.min(ramp.length-1,k+(B[Y&3][X&3]/16<fr?1:0));rgb=ramp[j].slice()}
+      const hsh=((X*73856093)^(Y*19349663)^(frame*83492791))>>>0;
+      if(sk.fx==='spark'&&hsh%97===0)rgb=[255,255,255];
+      if(sk.fx==='circuit'&&((X%9===0&&Y%3!==0)||(Y%11===0&&X%2===0))&&lum>.3)rgb=(X+Y+frame*3)%7<2?[180,255,245]:[0,245,212];
+      if(sk.fx==='lava'){const n=Math.sin(X*.7+Y*.31)+Math.sin(X*.23-Y*.9+frame*.5);if(n>1.45)rgb=n>1.75?[255,226,122]:[255,107,44]}
+      if(sk.fx==='stars'&&hsh%61===0)rgb=hsh%3?[255,255,255]:[255,226,154];
+      D[i]=rgb[0];D[i+1]=rgb[1];D[i+2]=rgb[2];if(sk.fx==='ghost')D[i+3]=Math.min(D[i+3],215)}}
+  x.putImageData(d,0,0);if(sk&&sk.fx!=='rgb'){x.globalCompositeOperation='source-atop'}sprC.set(ck,c);return c}
 function pet16(p,frame){const key=sk16Key(p),im=sk16Img(key);if(!im)return null;const fi=SK16_F[frame]!=null?SK16_F[frame]:0;const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;const g=sk16Geo(p,fi);
   const c=document.createElement('canvas');c.width=c.height=64;c._dog=1;c._hi=2;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
-  x.drawImage(sk16Back(p,g,fi,ev),0,0);x.drawImage(im,fi*64,0,64,64,0,0,64,64);x.drawImage(sk16Front(p,g,fi,ev,frame),0,0);return c}
+  x.drawImage(sk16Back(p,g,fi,ev),0,0);x.drawImage(sk16Frame(p,im,fi,frame),0,0);x.drawImage(sk16Front(p,g,fi,ev,frame),0,0);return c}
 
-function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return sprC.get(k);if(sk==='pixel16'||(sk==='natural'&&!p._classic&&!p.custom)){const c16=pet16(p,frame);if(c16){sprC.set(k,c16);return c16}return petC({...p,skin:'natural',_classic:1},frame)}
+function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return sprC.get(k);if(!p._classic){const c16=pet16(p,frame);if(c16){sprC.set(k,c16);return c16}return petC({...p,skin:sk==='pixel16'?'natural':sk,_classic:1},frame)}
   const g=dogGrid4(L,(p&&p.acc)||'',ev,frame,sk),P=dogPalette(L,ev,sk,frame);P.eL='#6E5E80';if(sk==='natural'||!sk)P.o='#3E2630';const c=document.createElement('canvas');c.width=DOG_N;c.height=DOG_N;c._dog=1;const x=c.getContext('2d');
   g.forEach((r,y)=>r.forEach((kk,i)=>{if(kk){x.fillStyle=P[kk]||'#FF00FF';x.fillRect(i,y,1,1)}}));sprC.set(k,c);return c}
 /* ================= PERROS EN ALTA DEFINICIÓN (48x48 con volumen, pelaje y luz) ================= */
@@ -2965,7 +3003,7 @@ function petHDold(p,frame=0){const {k}=dogKey(p,frame);const key='hd|'+k;if(hdC.
   /* brillo en los ojos: busca píxeles muy oscuros rodeados de pelaje en la mitad superior */
   for(let y=6;y<30;y++)for(let x=8;x<40;x++){const v=G[y*S1+x];if(!v||!isOut(v))continue;const up=at(x,y-1),lf=at(x-1,y);if(up&&!isOut(up)&&lf&&!isOut(lf)&&at(x+1,y)&&isOut(at(x+1,y))&&at(x,y+1)&&isOut(at(x,y+1))){const i=(y*S1+x)*4;o[i]=255;o[i+1]=255;o[i+2]=255;o[i+3]=255}}
   ox.putImageData(img,0,0);out._hd=1;hdC.set(key,out);return out}
-function petU(p,frame=0){const {k}=dogKey(p,frame);if(!urlC.has('u'+k))urlC.set('u'+k,petHD(p,frame).toDataURL());return urlC.get('u'+k)}
+function petU(p,frame=0){const {k}=dogKey(p,frame);if(!urlC.has('u'+k))urlC.set('u'+k,petHD(p,frame).toDataURL());return sk16Mark(urlC.get('u'+k),p)}
 function breedGrid(sel,attr){return `<input class="inp brsearch" type="search" placeholder="Buscar entre ${BREEDS.length} razas…" oninput="brFilter(this)" aria-label="Buscar raza"><div class="breeds">${BREEDS.map(b=>`<button class="brk ${sel===b.id?'on':''}" data-k="${b.id} ${b.k||''}" data-${attr}="${b.id}"><img class="spr" src="${petU({bid:b.id,coat:0,level:1})}" alt=""><span>${b.n}</span></button>`).join('')}</div>`}
 function coatRow(p,attr){const br=breedById(p.bid)||breedById(guessBreed(p.breed));return `<div class="cos">${br.coats.map((c,i)=>`<button data-${attr}="${i}" class="${!p.custom&&(p.coat|0)===i?'on':''}" aria-label="${esc(c[0])}" title="${esc(c[0])}"><img class="spr" src="${petU({...p,bid:br.id,coat:i,custom:false})}" alt=""></button>`).join('')}</div>`}
 function petHTML(p,size,o={}){return `<div class="petbox ${o.bob?'bob':''}" style="width:${size}px;height:${size}px;${o.style||''}"><img class="pstrip" src="${petStripU(p)}" alt="${esc(p&&p.name||'Mascota')}" style="animation-delay:-${(((p&&p.name||'').length*.37)%4).toFixed(2)}s"></div>`}
@@ -7448,7 +7486,7 @@ function angels(){if(!Array.isArray(S.angels))S.angels=[];return S.angels}
 const angelById=id=>angels().find(a=>a.id===id);
 function angelActive(){const a=S&&S.angelOn&&angelById(S.angelOn);return a||null}
 function angelC(a,frame=0,hd=false){const k=`ang|${hd?1:0}|${frame}|${JSON.stringify(a.look)}`;if(sprC.has(k))return sprC.get(k);
-  const base=hd?petHD({...a.look,_classic:1,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0):petC({...a.look,_classic:1,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0),m=base.width/24,GW=34,GH=31;
+  const base=hd?petHD({...a.look,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0):petC({...a.look,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0),m=base.width/24,GW=34,GH=31;
   const c=document.createElement('canvas');c.width=GW*m;c.height=GH*m;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
   const R=(gx,gy,w,h,col)=>{x.fillStyle=col;x.fillRect(Math.round(gx*m),Math.round(gy*m),Math.ceil(w*m),Math.ceil(h*m))};
   /* resplandor */
@@ -7463,7 +7501,7 @@ function angelC(a,frame=0,hd=false){const k=`ang|${hd?1:0}|${frame}|${JSON.strin
   /* aureola */
   R(9,2,8,1,'#FFC93C');R(8,3,1,1,'#FFC93C');R(17,3,1,1,'#FFC93C');R(9,4,8,1,'#FFC93C');R(10,2,2,1,'#FFF6B7');R(10,4,6,1,'#B8860B');
   sprC.set(k,c);return c}
-function angelU(a,frame=0){const k=`angU|${frame}|${JSON.stringify(a.look)}`;if(!urlC.has(k))urlC.set(k,angelC(a,frame,true).toDataURL());return urlC.get(k)}
+function angelU(a,frame=0){const k=`angU|${frame}|${JSON.stringify(a.look)}`;if(!urlC.has(k))urlC.set(k,angelC(a,frame,true).toDataURL());const u=urlC.get(k);if(!sk16Ready(a.look||{}))SK16P.set(u,{__ang:a,frame});return u}
 function angelHTML(a,size,o={}){return `<div class="petbox angbox ${o.bob===false?'':'angfloat'}" style="width:${size}px;height:${Math.round(size*31/34)}px"><img class="spr" src="${angelU(a,0)}" alt="${esc(a.name)}"><img class="spr f1" src="${angelU(a,1)}" alt=""></div>`}
 /* ---- caja en Manada ---- */
 function angelsBoxHTML(){const A=angels();
@@ -8016,7 +8054,7 @@ function inAppGate(){return new Promise(resolve=>{const app=inAppName(),ios=isIO
   if(!ios&&/Android/i.test(navigator.userAgent)&&!(window.self!==window.top))setTimeout(()=>{try{location.href=chrome}catch(e){}},700);
 })}
 /* ================= BOOT ================= */
-function startApp(){ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);setTimeout(invClaim,3000);setTimeout(invConfirm,9000);setTimeout(()=>{try{invCheck()}catch(e){}},7000);startupQueue([()=>{if(S.pact)return false;TIP_SHOWN=true;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden},()=>{if(TIP_SHOWN||S.tipsOff||!S.onboarded)return false;careTip();return true}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
+function startApp(){try{[S.pet,...(S.dogs||[])].forEach(d=>{if(d)sk16Img(sk16Key(d))});angels().forEach(a=>{if(a&&a.look)sk16Img(sk16Key(a.look))})}catch(e){}ensureDogs();setTimeout(cleanupMine,15000);setTimeout(()=>ensureProfiles(friendIds()),6000);swInit();setTimeout(remindTick,9000);setInterval(remindTick,60000);try{const tq=new URLSearchParams(location.search).get('tab');if(tq)setTimeout(()=>go(tq),1200)}catch(e){};setTimeout(creatorGrant,1500);setTimeout(handleFriendLink,600);setTimeout(invClaim,3000);setTimeout(invConfirm,9000);setTimeout(()=>{try{invCheck()}catch(e){}},7000);startupQueue([()=>{if(S.pact)return false;TIP_SHOWN=true;honorPact();return true},()=>{const w=$('#sheetWrap').hidden;exitHint(false);return w&&!$('#sheetWrap').hidden},()=>{const w=$('#sheetWrap').hidden;angelBirthday();return w&&!$('#sheetWrap').hidden},()=>{if(TIP_SHOWN||S.tipsOff||!S.onboarded)return false;careTip();return true}]);updAttr();$('#nav').hidden=false;hydrateIcons($('#nav'));rollDay();save();pushProfile();loadWXCache();go('home');checkResume();fetchWX();gpsPerm().then(st=>{if(st==='granted'&&!gpsBlock())getFix(12000).then(f=>{if(!f.err)fetchWX()})});
   // vaccine reminders
   const soon=S.vacc.filter(v=>v.next&&(new Date(v.next)-new Date(dkey()))/86400000<=7&&(new Date(v.next)-new Date(dkey()))>=0);const key='vac'+dkey();if(soon.length&&S.lastVacNote!==key){S.lastVacNote=key;notify(`Vacuna ${soon[0].n} de ${S.pet.name} el ${soon[0].next}`,'bell')}}
 async function boot(){
