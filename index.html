@@ -2736,7 +2736,7 @@ function dogGrid4(L,acc,ev,frame,skin){const N=DOG_N,HX=-3;
   for(let x=9;x<17;x++){const y=(x%3===0?5:4)+hy;if(['b','d'].includes(S2[y]&&S2[y][x]))S2[y][x]=S2[y][x]+'h'}
   return S2}
 const stripC=new Map();
-function petStripU(p){const {k}=dogKey(p,0);if(stripC.has(k))return stripC.get(k);const c=document.createElement('canvas');c.width=DOG_N*DOG_IDLE.length;c.height=DOG_N;const x=c.getContext('2d');DOG_IDLE.forEach((f,i)=>x.drawImage(petC(p,f),i*DOG_N,0));const u=c.toDataURL();stripC.set(k,u);return u}
+function petStripU(p){const {k}=dogKey(p,0);if(stripC.has(k))return stripC.get(k);const c=document.createElement('canvas');const fw=petC(p,0).width;c.width=fw*DOG_IDLE.length;c.height=fw;const x=c.getContext('2d');x.imageSmoothingEnabled=false;DOG_IDLE.forEach((f,i)=>x.drawImage(petC(p,f),i*fw,0));const u=c.toDataURL();stripC.set(k,u);return u}
 
 function dogPalette(L,ev,skin,frame){
   let b=L.b,w=L.w,d=L.d,eye=L.br.eye||'#5CC8FF',out='#1A1020';
@@ -2755,7 +2755,52 @@ function dogPalette(L,ev,skin,frame){
   return base}
 
 function dogKey(p,frame){p=p||{};const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;const sk=p.skin||'natural';const L=dogLook(p);return{L,ev,sk,k:[L.br.id,L.b,L.w,L.d,L.pat,p.acc||'',sk,ev,frame].join('|')}}
-function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return sprC.get(k);
+/* ================= SKIN 16-BIT (64x64): perros redibujados en estilo Super Nintendo =================
+   Hojas por raza y pelaje en /skins16/{raza}-{pelaje}.png con 11 cuadros:
+   0-3 quieto (respira) · 4 parpadeo · 5-6 dormido · 7-10 feliz con lengua.
+   Se descargan solo cuando se usan; mientras tanto se muestra el perro normal. */
+const SK16={img:{},want:new Set(),t:0};
+const SK16_F={0:0,1:4,2:2,3:3,4:7,5:1,6:8,7:9};          // cuadros del juego -> cuadros 16-bit
+const SK16_DY=[0,0,1,1,0,2,3,0,-1,0,-1];                  // cabeceo de cada cuadro (para los accesorios)
+function sk16Key(p){const br=breedById(p.bid)||breedById(guessBreed(p.breed));const ci=p.custom?0:Math.max(0,Math.min(br.coats.length-1,p.coat|0));return br.id+'-'+ci}
+function sk16Img(key){let im=SK16.img[key];if(im)return im.complete&&im.naturalWidth?im:null;
+  im=new Image();SK16.img[key]=im;im.onload=()=>{clearTimeout(SK16.t);SK16.t=setTimeout(()=>{[...sprC.keys()].forEach(k=>{if(String(k).includes('|pixel16|'))sprC.delete(k)});try{urlC.clear();stripC.clear()}catch(e){}try{render()}catch(e){}},120)};
+  im.onerror=()=>{SK16.img[key]=null};im.src='skins16/'+key+'.png';return null}
+function sk16Geo(p,fi){const br=breedById(p.bid)||breedById(guessBreed(p.breed));const size=br.size||'mediano';const hcy0={'pequeño':22,'mediano':20,'grande':19}[size]||20;
+  const hrx=({'pequeño':17.5,'mediano':16.5,'grande':16}[size]||16.5)+((br.fluff||0)>=2?1.2:0);return{br,size,hcx:32,hcy:hcy0+(SK16_DY[fi]||0),hrx,ey:hcy0+(SK16_DY[fi]||0)-1-(br.muz==='long'?1:0)}}
+/* dibujo de accesorios a 64 px con contorno, como el resto del sprite */
+function sk16Layer(draw){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');
+  const R=(X,Y,w,h,col)=>{x.fillStyle=col;x.fillRect(Math.round(X),Math.round(Y),Math.round(w),Math.round(h))};
+  const E=(cx,cy,rx,ry,col)=>{x.fillStyle=col;for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)for(let X=Math.floor(cx-rx);X<=Math.ceil(cx+rx);X++){const dx=(X+.5-cx)/rx,dy=(y+.5-cy)/ry;if(dx*dx+dy*dy<=1)x.fillRect(X,y,1,1)}};
+  const T=(pts,col)=>{x.fillStyle=col;const ys=pts.map(p=>p[1]),xs=pts.map(p=>p[0]);for(let y=Math.floor(Math.min(...ys));y<=Math.ceil(Math.max(...ys));y++)for(let X=Math.floor(Math.min(...xs));X<=Math.ceil(Math.max(...xs));X++){const px=X+.5,py=y+.5;let ins=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const [xi,yi]=pts[i],[xj,yj]=pts[j];if((yi>py)!==(yj>py)&&px<(xj-xi)*(py-yi)/(yj-yi+1e-9)+xi)ins=!ins}if(ins)x.fillRect(X,y,1,1)}};
+  draw({R,E,T,x});const d=x.getImageData(0,0,64,64),D=d.data,o=new Uint8ClampedArray(D);
+  for(let y=0;y<64;y++)for(let X=0;X<64;X++){const i=(y*64+X)*4;if(D[i+3])continue;if([[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>{const xx=X+a,yy=y+b;return xx>=0&&yy>=0&&xx<64&&yy<64&&D[(yy*64+xx)*4+3]}))o.set([34,16,15,255],i)}
+  x.putImageData(new ImageData(o,64,64),0,0);return c}
+function sk16Back(p,g,fi,ev){const acc=p.acc||'';const cape=acc==='capa'||(ev>=4&&ev<=8&&acc!=='capa');const wings=acc==='alas'||ev>=9;const flap=fi%2?-2:0,cy=g.hcy;
+  return sk16Layer(({T})=>{
+    if(wings)for(const s of[-1,1]){const X=v=>32+s*v;
+      T([[X(13),cy+14],[X(30),cy+4+flap],[X(29),cy+9+flap],[X(26),cy+10+flap],[X(27),cy+15+flap],[X(22),cy+16+flap],[X(22),cy+21],[X(14),cy+20]],'#FFF3B4');
+      T([[X(14),cy+15],[X(26),cy+8+flap],[X(24),cy+13+flap],[X(19),cy+15],[X(15),cy+18]],'#FFD24F');
+      T([[X(16),cy+16],[X(22),cy+12+flap],[X(19),cy+16]],'#DD9F22')}
+    if(cape)for(const s of[-1,1]){const X=v=>32+s*v;T([[X(10),cy+12],[X(17),cy+14],[X(20),58],[X(13),60],[X(9),cy+20]],s<0?'#D22F4A':'#8F1934');T([[X(12),cy+15],[X(16),cy+16],[X(18),56],[X(15),57]],s<0?'#FF6574':'#D22F4A')}})}
+function sk16Front(p,g,fi,ev,frame){const acc=p.acc||'';const {hcx,hcy,ey}=g;const crown=acc==='corona'||(ev>=8&&ev<=10&&acc!=='corona'&&acc!=='gorro'&&acc!=='audifonos'),halo=acc==='halo'||ev>=11;
+  return sk16Layer(({R,E,T})=>{
+    if(acc==='bandana'){T([[hcx-12,hcy+11],[hcx+12,hcy+11],[hcx,hcy+23]],'#D22F4A');T([[hcx-12,hcy+11],[hcx-2,hcy+11],[hcx-1,hcy+19]],'#FF6574');R(hcx-12,hcy+11,24,2,'#8F1934');[[hcx-5,hcy+14],[hcx+4,hcy+14],[hcx,hcy+18]].forEach(([a,b])=>R(a,b,1,1,'#FFE2E8'))}
+    if(acc==='collar_rgb'){const C=['#FF3B5C','#FF9F1C','#FFD24F','#4FD18B','#3CC8FF','#9C84FF'];for(let X=hcx-11;X<=hcx+11;X++){const dx=(X-hcx)/12.5,yy=Math.round(hcy+12+dx*dx*2.2);R(X,yy,1,3,C[(X+frame*2+64)%6])}E(hcx,hcy+18,2.6,2.6,'#FFD24F');R(hcx-1,hcy+17,1,1,'#FFF3B4')}
+    if(acc==='pajarita'){T([[hcx-7,hcy+12],[hcx-7,hcy+18],[hcx,hcy+15]],'#3C9DFF');T([[hcx+7,hcy+12],[hcx+7,hcy+18],[hcx,hcy+15]],'#1F6FD0');E(hcx,hcy+15,1.8,1.8,'#9CCBFF')}
+    if(acc==='arnes'){R(hcx-11,hcy+16,22,2,'#5B49D6');R(hcx-10,hcy+23,20,2,'#5B49D6');R(hcx-2,hcy+16,4,9,'#3E2FB0');R(hcx-1,hcy+19,2,2,'#FFD24F')}
+    if(acc==='gorro'){E(hcx,hcy-8,13,7.5,'#4FD18B');R(hcx-14,hcy-9,28,4,'#2FA98B');for(let X=hcx-13;X<hcx+13;X+=4)R(X,hcy-9,2,4,'#7CF0B4');R(hcx-11,hcy-14,22,2,'#9C84FF');E(hcx,hcy-16.5,3.4,3,'#FFD24F');R(hcx-2,hcy-18,1,1,'#FFF3B4')}
+    if(acc==='lentes'){for(const s of[-7,7]){R(hcx+s-4,ey-3,8,1,'#DD9F22');R(hcx+s-4,ey-3,1,6,'#DD9F22');R(hcx+s+3,ey-3,1,6,'#DD9F22');R(hcx+s-4,ey+2,8,1,'#A06612');R(hcx+s-3,ey-2,6,4,'#1B1530');R(hcx+s-2,ey-2,2,1,'#9C84FF');R(hcx+s-3,ey-1,1,1,'#5B49D6')}R(hcx-3,ey-2,6,1,'#DD9F22')}
+    if(acc==='visor'){R(hcx-16,ey-3,32,6,'#00C9B1');R(hcx-16,ey-3,32,1,'#9CFFF0');R(hcx-14,ey-1,7,1,'#E9FFFC');R(hcx+5,ey-1,5,1,'#FF6BD6');R(hcx-16,ey+2,32,1,'#00806F')}
+    if(acc==='audifonos'){for(let X=hcx-15;X<=hcx+15;X++){const dx=(X-hcx)/15.5,yy=Math.round(hcy-11-Math.sqrt(Math.max(0,1-dx*dx))*5);R(X,yy,1,2,'#5B49D6')}for(const s of[-1,1]){R(hcx+s*16-(s<0?4:0),hcy-4,5,8,'#3E2FB0');R(hcx+s*16-(s<0?3:-1),hcy-3,3,6,'#7C6BEA');R(hcx+s*16-(s<0?3:-1),hcy-3,1,2,'#B9ADFF')}}
+    if(acc==='flor'){const fx=hcx+11,fy=hcy-11;[[0,-3],[3,0],[0,3],[-3,0]].forEach(([a,b])=>E(fx+a,fy+b,2,2,'#FF8FB0'));E(fx,fy,1.6,1.6,'#FFD24F');R(fx-1,fy-1,1,1,'#FFF3B4')}
+    if(crown){const cy=hcy-15;T([[hcx-8,cy+5],[hcx-8,cy-2],[hcx-4,cy+1],[hcx,cy-5],[hcx+4,cy+1],[hcx+8,cy-2],[hcx+8,cy+5]],'#FFD24F');R(hcx-8,cy+3,17,3,'#DD9F22');R(hcx-1,cy+3,2,2,'#FF3B5C');R(hcx-6,cy+3,2,2,'#3C9DFF');R(hcx+4,cy+3,2,2,'#4FD18B');R(hcx-7,cy,1,3,'#FFF3B4')}
+    if(halo){const cy=hcy-19;for(let X=hcx-10;X<=hcx+10;X++){const dx=(X-hcx)/10.5,h=Math.sqrt(Math.max(0,1-dx*dx))*2.6;R(X,Math.round(cy-h),1,1,'#FFF3B4');R(X,Math.round(cy+h),1,1,'#FFD24F')}}})}
+function pet16(p,frame){const key=sk16Key(p),im=sk16Img(key);if(!im)return null;const fi=SK16_F[frame]!=null?SK16_F[frame]:0;const ev=p.evo!=null?p.evo:evoOf(p.level||1).i;const g=sk16Geo(p,fi);
+  const c=document.createElement('canvas');c.width=c.height=64;c._dog=1;c._hi=2;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
+  x.drawImage(sk16Back(p,g,fi,ev),0,0);x.drawImage(im,fi*64,0,64,64,0,0,64,64);x.drawImage(sk16Front(p,g,fi,ev,frame),0,0);return c}
+
+function petC(p,frame=0){const {L,ev,sk,k}=dogKey(p,frame);if(sprC.has(k))return sprC.get(k);if(sk==='pixel16'){const c16=pet16(p,frame);if(c16){sprC.set(k,c16);return c16}return petC({...p,skin:'natural'},frame)}
   const g=dogGrid4(L,(p&&p.acc)||'',ev,frame,sk),P=dogPalette(L,ev,sk,frame);P.eL='#6E5E80';if(sk==='natural'||!sk)P.o='#3E2630';const c=document.createElement('canvas');c.width=DOG_N;c.height=DOG_N;c._dog=1;const x=c.getContext('2d');
   g.forEach((r,y)=>r.forEach((kk,i)=>{if(kk){x.fillStyle=P[kk]||'#FF00FF';x.fillRect(i,y,1,1)}}));sprC.set(k,c);return c}
 /* ================= PERROS EN ALTA DEFINICIÓN (48x48 con volumen, pelaje y luz) ================= */
@@ -3044,6 +3089,7 @@ const COS=[
 ];
 const SKINS=[
  {id:'natural',n:'Pelaje Natural',r:'comun',tier:'corto',price:0,c:'#8A93AD',d:'El color original de la raza de tu perro.'},
+ {id:'pixel16',n:'Estilo 16-bit',r:'epica',tier:'medio',price:999,c:'#FFC93C',d:'Tu perro redibujado en 16-bit: el doble de detalle, sombras estilo Super Nintendo y animaciones nuevas. Sirve para todas las razas y pelajes, con tus accesorios.'},
  {id:'oro',n:'Sabueso de Oro 24K',r:'rara',tier:'medio',price:620,c:'#FFC93C',d:'Pelaje bañado en oro puro con destellos solares y ojos rubí.'},
  {id:'cyber',n:'Cyber-Perro Neón',r:'epica',tier:'medio',price:1250,c:'#00F5D4',d:'Armadura de titanio oscuro con circuitos cian luminosos.'},
  {id:'espectral',n:'Espíritu Ectoplasma',r:'epica',tier:'medio',price:1500,c:'#2CE6A6',d:'Brillo fantasma bioluminiscente turquesa con mirada mística.'},
@@ -3174,7 +3220,7 @@ function drawWorld(cv,cam,L={}){cv._hits=[];
   const line=(pts,col,w,dash)=>{if(!pts||pts.length<2)return;ctx.beginPath();pts.forEach((p,i)=>{const m=merc(p.lat,p.lng);i?ctx.lineTo(X(m.x),Y(m.y)):ctx.moveTo(X(m.x),Y(m.y))});ctx.setLineDash(dash?dash.map(v=>v*u):[]);ctx.lineCap=sharp?'round':'square';ctx.lineJoin=sharp?'round':'miter';ctx.strokeStyle=col;ctx.lineWidth=lw(w);ctx.stroke();ctx.setLineDash([])};
   if(L.guide)line(L.guide,light?'rgba(40,50,90,.6)':'rgba(200,210,240,.6)',2,[2,3]);
   if(L.trail){if(L.trailStyle&&L.trailStyle!=='clasico'&&L.trail.length>1){const P=L.trail.map(p=>{const m=merc(p.lat,p.lng);return{x:X(m.x),y:Y(m.y)}});drawTrailPx(ctx,P,L.trailStyle,u,now)}else{line(L.trail,'#5A1E08',4);line(L.trail,L.trailColor||OR,2)}}
-  const spr=(c,cx,by)=>{const w=c.width*u,h=c.height*u;ctx.drawImage(c,Math.round(cx-w/2),Math.round(by-h),Math.round(w),Math.round(h))};
+  const spr=(c,cx,by)=>{const w=c.width*u/(c._hi||1),h=c.height*u/(c._hi||1);ctx.drawImage(c,Math.round(cx-w/2),Math.round(by-h),Math.round(w),Math.round(h))};
   if(L.home){const m=merc(L.home.lat,L.home.lng);spr(iconC('home',light?'#1A1020':'#F4F6FB'),X(m.x),Y(m.y)+4*u)}
   const prRing=L.me?pickupRadius():0;
   if(L.items)for(const it of L.items){if(it.got)continue;const d=itemById(it.id),c=RAR[d.r].c,m=merc(it.lat,it.lng),cx=X(m.x),gy=Y(m.y);if(it.ang)angelGlow(ctx,cx,gy,u,now);
@@ -4073,7 +4119,7 @@ function arrive(d){const g=d.goal;if(g.kind==='toy'&&g.it){kick(g.it);puff('spar
 function drawDog(c,d){let im;try{im=petC(d.pet,d.fr)}catch(e){return}const x=Math.round(d.x-16),y=Math.round(d.y-30-d.hop),k=d.st==='do'&&d.goal?d.goal.kind:'';
  if(!HIGH.includes(k)){c.fillStyle='rgba(40,20,30,.28)';pixEll(c,d.x,d.y,9,2)}
  let sh=32;if(k==='splash')sh=22;if(k==='hide')sh=20;
- c.save();if(d.flip){c.translate(x+32,y);c.scale(-1,1);c.drawImage(im,0,0,32,sh,0,0,32,sh)}else c.drawImage(im,0,0,32,sh,x,y,32,sh);c.restore();
+ const hk=im._hi||1;c.save();c.imageSmoothingEnabled=false;if(d.flip){c.translate(x+32,y);c.scale(-1,1);c.drawImage(im,0,0,32*hk,sh*hk,0,0,32,sh)}else c.drawImage(im,0,0,32*hk,sh*hk,x,y,32,sh);c.restore();
  if(k==='splash'){c.fillStyle='#C9F3FF';c.fillRect(x+7,y+21,7,1);c.fillRect(x+18,y+22,8,1)}}
 /* ---------- cuadro ---------- */
 let edit=false,sel=null,drag=null,tm=0,raf=0;
@@ -6508,7 +6554,7 @@ function coverScreen(){return new Promise(resolve=>{const ob=$('#ob');ob.hidden=
     /* objetos flotantes */
     floaters.forEach(f=>{const fx=((f.x*W-s*14)%(W+20)+W+20)%(W+20)-10,fy=Math.round(f.y*gy+Math.sin(s*2+f.p)*3);const c=iconC(f.id);x.globalAlpha=.9;x.drawImage(c,Math.round(fx),fy);x.globalAlpha=1;if(Math.sin(s*3+f.p)>.8){x.fillStyle='#FFFFFF';x.fillRect(Math.round(fx)+9,fy-1,1,1)}});
     /* perros (con charcos que salpican cuando llueve) */
-    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(CV.hol&&CV.hol.hat?{...d,acc:''}:d,Math.floor(s*1.3+i*.7)%7===0?1:2+(Math.floor(s*6+i)%2));const dx=Math.round(sp*(i+.5)-16+Math.sin(s*1.2+i)*4),dy=gy-31+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+8,gy,18,2);x.drawImage(c,dx,dy);if(CV.hol&&CV.hol.hat)cvHat(x,dx,dy,CV.hol,i);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
+    const n=dogs.length,sp=W/(n+.5);dogs.forEach((d,i)=>{const fr=(Math.floor(s*6+i)%2);const c=petC(CV.hol&&CV.hol.hat?{...d,acc:''}:d,Math.floor(s*1.3+i*.7)%7===0?1:2+(Math.floor(s*6+i)%2));const dx=Math.round(sp*(i+.5)-16+Math.sin(s*1.2+i)*4),dy=gy-31+(fr?-1:0)+(i%2?0:1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(dx+8,gy,18,2);x.imageSmoothingEnabled=false;x.drawImage(c,dx,dy,c.width/(c._hi||1),c.height/(c._hi||1));if(CV.hol&&CV.hol.hat)cvHat(x,dx,dy,CV.hol,i);if(fr&&i%2){x.fillStyle=wet?'#AFC6FF':snowy?'#FFFFFF':'#C9B79A';x.fillRect(dx-2,gy-2,2,1);x.fillRect(dx-4,gy-1,1,1)}});
     /* partículas de estación: hojas (otoño), pétalos (primavera), luciérnagas (noches de verano) */
     if(CV.season==='otono'||CV.season==='primavera'){for(const l of cvLeaf){const ly=((l.y+s*l.v*.12)%1)*H*.9,lx=((l.x*W+Math.sin(s*1.4+l.p)*10-s*8)%W+W)%W;x.fillStyle=CV.season==='otono'?['#E8892C','#C23B22','#F2B134'][(l.p*3|0)%3]:['#FF8FB8','#FFD6E8','#FFFFFF'][(l.p*3|0)%3];const fl=Math.sin(s*5+l.p)>0;x.fillRect(Math.round(lx),Math.round(ly),fl?2:1,fl?1:2)}}
     if(CV.season==='verano'&&CV.phase!=='dia'&&!wet){for(let k=0;k<14;k++){const px=(hash2(k,7)*W+Math.sin(s*.8+k)*8+W)%W,py=gy-10-hash2(k,8)*gy*.35+Math.sin(s*1.3+k)*4;if(Math.sin(s*3+k*1.7)>.1){x.fillStyle='#E6FF7A';x.fillRect(Math.round(px),Math.round(py),1,1);x.globalAlpha=.3;x.fillRect(Math.round(px)-1,Math.round(py)-1,3,3);x.globalAlpha=1}}}
@@ -7132,7 +7178,7 @@ function angels(){if(!Array.isArray(S.angels))S.angels=[];return S.angels}
 const angelById=id=>angels().find(a=>a.id===id);
 function angelActive(){const a=S&&S.angelOn&&angelById(S.angelOn);return a||null}
 function angelC(a,frame=0,hd=false){const k=`ang|${hd?1:0}|${frame}|${JSON.stringify(a.look)}`;if(sprC.has(k))return sprC.get(k);
-  const base=hd?petHD(a.look,0):petC(a.look,0),m=base.width/24,GW=34,GH=31;
+  const base=hd?petHD({...a.look,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0):petC({...a.look,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0),m=base.width/24,GW=34,GH=31;
   const c=document.createElement('canvas');c.width=GW*m;c.height=GH*m;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
   const R=(gx,gy,w,h,col)=>{x.fillStyle=col;x.fillRect(Math.round(gx*m),Math.round(gy*m),Math.ceil(w*m),Math.ceil(h*m))};
   /* resplandor */
@@ -7234,7 +7280,7 @@ function openLetters(id){const a=angelById(id);if(!a)return;a.letters=a.letters|
     sh.querySelector('#ltOk').onclick=()=>{const t=sh.querySelector('#ltT').value.trim();if(!t)return;a.letters.push({d:new Date().toLocaleDateString('es-CL'),t:t.slice(0,500)});a.letters=a.letters.slice(-60);save();openLetters(id)}})}
 /* ---- cielo de la manada: cada paseo enciende una estrella y se forma su constelación ---- */
 const SKY_N=30;
-function skyPoints(a){const c=petC(a.look,0),Z=c.width,d=c.getContext('2d').getImageData(0,0,Z,Z).data,on=(x,y)=>x>=0&&y>=0&&x<Z&&y<Z&&d[(y*Z+x)*4+3]>0;const E=[];
+function skyPoints(a){const c=petC({...a.look,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0),Z=c.width,d=c.getContext('2d').getImageData(0,0,Z,Z).data,on=(x,y)=>x>=0&&y>=0&&x<Z&&y<Z&&d[(y*Z+x)*4+3]>0;const E=[];
   for(let y=0;y<Z;y++)for(let x=0;x<Z;x++)if(on(x,y)&&(!on(x-1,y)||!on(x+1,y)||!on(x,y-1)||!on(x,y+1)))E.push([x,y]);
   const cx=Z/2,cy=Z/2;E.sort((p,q)=>Math.atan2(p[1]-cy,p[0]-cx)-Math.atan2(q[1]-cy,q[0]-cx));const out=[];for(let i=0;i<SKY_N;i++)out.push(E[Math.floor(i*E.length/SKY_N)]);return out}
 function openSky(id){const a=angelById(id);if(!a)return;const n=Math.min(SKY_N,a.stars||0);
@@ -7245,7 +7291,7 @@ function openSky(id){const a=angelById(id);if(!a)return;const n=Math.min(SKY_N,a
     const rnd=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647})();const bg=Array.from({length:90},()=>[rnd()*240,rnd()*240,rnd()]);
     const tick=t=>{if(!cv.isConnected){cancelAnimationFrame(raf);return}x.fillStyle='#0A0824';x.fillRect(0,0,240,240);
       for(const [bx,by,bs] of bg){x.globalAlpha=.25+.35*Math.abs(Math.sin(t/900+bs*20));x.fillStyle='#C9D6FF';x.fillRect(bx|0,by|0,1,1)}
-      const Z=petC(a.look,0).width,map=p=>[24+p[0]*192/Z,24+p[1]*192/Z];x.globalAlpha=.55;x.strokeStyle='#9FC4FF';x.lineWidth=1;x.beginPath();for(let i=0;i<n;i++){const [px,py]=map(P[i]);i?x.lineTo(px+.5,py+.5):x.moveTo(px+.5,py+.5)}if(n>=SKY_N){const [px,py]=map(P[0]);x.lineTo(px+.5,py+.5)}x.stroke();
+      const Z=petC({...a.look,skin:a.look&&a.look.skin==='pixel16'?'natural':a.look&&a.look.skin},0).width,map=p=>[24+p[0]*192/Z,24+p[1]*192/Z];x.globalAlpha=.55;x.strokeStyle='#9FC4FF';x.lineWidth=1;x.beginPath();for(let i=0;i<n;i++){const [px,py]=map(P[i]);i?x.lineTo(px+.5,py+.5):x.moveTo(px+.5,py+.5)}if(n>=SKY_N){const [px,py]=map(P[0]);x.lineTo(px+.5,py+.5)}x.stroke();
       for(let i=0;i<SKY_N;i++){const [px,py]=map(P[i]);if(i<n){const tw=.7+.3*Math.sin(t/400+i);x.globalAlpha=tw;x.fillStyle='#FFFFFF';x.fillRect(px-1,py,3,1);x.fillRect(px,py-1,1,3);x.fillStyle='#FFE29A';x.fillRect(px,py,1,1);if(i===n-1){x.globalAlpha=.4*tw;x.fillRect(px-3,py,7,1);x.fillRect(px,py-3,1,7)}}else{x.globalAlpha=.18;x.fillStyle='#6A78B0';x.fillRect(px,py,1,1)}}
       x.globalAlpha=1;raf=requestAnimationFrame(tick)};raf=requestAnimationFrame(tick)})}
 /* ---- en el paseo ---- */
